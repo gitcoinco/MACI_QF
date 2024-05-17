@@ -38,7 +38,7 @@ npm run dev
 
 npm run dev -- --drop-db # drop the database before indexing
 npm run dev -- --from-block=latest # start indexing from the last block
-npm run dev -- --from-block=12345 # start indexing from the 12345th block
+npm run dev -- --from-block=591000 # start indexing from the 12345th block
 npm run dev -- --run-once # index and exit without watching for events
 npm run dev -- --no-cache # disable cache
 npm run dev -- --log-level=trace # set log level

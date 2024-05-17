@@ -477,7 +477,7 @@ export async function handleEvent(
         adminRole,
         strategyAddress: parseAddress(strategyAddress),
         strategyId,
-        strategyName: "MACIQF",
+        strategyName: strategy?.name ?? "",
         createdByAddress: parseAddress(createdBy),
         createdAtBlock: event.blockNumber,
         updatedAtBlock: event.blockNumber,
@@ -816,6 +816,7 @@ export async function handleEvent(
           break;
 
         case "allov2.DonationVotingMerkleDistributionDirectTransferStrategy":
+        case "allov2.QFMACI":
           values = decodeDVMDApplicationData(encodedData);
           id = (Number(values.recipientsCounter) - 1).toString();
           break;
@@ -892,18 +893,8 @@ export async function handleEvent(
 
           break;
 
-        case "allov2.DonationVotingMerkleDistributionDirectTransferStrategy":
-          params = event.params as DVMDTimeStampUpdatedData;
-
-          applicationsStartTime = getDateFromTimestamp(
-            params.registrationStartTime
-          );
-          applicationsEndTime = getDateFromTimestamp(
-            params.registrationEndTime
-          );
-          donationsStartTime = getDateFromTimestamp(params.allocationStartTime);
-          donationsEndTime = getDateFromTimestamp(params.allocationEndTime);
         case "allov2.QFMACI":
+        case "allov2.DonationVotingMerkleDistributionDirectTransferStrategy":
           params = event.params as DVMDTimeStampUpdatedData;
 
           applicationsStartTime = getDateFromTimestamp(
@@ -916,7 +907,6 @@ export async function handleEvent(
           donationsEndTime = getDateFromTimestamp(params.allocationEndTime);
 
           break;
-
         default:
           throw new Error("Invalid strategy name");
       }
