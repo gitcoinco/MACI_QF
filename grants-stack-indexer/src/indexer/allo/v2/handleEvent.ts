@@ -414,12 +414,13 @@ export async function handleEvent(
         applicationsEndTime = getDateFromTimestamp(registrationEndTimeResolved);
         donationsStartTime = getDateFromTimestamp(allocationStartTimeResolved);
         donationsEndTime = getDateFromTimestamp(allocationEndTimeResolved);
-
         if (parsedMetadata.success && token !== null) {
-          matchAmount = parseUnits(
-            parsedMetadata.data.quadraticFundingConfig.matchingFundsAvailable.toString(),
-            token.decimals
-          );
+          matchAmount = BigInt(parsedMetadata.data.quadraticFundingConfig.matchingFundsAvailable * 10 ** 18);
+
+          // matchAmount = parseUnits(
+          //   parsedMetadata.data.quadraticFundingConfig.matchingFundsAvailable.toString(),
+          //   token.decimals
+          // );
           matchAmountInUsd = (
             await convertToUSD(
               priceProvider,
@@ -865,14 +866,16 @@ export async function handleEvent(
 
     case "TimestampsUpdated": {
       const strategyAddress = parseAddress(event.address);
-      const round = await db.getRoundByStrategyAddress(
-        chainId,
-        strategyAddress
-      );
 
-      if (!round) {
-        throw new Error("Round not found");
-      }
+      console.log("TimestampsUpdated", strategyAddress);
+
+      const strategyId = await readContract({
+        contract: "AlloV2/IStrategy/V1",
+        address: strategyAddress,
+        functionName: "getStrategyId",
+      });
+
+      const strategy = extractStrategyFromId(strategyId);
 
       let applicationsStartTime: Date | null = null;
       let applicationsEndTime: Date | null = null;
@@ -880,7 +883,7 @@ export async function handleEvent(
       let donationsEndTime: Date | null = null;
       let params;
 
-      switch (round.strategyName) {
+      switch (strategy?.name ?? "") {
         case "allov2.DirectGrantsSimpleStrategy":
           params = event.params as DGTimeStampUpdatedData;
 
@@ -915,7 +918,7 @@ export async function handleEvent(
         {
           type: "UpdateRound",
           chainId,
-          roundId: round.id,
+          roundId: event.address,
           round: {
             applicationsStartTime,
             applicationsEndTime,

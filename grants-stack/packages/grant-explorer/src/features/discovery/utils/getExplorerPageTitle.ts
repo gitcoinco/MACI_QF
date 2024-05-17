@@ -3,7 +3,7 @@ import {
   ROUND_PAYOUT_MERKLE_OLD,
   ROUND_PAYOUT_DIRECT,
   ROUND_PAYOUT_MERKLE,
-  ROUND_PAYOUT_MACIQF,
+  ROUND_PAYOUT_QFMACI,
 } from "common";
 import { getFilterLabel } from "./getFilterLabel";
 import { RoundFilterParams, RoundStatus } from "../hooks/useFilterRounds";
@@ -17,7 +17,7 @@ export function getExplorerPageTitle(filter: RoundFilterParams): string {
     case ROUND_PAYOUT_MERKLE_OLD:
     case ROUND_PAYOUT_MERKLE:
       return "Quadratic Funding rounds";
-    case ROUND_PAYOUT_MACIQF:
+    case ROUND_PAYOUT_QFMACI:
       return "MACI QF rounds";
     case ROUND_PAYOUT_DIRECT_OLD:
     case ROUND_PAYOUT_DIRECT:

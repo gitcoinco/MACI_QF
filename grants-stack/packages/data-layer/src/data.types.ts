@@ -6,7 +6,7 @@ export type RoundPayoutType =
   | "allov1.QF"
   | "allov2.DirectGrantsSimpleStrategy"
   | "allov2.DonationVotingMerkleDistributionDirectTransferStrategy"
-  | "allov2.MACIQF"
+  | "allov2.QFMACI"
   | ""; // This is to handle the cases where the strategyName is not set in a round, mostly spam rounds
 export type RoundVisibilityType = "public" | "private";
 
@@ -385,7 +385,7 @@ export interface PayoutStrategy {
    * Whether is QUADRATIC FUNDING or DIRECT GRANT
    * MERKLE for QF
    * DIRECT for DG
-   * MACIQF for MACIQF
+   * QFMACI for QFMACI
    */
   strategyName: RoundPayoutType;
 }

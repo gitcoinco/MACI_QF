@@ -73,25 +73,14 @@ export default function CreateRound() {
             </div>
           </header>
           <main>
-            {roundCategoryParam == "MACI-QF" ? (
-              <FormWizard
-                // @ts-expect-error Needs refactoring/typing as a whole
-                steps={steps}
-                initialData={{ program }}
-                configuration={{
-                  roundCategory: roundCategory,
-                }}
-              />
-            ) : (
-              <FormWizard
-                // @ts-expect-error Needs refactoring/typing as a whole
-                steps={steps}
-                initialData={{ program }}
-                configuration={{
-                  roundCategory: roundCategory,
-                }}
-              />
-            )}
+            <FormWizard
+              // @ts-expect-error Needs refactoring/typing as a whole
+              steps={steps}
+              initialData={{ program }}
+              configuration={{
+                roundCategory: roundCategory,
+              }}
+            />
           </main>
         </div>
         <Footer />
