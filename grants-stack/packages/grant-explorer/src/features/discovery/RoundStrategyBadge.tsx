@@ -16,7 +16,7 @@ const colorOptions = {
   [ROUND_PAYOUT_DIRECT_OLD]: "yellow",
   [ROUND_PAYOUT_MERKLE]: "blue",
   [ROUND_PAYOUT_DIRECT]: "yellow",
-  [ROUND_PAYOUT_QFMACI]: "blue",
+  [ROUND_PAYOUT_QFMACI]: "green",
 
   ["allov2.DonationVotingMerkleDistributionDirectTransferStrategy"]: "blue",
   ["allov2.MicroGrantsStrategy"]: "yellow",
@@ -24,7 +24,7 @@ const colorOptions = {
   ["allov2.SQFSuperFluidStrategy"]: "yellow",
   ["allov2.MicroGrantsGovStrategy"]: "yellow",
   ["allov2.DirectGrantsSimpleStrategy"]: "yellow",
-  ["QFMACI"]: "blue",
+  ["QFMACI"]: "green",
   [""]: "grey",
 } as const;
 
