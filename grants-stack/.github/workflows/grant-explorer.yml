@@ -1,0 +1,43 @@
+name: Explorer - Lint & Test & Typecheck
+on:
+  push:
+    branches:
+      - main
+      - release
+  pull_request:
+    branches:
+      - "**"
+jobs:
+  lint-test-typecheck:
+    concurrency: ci-grant-explorer-${{ github.head_ref || github.run_id }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: |
+          pnpm install
+
+      - name: Lint Explorer
+        run: |
+          pnpm lint:explorer
+
+      - name: Test Explorer
+        run: |
+          pnpm test:explorer
+
+      - name: Typecheck Explorer
+        run: |
+          pnpm typecheck:explorer

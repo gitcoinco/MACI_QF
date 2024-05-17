@@ -1,0 +1,6 @@
+/data
+/node_modules
+/.cache
+/.git
+/dist
+.env

@@ -1,0 +1,58 @@
+{
+  "name": "root",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "engines": {
+    "npm": ">=8.5.5",
+    "node": ">=16.15.0"
+  },
+  "scripts": {
+    "start": "pnpm --filter round-manager run start",
+    "build": "pnpm turbo build",
+    "compile": "pnpm --filter contracts run compile ",
+    "test": "pnpm turbo run test --no-cache --concurrency=50%",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write",
+    "build:manager": "pnpm --filter round-manager run build",
+    "test:manager": "turbo run test --filter=round-manager",
+    "start:manager": "pnpm --filter round-manager run start",
+    "lint:manager": "turbo run lint:ci --filter=round-manager",
+    "typecheck:manager": "turbo run typecheck --filter=round-manager",
+    "build:explorer": "turbo run build --filter=grant-explorer",
+    "test:explorer": "turbo run test --filter=grant-explorer",
+    "start:explorer": "pnpm --filter grant-explorer run start",
+    "typecheck:explorer": "turbo run typecheck --filter=grant-explorer",
+    "lint:explorer": "turbo run lint:ci --filter=grant-explorer",
+    "start:builder": "pnpm --filter builder run start",
+    "lint:builder": "turbo run lint:ci --filter=builder",
+    "test:builder": "pnpm test --filter=builder",
+    "typecheck:builder": "turbo run typecheck --filter=builder",
+    "test:common": "turbo run test --filter=common",
+    "lint:common": "pnpm --filter common run lint",
+    "typecheck:common": "pnpm --filter common run typecheck",
+    "lint:data-layer": "pnpm --filter data-layer run lint",
+    "typecheck:data-layer": "pnpm --filter data-layer run typecheck",
+    "test:verify-env": "turbo run test --filter=verify-env",
+    "test:data-layer": "turbo run test --filter=data-layer"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^17.7.1",
+    "@commitlint/config-conventional": "^17.7.0",
+    "turbo": "^1.12.3"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2",
+    "prettier": "^3.0.3",
+    "react-tagsinput": "3.20.3",
+    "@types/react-tagsinput": "3.20.6"
+
+  },
+  "pnpm": {
+    "overrides": {
+      "webpack": "^5"
+    }
+  },
+  "workspaces": [
+    "packages/*"
+  ]
+}

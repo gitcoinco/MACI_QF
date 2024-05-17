@@ -1,0 +1,15 @@
+{
+  "name": "eslint-config-gitcoin",
+  "version": "1.0.0",
+  "main": "index.js",
+  "private": true,
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.7.2",
+    "@typescript-eslint/parser": "^6.7.2",
+    "typescript": "^5.2.2",
+    "eslint": "^8.49.0",
+    "eslint-config-turbo": "^1.10.14",
+    "eslint-plugin-react": "^7.31.7",
+    "eslint-plugin-react-hooks": "^4.6.0"
+  }
+}

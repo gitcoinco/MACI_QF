@@ -1,0 +1,15 @@
+node_modules
+.env
+.idea/
+.DS_Store
+/lerna-debug.log
+.turbo
+.husky/
+.vercel
+dist/
+coverage/
+.eslintcache
+bun.lockb
+tmp
+/packages/grant-explorer/tsconfig.tsbuildinfo
+/packages/round-manager/tsconfig.tsbuildinfo
