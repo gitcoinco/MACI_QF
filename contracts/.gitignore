@@ -1,0 +1,29 @@
+node_modules
+/node_modules
+.env
+
+# Package manager lock files
+bun.lockb
+yarn.lock
+package-lock.json
+
+
+# Hardhat files
+/cache
+/artifacts
+
+# TypeChain files
+/typechain
+/typechain-types
+
+# solidity-coverage files
+/coverage
+/coverage.json
+
+# ZKEYS files
+/zkeys
+
+# Generated proof files
+/proof_output
+
+
