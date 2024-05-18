@@ -96,7 +96,7 @@ export class MaciParameters {
   static async mock2(): Promise<MaciParameters> {
     const deployParams = await MaciParameters.fromConfig(
       "micro",
-      "./../zkeys/zkeys",
+      "./zkeys/zkeys",
     );
 
     return deployParams;

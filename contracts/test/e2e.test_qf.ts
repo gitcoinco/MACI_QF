@@ -46,7 +46,7 @@ import { getTalyFilePath } from "./utils/misc";
 import path from "path";
 
 // MACI zkFiles
-const circuitDirectory = process.env.CIRCUIT_DIRECTORY || "./../zkeys/zkeys";
+const circuitDirectory = process.env.CIRCUIT_DIRECTORY || "./zkeys/zkeys";
 const proofOutputDirectory = process.env.PROOF_OUTPUT_DIR || "./proof_output";
 const tallyBatchSize = Number(process.env.TALLY_BATCH_SIZE || 8);
 
@@ -162,7 +162,7 @@ describe("e2e", function test() {
         new Array(2).fill(0n),
       ],
       _pc: new Array(2).fill(0n),
-      _pubSignals: new Array(38).fill(0n)
+      _pubSignals: new Array(38).fill("0")
     };
     // convert yo BigInt[]
 

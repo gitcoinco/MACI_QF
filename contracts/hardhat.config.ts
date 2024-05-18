@@ -85,7 +85,7 @@ const config: HardhatUserConfig = {
     tests: "./test",
     artifacts: "./artifacts",
   },
-  defaultNetwork: "sepolia",
+  defaultNetwork: "localhost",
   networks: {
     arbsepolia: {
       chainId: 421614,
