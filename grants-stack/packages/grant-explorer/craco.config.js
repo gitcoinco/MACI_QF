@@ -32,6 +32,8 @@ if (process.env.REACT_APP_ENV === "production") {
 
 module.exports = {
   webpack: {
+    swcMinify: true,
+
     configure: {
       devtool: "source-map", // Source map generation must be turned on
       module: {
@@ -64,6 +66,10 @@ module.exports = {
           os: require.resolve("os-browserify"),
           url: require.resolve("url"),
           util: require.resolve("util"),
+          zlib: require.resolve("browserify-zlib"),
+          fs: false,
+          net: false,
+          tls: false,
         },
       },
       experiments: {

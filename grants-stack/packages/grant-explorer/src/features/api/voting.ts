@@ -213,3 +213,285 @@ export function encodedQFAllocation(
 
   return encodedData;
 }
+
+
+export function bnSqrt(val: bigint) {
+  // Take square root from a bigint
+  // https://stackoverflow.com/a/52468569/1868395
+  if (val < 0n) {
+    throw new Error("Complex numbers not support");
+  }
+  if (val < 2n) {
+    return val;
+  }
+  let loop = 100;
+  let x;
+  let x1 = val / 2n;
+  do {
+    x = x1;
+    x1 = (x + val / x) / 2n;
+    loop--;
+  } while (x !== x1 && loop);
+  if (loop === 0 && x !== x1) {
+    throw new Error("Sqrt took too long to calculate");
+  }
+  return x;
+}
+
+// NEW CODE
+
+export function encodedMACIQFSignUp(
+  donationToken: VotingToken,
+  donations: Pick<
+    CartProject,
+    | "amount"
+    | "recipient"
+    | "projectRegistryId"
+    | "applicationIndex"
+    | "anchorAddress"
+  >[]
+): Hex[] {
+  const tokenAddress =
+    donationToken.address === zeroAddress ? NATIVE : donationToken.address;
+
+  const encodedData = donations.map((donation) => {
+    if (!donation.anchorAddress) {
+      throw new Error("Anchor address is required for QF allocation");
+    }
+    return encodeAbiParameters(
+      parseAbiParameters(
+        "address,uint8,(((address,uint256),uint256,uint256),bytes)"
+      ),
+      [
+        getAddress(donation.anchorAddress),
+        0, // permit type of none on the strategy
+        [
+          [
+            [
+              getAddress(tokenAddress),
+              parseUnits(donation.amount, donationToken.decimal),
+            ],
+            0n, // nonce, since permit type is none
+            0n, // deadline, since permit type is none
+          ],
+          "0x0000000000000000000000000000000000000000000000000000000000000000", // signature, since permit type is none
+        ],
+      ]
+    );
+  });
+
+  return encodedData;
+}
+
+// (
+//   PubKey memory pubKey, TUPLE(UINT256, UINT256)
+//   uint256 amount,
+//   uint[2] memory _pA,
+//   uint[2][2] memory _pB,
+//   uint[2] memory _pC,
+//   uint[38] memory _pubSignals
+// ) = abi.decode(_data, (PubKey, uint256, uint[2], uint[2][2], uint[2], uint[38]));
+
+export function encodedMACIQFAllocation(
+  donationToken: VotingToken,
+  donations: Pick<
+    CartProject,
+    | "amount"
+    | "recipient"
+    | "projectRegistryId"
+    | "applicationIndex"
+    | "anchorAddress"
+  >[]
+): Hex[] {
+  const tokenAddress =
+    donationToken.address === zeroAddress ? NATIVE : donationToken.address;
+
+  const encodedData = donations.map((donation) => {
+    if (!donation.anchorAddress) {
+      throw new Error("Anchor address is required for QF allocation");
+    }
+    return encodeAbiParameters(
+      parseAbiParameters(
+        "address,uint8,(((address,uint256),uint256,uint256),bytes)"
+      ),
+      [
+        getAddress(donation.anchorAddress),
+        0, // permit type of none on the strategy
+        [
+          [
+            [
+              getAddress(tokenAddress),
+              parseUnits(donation.amount, donationToken.decimal),
+            ],
+            0n, // nonce, since permit type is none
+            0n, // deadline, since permit type is none
+          ],
+          "0x0000000000000000000000000000000000000000000000000000000000000000", // signature, since permit type is none
+        ],
+      ]
+    );
+  });
+
+  return encodedData;
+}
+
+// uint[2] memory _pA,
+// uint[2][2] memory _pB,
+// uint[2] memory _pC,
+// uint[38] memory _pubSignals
+export interface ProofArgs {
+  _pA: string[];
+  _pB: string[][];
+  _pC: string[];
+  _pubSignals: bigint[];
+}
+
+/**
+ * Interface for the arguments to the batch publish command
+ */
+export interface IAllocateArgs {
+  /**
+   * The public key of the user
+   */
+  publicKey: PubKey;
+
+  amount: bigint;
+
+  proof?: string;
+}
+
+export const prepareAllocationData = async ({
+  publicKey,
+  amount,
+  proof,
+}: IAllocateArgs) => {
+  // uint[2] memory _pA,
+  // uint[2][2] memory _pB,
+  // uint[2] memory _pC,
+  // uint[38] memory _pubSignals
+  const types = "(uint256,uint256),uint256,uint[2],uint[2][2],uint[2],uint[38]";
+
+  console.log("amount", amount);
+  let dt: ProofArgs;
+  if (proof) {
+    dt = generateWitness(JSON.parse(proof));
+  } else {
+    dt = {
+      _pA: new Array(2).fill("0"),
+      _pB: [new Array(2).fill("0"), new Array(2).fill("0")],
+      _pC: new Array(2).fill("0"),
+      _pubSignals: new Array(38).fill("0"),
+    };
+  }
+
+  const pubKey = [
+    publicKey.asContractParam().x,
+    publicKey.asContractParam().y,
+  ] as [bigint, bigint];
+  const data = encodeAbiParameters(parseAbiParameters(types), [
+    pubKey,
+    amount as bigint,
+    dt._pA.map((str) => BigInt(str)) as [bigint, bigint],
+    dt._pB.map((pair) => pair.map((num) => BigInt(num))) as [
+      [bigint, bigint],
+      [bigint, bigint],
+    ],
+    dt._pC.map((str) => BigInt(str)) as [bigint, bigint],
+    // add 38 bigint in the as [bigint, bigint, ...] format
+    dt._pubSignals as [
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+      bigint,
+    ],
+  ]);
+
+  return data;
+};
+
+import { utils } from "ethers";
+import { Keypair as MaciKeypair, PrivKey, PubKey } from "maci-domainobjs";
+import { generateWitness } from "./pcd";
+
+/**
+ * Derives the MACI private key from the users signature hash
+ * @param hash - user's signature hash
+ * @return The MACI private key
+ */
+function genPrivKey(hash: string): PrivKey {
+  if (!utils.isBytesLike(hash)) {
+    throw new Error(`genPrivKey() error. Hash must be a hex string: ${hash}`);
+  }
+
+  let rawPrivKey = BigInt(hash);
+  let pubKey: PubKey | null = null;
+
+  for (let counter = 1; pubKey === null; counter++) {
+    try {
+      const privKey = new PrivKey(rawPrivKey);
+      // this will throw 'Invalid public key' if key is not on the Baby Jubjub elliptic curve
+      const keypair = new Keypair(privKey);
+      pubKey = keypair.pubKey;
+    } catch {
+      const data = encodeAbiParameters(parseAbiParameters("uint256, uint256"), [
+        rawPrivKey,
+        BigInt(counter),
+      ]);
+      rawPrivKey = BigInt(utils.keccak256(data));
+    }
+  }
+
+  return new PrivKey(rawPrivKey);
+}
+
+export class Keypair extends MaciKeypair {
+  /**
+   * generate a key pair from a seed
+   * @param seed The sha256 hash of signature
+   * @returns key pair
+   */
+  static createFromSeed(seed: string): Keypair {
+    if (!seed) {
+      throw new Error("Keypair seed cannot be empty");
+    }
+    const sanitizedSeed = seed.startsWith("0x") ? seed : "0x" + seed;
+    const privKey = genPrivKey(sanitizedSeed);
+    return new Keypair(privKey);
+  }
+}
+
+export { PubKey, PrivKey };

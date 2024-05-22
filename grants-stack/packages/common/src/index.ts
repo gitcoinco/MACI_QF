@@ -336,6 +336,7 @@ export function getRoundStrategyType(name: string): RoundStrategyType {
       return "QuadraticFunding";
     case "allov2.QFMACI":
     case "QFMACI":
+    case "MACIQF":
       return "QFMACI";
 
     default:

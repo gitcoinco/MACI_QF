@@ -38,7 +38,7 @@ const connectors = connectorsForWallets([
     groupName: "Recommended",
     wallets: [
       injectedWallet({ chains }),
-      walletConnectWallet({ chains, projectId }),
+      // walletConnectWallet({ chains, projectId }),
       coinbaseWallet({ appName: "Gitcoin Explorer", chains }),
       metaMaskWallet({ chains, projectId }),
     ],

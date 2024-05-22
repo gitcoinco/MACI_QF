@@ -115,9 +115,6 @@ export interface IAllocateArgs {
   amount: BigInt;
 
   proof: ProofArgs;
-
-
-
 }
 
   // uint[2] memory _pA,

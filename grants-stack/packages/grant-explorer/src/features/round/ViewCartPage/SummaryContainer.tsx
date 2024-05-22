@@ -1,14 +1,14 @@
 /* eslint-disable no-unexpected-multiline */
 import { ChainId, getTokenPrice, NATIVE, submitPassportLite } from "common";
 import { useCartStorage } from "../../../store";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Summary } from "./Summary";
 import ChainConfirmationModal from "../../common/ConfirmationModal";
 import { ChainConfirmationModalBody } from "./ChainConfirmationModalBody";
 import { ProgressStatus } from "../../api/types";
 import { modalDelayMs } from "../../../constants";
 import { useNavigate } from "react-router-dom";
-import { useAccount, useWalletClient } from "wagmi";
+import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { Button } from "common/src/styles";
 import { InformationCircleIcon } from "@heroicons/react/24/solid";
 import { BoltIcon } from "@heroicons/react/24/outline";
@@ -33,6 +33,7 @@ import { isPresent } from "ts-is-present";
 import { useAllo } from "../../api/AlloWrapper";
 import { getFormattedRoundId } from "../../common/utils/utils";
 import { datadogLogs } from "@datadog/browser-logs";
+import { useZuAuth } from "zupass-auth";
 
 export function SummaryContainer() {
   const { data: walletClient } = useWalletClient();
@@ -44,7 +45,8 @@ export function SummaryContainer() {
     chainToVotingToken,
     remove: removeProjectFromCart,
   } = useCartStorage();
-  const { checkout, voteStatus, chainsToCheckout } = useCheckoutStore();
+  const { checkout, voteStatus, chainsToCheckout, checkoutMaci } =
+    useCheckoutStore();
   const dataLayer = useDataLayer();
 
   const { openConnectModal } = useConnectModal();
@@ -138,6 +140,33 @@ export function SummaryContainer() {
       })
     ).then((rounds) => rounds.filter(isPresent));
   });
+
+  const { authenticate, pcd } = useZuAuth();
+
+  const validEventIds = [
+    "91312aa1-5f74-4264-bdeb-f4a3ddb8670c", // TEST event
+  ];
+  const fieldsToReveal = {
+    revealAttendeeEmail: true,
+    revealEventId: true,
+    revealProductId: true,
+  };
+
+  const { address: connectedAddress } = useAccount();
+
+  const getProof = useCallback(async () => {
+    try {
+      authenticate(
+        fieldsToReveal,
+        connectedAddress as `0x${string}`,
+        validEventIds
+      );
+      console.log("Authentication complete, proceeding to next step.");
+      // Your next steps after authentication
+    } catch (error) {
+      console.error("Authentication failed", error);
+    }
+  }, [fieldsToReveal, connectedAddress, validEventIds]);
 
   /** useEffect to clear projects from expired rounds (no longer accepting donations) */
   useEffect(() => {
@@ -275,7 +304,7 @@ export function SummaryContainer() {
         <ChainConfirmationModal
           title={"Checkout"}
           confirmButtonText={"Checkout"}
-          confirmButtonAction={handleSubmitDonation}
+          confirmButtonAction={pcd ? handleSubmitDonation: async() => {await getProof();}}
           body={
             <ChainConfirmationModalBody
               projectsByChain={projectsByChain}
@@ -292,11 +321,22 @@ export function SummaryContainer() {
           isOpen={openMRCProgressModal}
           subheading={"Please hold while we submit your donation."}
           body={
-            <MRCProgressModalBody
-              chainIdsBeingCheckedOut={chainIdsBeingCheckedOut}
-              tryAgainFn={handleSubmitDonation}
-              setIsOpen={setOpenMRCProgressModal}
-            />
+            <div className="flex flex-col items-center">
+              {/* <Button
+                className="btn btn-primary"
+                onClick={() => {
+                  getProof();
+                }}
+              >
+                {" "}
+                genProof{" "}
+              </Button> */}
+              <MRCProgressModalBody
+                chainIdsBeingCheckedOut={chainIdsBeingCheckedOut}
+                tryAgainFn={handleSubmitDonation}
+                setIsOpen={setOpenMRCProgressModal}
+              />
+            </div>
           }
         />
         {/*Passport not connected warning modal*/}
@@ -330,7 +370,7 @@ export function SummaryContainer() {
       </>
     );
   }
-
+  
   async function handleSubmitDonation() {
     try {
       if (!walletClient || !allo) {
@@ -342,14 +382,13 @@ export function SummaryContainer() {
         setOpenChainConfirmationModal(false);
       }, modalDelayMs);
 
-      await checkout(
+      await checkoutMaci(
         chainIdsBeingCheckedOut.map((chainId) => ({
           chainId,
           permitDeadline: currentPermitDeadline,
         })),
         walletClient,
-        allo,
-        dataLayer
+        pcd
       );
     } catch (error) {
       console.error(error);

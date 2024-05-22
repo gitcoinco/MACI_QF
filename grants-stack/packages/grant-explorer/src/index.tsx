@@ -6,7 +6,13 @@ import { getConfig } from "common/src/config";
 import { DataLayer, DataLayerProvider } from "data-layer";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { HashRouter, Route, Routes } from "react-router-dom";
+import {
+  BrowserRouter,
+  HashRouter,
+  Route,
+  Router,
+  Routes,
+} from "react-router-dom";
 import { WagmiConfig } from "wagmi";
 import { chains, config } from "./app/wagmi";
 import { RoundProvider } from "./context/RoundContext";
@@ -33,6 +39,7 @@ import ViewRound from "./features/round/ViewRoundPage";
 import AlloWrapper from "./features/api/AlloWrapper";
 import { merge } from "lodash";
 import { PostHogProvider } from "posthog-js/react";
+import Popup from "./features/common/ZuPopup";
 
 initSentry();
 initDatadog();
@@ -123,10 +130,18 @@ root.render(
                         element={<ExploreProjectsPage />}
                       />
 
+
                       {/* 404 */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </HashRouter>
+                      {/* Popup */}
+
+                  <BrowserRouter>
+                    <Routes>
+                      <Route path="/popup" element={<Popup />} />
+                    </Routes>
+                  </BrowserRouter>
                 </AlloWrapper>
               </DataLayerProvider>
             </RoundProvider>
