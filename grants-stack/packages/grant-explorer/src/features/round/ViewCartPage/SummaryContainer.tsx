@@ -34,6 +34,7 @@ import { useAllo } from "../../api/AlloWrapper";
 import { getFormattedRoundId } from "../../common/utils/utils";
 import { datadogLogs } from "@datadog/browser-logs";
 import { useZuAuth } from "zupass-auth";
+import { Switch } from "@headlessui/react";
 
 export function SummaryContainer() {
   const { data: walletClient } = useWalletClient();
@@ -45,7 +46,7 @@ export function SummaryContainer() {
     chainToVotingToken,
     remove: removeProjectFromCart,
   } = useCartStorage();
-  const { checkout, voteStatus, chainsToCheckout, checkoutMaci } =
+  const { voteStatus, chainsToCheckout, checkoutMaci } =
     useCheckoutStore();
   const dataLayer = useDataLayer();
 
@@ -298,20 +299,71 @@ export function SummaryContainer() {
     }
   }
 
+  function classNames(...classes: string[]) {
+    return classes.filter(Boolean).join(" ");
+  }
+
+  const [enabled, setEnabled] = useState(false);
+
   function PayoutModals() {
     return (
       <>
         <ChainConfirmationModal
           title={"Checkout"}
-          confirmButtonText={"Checkout"}
-          confirmButtonAction={pcd ? handleSubmitDonation: async() => {await getProof();}}
+          confirmButtonText={(pcd && enabled) ? "Checkout" : !enabled ? "Checkout" : "Generate Proof"}
+          confirmButtonAction={
+          (pcd && enabled) || !enabled
+              ? handleSubmitDonation
+              : async () => {
+                  await getProof();
+                }
+          }
           body={
-            <ChainConfirmationModalBody
-              projectsByChain={projectsByChain}
-              totalDonationsPerChain={totalDonationsPerChain}
-              chainIdsBeingCheckedOut={chainIdsBeingCheckedOut}
-              setChainIdsBeingCheckedOut={setChainIdsBeingCheckedOut}
-            />
+            <div>
+              <Switch.Group
+                as="div"
+                className="flex items-center justify-between mb-4"
+              >
+                <span className="flex flex-grow flex-col">
+                  <Switch.Label
+                    as="span"
+                    className="text-sm font-medium leading-6 text-gray-900"
+                    passive
+                  >
+                    Join Allowlist
+                  </Switch.Label>
+                  <Switch.Description
+                    as="span"
+                    className="text-sm text-gray-500"
+                  >
+                    You will gain access to the Allowlist and be able to donate more
+                  </Switch.Description>
+                </span>
+                <Switch
+                  checked={enabled}
+                  onChange={setEnabled}
+                  className={classNames(
+                    enabled ? "bg-indigo-600" : "bg-gray-200",
+                    "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2"
+                  )}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={classNames(
+                      enabled ? "translate-x-5" : "translate-x-0",
+                      "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                    )}
+                  />
+                </Switch>
+              </Switch.Group>
+
+              <ChainConfirmationModalBody
+                projectsByChain={projectsByChain}
+                totalDonationsPerChain={totalDonationsPerChain}
+                chainIdsBeingCheckedOut={chainIdsBeingCheckedOut}
+                setChainIdsBeingCheckedOut={setChainIdsBeingCheckedOut}
+              />
+            </div>
           }
           isOpen={openChainConfirmationModal}
           setIsOpen={setOpenChainConfirmationModal}
@@ -322,15 +374,6 @@ export function SummaryContainer() {
           subheading={"Please hold while we submit your donation."}
           body={
             <div className="flex flex-col items-center">
-              {/* <Button
-                className="btn btn-primary"
-                onClick={() => {
-                  getProof();
-                }}
-              >
-                {" "}
-                genProof{" "}
-              </Button> */}
               <MRCProgressModalBody
                 chainIdsBeingCheckedOut={chainIdsBeingCheckedOut}
                 tryAgainFn={handleSubmitDonation}
@@ -578,3 +621,7 @@ export function SummaryContainer() {
     </div>
   );
 }
+
+
+
+

@@ -2,9 +2,11 @@ import { EventHandlerArgs } from "chainsauce";
 import {
   Hex,
   decodeAbiParameters,
+  encodeAbiParameters,
   encodePacked,
   keccak256,
   pad,
+  parseAbiParameters,
   parseUnits,
   zeroAddress,
 } from "viem";
@@ -42,6 +44,7 @@ import { getTokenForChain } from "../../../config.js";
 import { ethers } from "ethers";
 import { UnknownTokenError } from "../../../prices/common.js";
 import { ApplicationMetadataSchema } from "../../applicationMetadata.js";
+import { randomUUID } from "crypto";
 
 const ALLO_NATIVE_TOKEN = parseAddress(
   "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
@@ -386,6 +389,8 @@ export async function handleEvent(
           registrationEndTimeResolved,
           allocationStartTimeResolved,
           allocationEndTimeResolved,
+          PollContractsAddresses,
+          maciAddress,
         ] = await Promise.all([
           await readContract({
             contract,
@@ -407,7 +412,28 @@ export async function handleEvent(
             address: strategyAddress,
             functionName: "allocationEndTime",
           }),
+          await readContract({
+            contract,
+            address: strategyAddress,
+            functionName: "_pollContracts",
+          }),
+          await readContract({
+            contract,
+            address: strategyAddress,
+            functionName: "_maci",
+          }),
         ]);
+
+        subscribeToContract({
+          contract: "AlloV2/MACIPoll/V1",
+          address: PollContractsAddresses[0],
+        });
+
+        subscribeToContract({
+          contract: "AlloV2/MACI/V1",
+          address: maciAddress,
+        });
+
         applicationsStartTime = getDateFromTimestamp(
           registrationStartTimeResolved
         );
@@ -415,7 +441,10 @@ export async function handleEvent(
         donationsStartTime = getDateFromTimestamp(allocationStartTimeResolved);
         donationsEndTime = getDateFromTimestamp(allocationEndTimeResolved);
         if (parsedMetadata.success && token !== null) {
-          matchAmount = BigInt(parsedMetadata.data.quadraticFundingConfig.matchingFundsAvailable * 10 ** 18);
+          matchAmount = BigInt(
+            parsedMetadata.data.quadraticFundingConfig.matchingFundsAvailable *
+              10 ** 18
+          );
 
           // matchAmount = parseUnits(
           //   parsedMetadata.data.quadraticFundingConfig.matchingFundsAvailable.toString(),
@@ -1225,6 +1254,110 @@ export async function handleEvent(
           return [];
         }
       }
+    }
+
+    // NEW CODE
+    case "SignUp": {
+      const maciAddress = parseAddress(event.address);
+
+      const stateIndex = event.params._stateIndex;
+
+      const voiceCreditBalance = event.params._voiceCreditBalance;
+      const txHash = event.transactionHash;
+
+      const TxInfo = await rpcClient.getTransaction({
+        hash: event.transactionHash,
+      });
+
+      const createdBy = parseAddress(TxInfo.from);
+
+      const types = "uint256, address, address";
+
+      const bytes = encodeAbiParameters(parseAbiParameters(types), [
+        BigInt(chainId),
+        maciAddress,
+        createdBy,
+      ]);
+
+      const id = ethers.utils.solidityKeccak256(["bytes"], [bytes]);
+
+      const { timestamp } = await getBlock();
+
+      return [
+        {
+          type: "InsertContribution",
+          contribution: {
+            id: id,
+            chainId: chainId,
+            voiceCreditBalance: voiceCreditBalance,
+            maciId: maciAddress,
+            stateIndex: stateIndex,
+            contributorAddress: createdBy,
+            transactionHash: txHash,
+            timestamp: new Date(timestamp * 1000),
+          },
+        },
+      ];
+    }
+
+    case "PublishMessage": {
+      const PollAddress = parseAddress(event.address);
+
+      const [extContracts] = await Promise.all([
+        await readContract({
+          contract: "AlloV2/MACIPoll/V1",
+          address: PollAddress,
+          functionName: "extContracts",
+        }),
+      ]);
+
+      const maciAddress = extContracts[0];
+
+      const TxInfo = await rpcClient.getTransaction({
+        hash: event.transactionHash,
+      });
+
+      const createdBy = parseAddress(TxInfo.from);
+
+      const types = "uint256, address, address";
+
+      const bytes = encodeAbiParameters(parseAbiParameters(types), [
+        BigInt(chainId),
+        maciAddress,
+        createdBy,
+      ]);
+
+
+      const message = {
+        msgType: BigInt(event.params._message.msgType).toString(),
+        data: event.params._message.data.map((x) => BigInt(x).toString()),
+      };
+
+      const id = ethers.utils.solidityKeccak256(["bytes"], [bytes]);
+
+      const { timestamp } = await getBlock();
+      let uuid = randomUUID();
+
+      const uuidTypes = "string, string"
+      const uuidBytes = encodeAbiParameters(parseAbiParameters(uuidTypes), [
+        uuid,
+        id,
+      ]);
+      const uuidId = ethers.utils.solidityKeccak256(["bytes"], [uuidBytes]);
+      return [
+        {
+          type: "InsertMessage",
+          message: {
+            messageId: uuidId,
+            contributionId: id,
+            message: JSON.stringify(message),
+            chainId: chainId,
+            pollId: PollAddress,
+            maciId: maciAddress,
+            createdByAddress: createdBy,
+          },
+        },
+      ];
     }
   }
 

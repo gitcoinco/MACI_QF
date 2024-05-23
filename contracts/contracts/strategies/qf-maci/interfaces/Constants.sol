@@ -125,20 +125,6 @@ contract Constants {
         IStrategy.Status status
     );
 
-    /// @notice Emitted when the MACI contract is set
-    /// @param maci The MACI contract address
-    /// @param poll The poll contract address
-    /// @param messageProcessor The message processor contract address
-    /// @param tally The tally contract address
-    /// @param subsidy The subsidy contract address
-    event MaciSet(
-        address maci,
-        address poll,
-        address messageProcessor,
-        address tally,
-        address subsidy
-    );
-
     /// @notice Emitted when a recipient is added
     /// @param recipientId ID of the recipient
     /// @param recipientIndex ID of the recipient"s MACI voting option

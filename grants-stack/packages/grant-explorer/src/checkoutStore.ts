@@ -32,23 +32,7 @@ import { getConfig } from "common/src/config";
 import { DataLayer } from "data-layer";
 
 // NEW CODE
-import { ZKEdDSAEventTicketPCDPackage } from "@pcd/zk-eddsa-event-ticket-pcd";
-
-import { generateWitness } from "./features/api/pcd";
-
-import { isZupassPublicKey, useZuAuth } from "zupass-auth";
-
-import { hexToBigInt } from "viem";
-
-import { Signer } from "ethers";
-import {
-  Keypair,
-  PCommand,
-  PubKey,
-  PrivKey,
-  IMessageContractParams,
-  IG1ContractParams,
-} from "maci-domainobjs";
+import { Keypair, PCommand, PubKey, PrivKey } from "maci-domainobjs";
 import { genRandomSalt } from "maci-crypto";
 
 type ChainMap<T> = Record<ChainId, T>;
@@ -73,14 +57,6 @@ interface CheckoutState {
   /** Checkout the given chains
    * this has the side effect of adding the chains to the wallet if they are not yet present
    * We get the data necessary to construct the votes from the cart store */
-  checkout: (
-    chainsToCheckout: { chainId: ChainId; permitDeadline: number }[],
-    walletClient: WalletClient,
-    allo: Allo,
-    dataLayer: DataLayer,
-    maci?: boolean,
-    maciParams?: string //TODO
-  ) => Promise<void>;
   checkoutMaci: (
     chainsToCheckout: { chainId: ChainId; permitDeadline: number }[],
     walletClient: WalletClient,
@@ -128,230 +104,9 @@ export const useCheckoutStore = create<CheckoutState>()(
         chainsToCheckout: chains,
       });
     },
-    checkout: async (
-      chainsToCheckout: { chainId: ChainId; permitDeadline: number }[],
-      walletClient: WalletClient,
-      allo: Allo
-    ) => {
-      const chainIdsToCheckOut = chainsToCheckout.map((chain) => chain.chainId);
-      get().setChainsToCheckout(
-        uniq([...get().chainsToCheckout, ...chainIdsToCheckOut])
-      );
-      const projectsToCheckOut = useCartStorage
-        .getState()
-        .projects.filter((project) =>
-          chainIdsToCheckOut.includes(project.chainId)
-        );
-
-      const projectsByChain = groupBy(projectsToCheckOut, "chainId") as {
-        [chain: number]: CartProject[];
-      };
-
-      const getVotingTokenForChain =
-        useCartStorage.getState().getVotingTokenForChain;
-
-      const totalDonationPerChain = Object.fromEntries(
-        Object.entries(projectsByChain).map(([key, value]) => [
-          Number(key) as ChainId,
-          value
-            .map((project) => project.amount)
-            .reduce(
-              (acc, amount) =>
-                acc +
-                parseUnits(
-                  amount ? amount : "0",
-                  getVotingTokenForChain(Number(key) as ChainId).decimal
-                ),
-              0n
-            ),
-        ])
-      );
-
-      /* Main chain loop */
-      for (const currentChain of chainsToCheckout) {
-        const chainId = currentChain.chainId;
-        const deadline = currentChain.permitDeadline;
-        const donations = projectsByChain[chainId];
-
-        set({
-          currentChainBeingCheckedOut: chainId,
-        });
-
-        /* Switch to the current chain */
-        await switchToChain(chainId, walletClient, get);
-
-        const token = getVotingTokenForChain(chainId);
-
-        let sig;
-        let nonce;
-
-        if (token.address !== zeroAddress) {
-          /* Need permit */
-          try {
-            get().setPermitStatusForChain(chainId, ProgressStatus.IN_PROGRESS);
-
-            const owner = walletClient.account.address;
-            /* Get nonce and name from erc20 contract */
-            const erc20Contract = getContract({
-              address: token.address as Hex,
-              abi: parseAbi([
-                "function nonces(address) public view returns (uint256)",
-                "function name() public view returns (string)",
-              ]),
-              walletClient,
-              chainId,
-            });
-            nonce = await erc20Contract.read.nonces([owner]);
-            const tokenName = await erc20Contract.read.name();
-            if (getPermitType(token) === "dai") {
-              sig = await signPermitDai({
-                walletClient: walletClient,
-                spenderAddress: MRC_CONTRACTS[chainId],
-                chainId,
-                deadline: BigInt(deadline),
-                contractAddress: token.address,
-                erc20Name: tokenName,
-                ownerAddress: owner,
-                nonce,
-                permitVersion: token.permitVersion ?? "1",
-              });
-            } else {
-              sig = await signPermit2612({
-                walletClient: walletClient,
-                value: totalDonationPerChain[chainId],
-                spenderAddress: MRC_CONTRACTS[chainId],
-                nonce,
-                chainId,
-                deadline: BigInt(deadline),
-                contractAddress: token.address,
-                erc20Name: tokenName,
-                ownerAddress: owner,
-                permitVersion: token.permitVersion ?? "1",
-              });
-            }
-
-            get().setPermitStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
-          } catch (e) {
-            if (!(e instanceof UserRejectedRequestError)) {
-              console.error("permit error", e, {
-                donations,
-                chainId,
-                tokenAddress: token.address,
-              });
-            }
-            get().setPermitStatusForChain(chainId, ProgressStatus.IS_ERROR);
-            return;
-          }
-
-          if (!sig) {
-            get().setPermitStatusForChain(chainId, ProgressStatus.IS_ERROR);
-            return;
-          }
-        } else {
-          /** When voting via native token, we just set the permit status to success */
-          get().setPermitStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
-        }
-
-        try {
-          get().setVoteStatusForChain(chainId, ProgressStatus.IN_PROGRESS);
-
-          /* Group donations by round */
-          const groupedDonations = groupBy(
-            donations.map((d) => ({
-              ...d,
-              roundId: d.roundId,
-            })),
-            "roundId"
-          );
-
-          const groupedEncodedVotes: Record<string, Hex[]> = {};
-
-          for (const roundId in groupedDonations) {
-            groupedEncodedVotes[roundId] = isV2
-              ? encodedQFAllocation(token, groupedDonations[roundId])
-              : encodeQFVotes(token, groupedDonations[roundId]);
-          }
-
-          const groupedAmounts: Record<string, bigint> = {};
-          for (const roundId in groupedDonations) {
-            groupedAmounts[roundId] = groupedDonations[roundId].reduce(
-              (acc, donation) =>
-                acc + parseUnits(donation.amount, token.decimal),
-              0n
-            );
-          }
-
-          const amountArray: bigint[] = [];
-          for (const roundId in groupedDonations) {
-            groupedDonations[roundId].map((donation) => {
-              amountArray.push(parseUnits(donation.amount, token.decimal));
-            });
-          }
-
-          const receipt = await allo.donate(
-            getPublicClient({
-              chainId,
-            }),
-            chainId,
-            token,
-            groupedEncodedVotes,
-            isV2 ? amountArray : groupedAmounts,
-            totalDonationPerChain[chainId],
-            sig
-              ? {
-                  sig,
-                  deadline,
-                  nonce: nonce!,
-                }
-              : undefined
-          );
-
-          if (receipt.status === "reverted") {
-            throw new Error("donate transaction reverted", {
-              cause: { receipt },
-            });
-          }
-
-          /* Remove checked out projects from cart */
-          donations.forEach((donation) => {
-            useCartStorage.getState().remove(donation);
-          });
-          set((oldState) => ({
-            voteStatus: {
-              ...oldState.voteStatus,
-              [chainId]: ProgressStatus.IS_SUCCESS,
-            },
-          }));
-          set({
-            checkedOutProjects: [...get().checkedOutProjects, ...donations],
-          });
-        } catch (error) {
-          let context: Record<string, unknown> = {
-            chainId,
-            donations,
-            token,
-          };
-
-          if (error instanceof Error) {
-            context = {
-              ...context,
-              error: error.message,
-              cause: error.cause,
-            };
-          }
-
-          // do not log user rejections
-          if (!(error instanceof UserRejectedRequestError)) {
-            console.error("donation error", error, context);
-          }
-
-          get().setVoteStatusForChain(chainId, ProgressStatus.IS_ERROR);
-          throw error;
-        }
-      }
-      /* End main chain loop*/
-    },
-
+    /** Checkout the given chains
+     * this has the side effect of adding the chains to the wallet if they are not yet present
+     * We get the data necessary to construct the votes from the cart store */
     checkoutMaci: async (
       chainsToCheckout: { chainId: ChainId; permitDeadline: number }[],
       walletClient: WalletClient,
@@ -505,7 +260,7 @@ export const useCheckoutStore = create<CheckoutState>()(
             groupedDonations[roundId].map((donation) => {
               groupedAmounts[roundId] = groupedDonations[roundId].reduce(
                 (acc, donation) =>
-                  acc + BigInt(donation.amount) * BigInt(10) ** BigInt(18),
+                  acc + BigInt(Number(donation.amount) * 1000) * BigInt(10) ** BigInt(15),
                 0n
               );
             });
@@ -525,7 +280,7 @@ export const useCheckoutStore = create<CheckoutState>()(
             groupedDonations[roundId].map((donation) => {
               DonationVotesEachRound[donation.roundId] = {
                 [donation.applicationIndex]:
-                  (BigInt(donation.amount) * 10n ** 18n * SINGLEVOTE) /
+                  (BigInt(Number(donation.amount) *1000) * 10n ** 15n * SINGLEVOTE) /
                   groupedAmounts[roundId],
               };
             });
@@ -553,9 +308,18 @@ export const useCheckoutStore = create<CheckoutState>()(
                 stateIndex: 1n,
                 voteOptionIndex: BigInt(donation.applicationIndex),
                 nonce: BigInt(0),
-                newVoteWeight: bnSqrt(SINGLEVOTE / 100n),
+                newVoteWeight: bnSqrt(SINGLEVOTE / 200n),
+              };
+              const message2 = {
+                // must be fixed this need to be taken from the events
+                stateIndex: 2n,
+                voteOptionIndex: BigInt(donation.applicationIndex + 1),
+                nonce: BigInt(1),
+                newVoteWeight: bnSqrt(SINGLEVOTE / 200n),
               };
               messages.push(message);
+              messages.push(message2);
+
               nonce++;
             });
             messagesPerRound[roundId] = messages;
@@ -996,7 +760,7 @@ export const publishBatch = async ({
     y: bigint;
   }
 
-  interface IMessageContractParamz {
+  interface IMessageContractParams {
     msgType: bigint;
     data: readonly [
       bigint,
@@ -1013,7 +777,7 @@ export const publishBatch = async ({
   }
   const preparedMessages = payload
     .map((obj) => obj.message)
-    .reverse() as unknown as IMessageContractParamz[];
+    .reverse() as unknown as IMessageContractParams[];
   const preparedKeys = payload
     .map((obj) => obj.key)
     .reverse() as unknown as IPubKey[];

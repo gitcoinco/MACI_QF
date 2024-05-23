@@ -6,8 +6,6 @@ import {Constants, Metadata, IRegistry, IAllo, IVerifier} from "./interfaces/Con
 
 import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 
-import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
-
 // Core Contracts
 import {BaseStrategy} from "../BaseStrategy.sol";
 
@@ -75,7 +73,6 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
     /// ======================
     /// ======= Storage ======
     /// ======================
-    using Counters for Counters.Counter;
 
     // slot 0
     /// @notice The total number of votes cast for all recipients
@@ -83,7 +80,8 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
 
     // slot 1
     /// @notice The number of votes required to review a recipient
-    uint256 public reviewThreshold;
+    // We might not need this one TODO remove if not needed
+    // uint256 public reviewThreshold;
 
     // slot 2
     /// @notice The start and end times for registrations and allocations
@@ -108,6 +106,9 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
     /// @notice The total number of recipients.
     uint256 public recipientsCounter;
 
+    /// @notice The total number of accepted recipients.
+    uint256 public acceptedRecipientsCounter;
+
     /// @notice This is a packed array of booleans, 'statuses[0]' is the first row of the bitmap and allows to
     /// store 256 bits to describe the status of 256 projects. 'statuses[1]' is the second row, and so on
     /// Instead of using 1 bit for each recipient status, we will use 4 bits for each status
@@ -128,6 +129,8 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
     mapping(address => uint256) public recipientToStatusIndexes;
 
     mapping(uint256 => address) public recipientIndexToAddress;
+
+    mapping(address => uint256) public recipientToVoteIndex;
 
     /// @notice This is a packed array of booleans to keep track of claims distributed.
     /// @dev distributedBitMap[0] is the first row of the bitmap and allows to store 256 bits to describe
@@ -274,6 +277,22 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
             uint256 fullRow = statuses[i].statusRow;
 
             statusesBitMap[rowIndex] = fullRow;
+
+            address recipientId = recipientIndexToAddress[rowIndex];
+
+            if (recipientId == address(0)) {
+                revert INVALID();
+            }
+
+            if(Status(fullRow) == Status.Accepted) {
+
+                recipientToVoteIndex[recipientId] = acceptedRecipientsCounter;
+
+                unchecked {
+                    acceptedRecipientsCounter++;
+                }
+            }
+
 
             // Emit that the recipient status has been updated with the values
             emit RecipientStatusUpdated(rowIndex, fullRow, msg.sender);

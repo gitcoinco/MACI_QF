@@ -57,7 +57,8 @@ contract QFMACI is QFMACIBase, DomainObjs, Params {
 
     address public maciFactory;
 
-    PubKey public coordinatorPubKey; // coordinator public key
+    // It may not be necessary to store TODO
+    // PubKey public coordinatorPubKey; // coordinator public key
 
     /// ======================
     /// ======= Structs ======
@@ -122,8 +123,6 @@ contract QFMACI is QFMACIBase, DomainObjs, Params {
 
         coordinator = _params.maciParams.coordinator;
 
-        coordinatorPubKey = _params.maciParams.coordinatorPubKey;
-
         verifier = IVerifier(_params.maciParams.verifier);
 
         for (uint i = 0; i < _params.maciParams.validEventIds.length; ) {
@@ -160,230 +159,11 @@ contract QFMACI is QFMACIBase, DomainObjs, Params {
         );
 
         maciFactory = _params.maciParams.maciFactory;
-
-        emit MaciSet(
-            _maci,
-            _pollContracts.poll,
-            _pollContracts.messageProcessor,
-            _pollContracts.tally,
-            _pollContracts.subsidy
-        );
     }
 
-    /// ================================
-    /// ====== External/Public =========
-    /// ================================
-
-    /**
-     * @dev Register user for voting.
-     * This function is part of SignUpGatekeeper interface.
-     * @param _data Encoded address of a contributor.
-     */
-    function register(address /* _caller */, bytes memory _data) external view {
-        if (msg.sender != _maci) {
-            revert OnlyMaciCanRegisterVoters();
-        }
-
-        address user = abi.decode(_data, (address));
-
-        bool verified = contributorCredits[user] > 0;
-
-        if (!verified) {
-            revert UserNotVerified();
-        }
-    }
-
-    /**
-     * @dev Publish the IPFS hash of the vote tally. Only coordinator can publish.
-     * @param _tallyHash IPFS hash of the vote tally.
-     */
-    function publishTallyHash(
-        string calldata _tallyHash
-    ) external onlyCoordinator onlyAfterAllocation {
-        if (isFinalized) {
-            revert RoundAlreadyFinalized();
-        }
-        if (bytes(_tallyHash).length == 0) {
-            revert EmptyTallyHash();
-        }
-
-        tallyHash = _tallyHash;
-        emit TallyPublished(_tallyHash);
-    }
-
-    /**
-     * @dev Add and verify tally results by batch.
-     * @param _voteOptionIndices Vote option index.
-     * @param _tallyResults The results of vote tally for the recipients.
-     * @param _tallyResultProofs Proofs of correctness of the vote tally results.
-     * @param _tallyResultSalt the respective salt in the results object in the tally.json
-     * @param _spentVoiceCreditsHashes hashLeftRight(number of spent voice credits, spent salt)
-     * @param _perVOSpentVoiceCreditsHashes hashLeftRight(merkle root of the no spent voice credits per vote option, perVOSpentVoiceCredits salt)
-     */
-    function addTallyResultsBatch(
-        uint256[] calldata _voteOptionIndices,
-        uint256[] calldata _tallyResults,
-        uint256[][][] calldata _tallyResultProofs,
-        uint256 _tallyResultSalt,
-        uint256 _spentVoiceCreditsHashes,
-        uint256 _perVOSpentVoiceCreditsHashes
-    ) external onlyCoordinator {
-        if (_voteOptionIndices.length != _tallyResults.length) {
-            revert INVALID();
-        }
-
-        for (uint256 i = 0; i < _voteOptionIndices.length; i++) {
-            _addTallyResult(
-                _voteOptionIndices[i],
-                _tallyResults[i],
-                _tallyResultProofs[i],
-                _tallyResultSalt,
-                _spentVoiceCreditsHashes,
-                _perVOSpentVoiceCreditsHashes
-            );
-        }
-    }
-
-    /**
-     * @dev Get the total amount of votes from MACI,
-     * verify the total amount of spent voice credits across all recipients,
-     * calculate the quadratic alpha value,
-     * and allow recipients to claim funds.
-     * @param _totalSpent Total amount of spent voice credits.
-     * @param _totalSpentSalt The salt.
-     */
-    function finalize(
-        uint256 _totalSpent,
-        uint256 _totalSpentSalt,
-        uint256 _newResultCommitment,
-        uint256 _perVOSpentVoiceCreditsHash
-    ) external onlyPoolManager(msg.sender) onlyAfterAllocation {
-        (, Tally tally) = getMaciContracts();
-
-        if (isFinalized) {
-            revert RoundAlreadyFinalized();
-        }
-
-        if (isAddressZero(_maci)) revert MaciNotSet();
-
-        if (!tally.isTallied()) {
-            revert VotesNotTallied();
-        }
-
-        if (bytes(tallyHash).length == 0) {
-            revert TallyHashNotPublished();
-        }
-
-        // If nobody voted, the round should be cancelled to avoid locking of matching funds
-        if (_totalSpent == 0) {
-            revert NoVotes();
-        }
-
-        bool verified = tally.verifySpentVoiceCredits(
-            _totalSpent,
-            _totalSpentSalt,
-            _newResultCommitment,
-            _perVOSpentVoiceCreditsHash
-        );
-
-        if (!verified) {
-            revert IncorrectSpentVoiceCredits();
-        }
-
-        totalSpent = _totalSpent;
-
-        uint256 _poolAmount = _getBalance(allo.getPool(poolId).token, address(this));
-
-        // Total amount of spent voice credits is the size of the pool of direct rewards.
-        // Everything else, including unspent voice credits and downscaling error,
-        // is considered a part of the matching pool
-        alpha = calcAlpha(_poolAmount, totalVotesSquares, _totalSpent);
-
-        matchingPoolSize = _poolAmount - _totalSpent * voiceCreditFactor;
-
-        isFinalized = true;
-    }
-
-    /**
-        * @dev Reset tally results. This should only be used if the tally script
-        *     failed to proveOnChain due to unexpected error processing MACI logs
-        */
-    function resetTally()
-        external
-        onlyCoordinator
-        onlyAfterAllocation()
-    {
-        if (isAddressZero(address(_maci))) revert MaciNotSet();
-
-        if (isFinalized) {
-        revert RoundAlreadyFinalized();
-        }
-
-        (Poll poll, Tally tally) = getMaciContracts();
-
-        address verifier = address(tally.verifier());
-        address vkRegistry = address(tally.vkRegistry());
-
-        address mp = ClonableMACIFactory(maciFactory).deployMessageProcessor(verifier, vkRegistry, address(poll), coordinator);
-        address newTally = ClonableMACIFactory(maciFactory).deployTally(verifier, vkRegistry, address(poll), mp, coordinator);
-        
-        _pollContracts.tally = newTally;
-        // TODO Does this one needs to get updated ?
-        _pollContracts.messageProcessor = mp;
-    }
-
-    /**
-        * @dev Withdraw contributed funds for a list of contributors if the round has been cancelled.
-    */
-    function withdrawContributions(address[] memory _contributors)
-        public
-        returns (bool[] memory result)
-    {
-        if (!isCancelled) {
-            revert RoundNotCancelled();
-        }
-
-        result = new bool[](_contributors.length);
-        // Reconstruction of exact contribution amount from VCs may not be possible due to a loss of precision
-        for (uint256 i = 0; i < _contributors.length; i++) {
-            address contributor = _contributors[i];
-            uint256 amount = contributorCredits[contributor] * voiceCreditFactor;
-            if (amount > 0) {
-                contributorCredits[contributor] = 0;
-                if (allo.getPool(poolId).token != NATIVE) {
-                    _transferAmountFrom(allo.getPool(poolId).token, TransferData(address(this), contributor, amount));
-                } else {
-                    _transferAmountFrom(NATIVE, TransferData(address(this), contributor, amount));
-                }            
-                result[i] = true;
-            } else {
-                result[i] = false;
-            }
-        }
-    }
-
-    /**
-        * @dev Withdraw contributed funds by the caller.
-        */
-    function withdrawContribution()
-        external
-    {
-        address[] memory msgSender = new address[](1);
-        msgSender[0] = msg.sender;
-
-        bool[] memory results = withdrawContributions(msgSender);
-        if (!results[0]) {
-            revert NothingToWithdraw();
-        }
-    }
-
-    function getWhitelistedEvents() external view returns (uint256[] memory) {
-        return VALID_EVENT_IDS.values();
-    }
-
-    /// ====================================
-    /// ============ Internal ==============
-    /// ====================================
+    /// =======================================
+    /// ====== Allo related functions =========
+    /// =======================================
 
     /// @notice Allocate votes to a recipient
     /// @param _data The data
@@ -441,6 +221,117 @@ contract QFMACI is QFMACIBase, DomainObjs, Params {
         ClonableMACI(_maci).signUp(pubKey, signUpGatekeeperData, initialVoiceCreditProxyData);
 
         emit Allocated(address(0), amount, token, _sender);
+    }
+
+    // TODO are we going to allow anyone to distribute the funds? or only the pool manager?
+    /// @notice Distribute the tokens to the recipients
+    /// @dev The "_sender" must be a pool manager and the allocation must have ended
+    function _distribute(
+        address[] memory /* _recipientIds */,
+        bytes memory data,
+        address /* _sender */
+    ) internal override onlyAfterAllocation {
+        if (!isFinalized) {
+            revert RoundNotFinalized();
+        }
+
+        if (isCancelled) {
+            revert RoundCancelled();
+        }
+
+        bytes[] memory claims = abi.decode(data, (bytes[]));
+
+        for (uint256 i = 0; i < claims.length; i++) {
+            _distributeFunds(claims[i]);
+        }
+
+    }
+
+    /// @notice Distribute the funds to the recipients
+    /// @param _claim The claim funds
+    function _distributeFunds(bytes memory _claim) internal {
+        claimFunds memory claim = abi.decode(_claim, (claimFunds));
+
+        uint256 index = claim.voteOptionIndex;
+
+        address recipientId = recipientIndexToAddress[index];
+
+        Recipient memory recipient = _recipients[recipientId];
+
+        uint256 amount = getAllocatedAmount(recipient.totalVotesReceived, claim.spent);
+
+        // This allows 125 accepted recipients to claim funds instead of 125 recipients
+        claim.voteOptionIndex = recipientToVoteIndex[recipientId];
+
+        verifyClaim(claim);
+
+        if (!_validateDistribution(index) || !_isAcceptedRecipient(recipientId) || amount == 0) {
+            revert RECIPIENT_ERROR(recipientId);
+        }
+
+        IAllo.Pool memory pool = allo.getPool(poolId);
+
+        _transferAmount(pool.token, recipientId, amount);
+
+        _setDistributed(index);
+
+        emit Distributed(recipientId, recipient.recipientAddress, amount, address(0));
+    }
+
+    /// =======================================
+    /// ====== MACI related functions =========
+    /// =======================================
+
+    /**
+     * @dev Register user for voting.
+     * This function is part of SignUpGatekeeper interface.
+     * @param _data Encoded address of a contributor.
+     */
+    function register(address /* _caller */, bytes memory _data) external view {
+        if (msg.sender != _maci) {
+            revert OnlyMaciCanRegisterVoters();
+        }
+
+        address user = abi.decode(_data, (address));
+
+        bool verified = contributorCredits[user] > 0;
+
+        if (!verified) {
+            revert UserNotVerified();
+        }
+    }
+
+    /**
+     * @dev Add and verify tally results by batch.
+     * @param _voteOptionIndices Vote option index.
+     * @param _tallyResults The results of vote tally for the recipients.
+     * @param _tallyResultProofs Proofs of correctness of the vote tally results.
+     * @param _tallyResultSalt the respective salt in the results object in the tally.json
+     * @param _spentVoiceCreditsHashes hashLeftRight(number of spent voice credits, spent salt)
+     * @param _perVOSpentVoiceCreditsHashes hashLeftRight(merkle root of the no spent voice credits per vote option, perVOSpentVoiceCredits salt)
+     */
+    function addTallyResultsBatch(
+        uint256[] calldata _voteOptionIndices,
+        uint256[] calldata _tallyResults,
+        uint256[][][] calldata _tallyResultProofs,
+        uint256 _tallyResultSalt,
+        uint256 _spentVoiceCreditsHashes,
+        uint256 _perVOSpentVoiceCreditsHashes
+    ) external onlyCoordinator {
+        if (_voteOptionIndices.length != _tallyResults.length) {
+            revert INVALID();
+        }
+
+        for (uint256 i = 0; i < _voteOptionIndices.length; i++) {
+            _addTallyResult(
+                _voteOptionIndices[i],
+                _tallyResults[i],
+                _tallyResultProofs[i],
+                _tallyResultSalt,
+                _spentVoiceCreditsHashes,
+                _perVOSpentVoiceCreditsHashes
+            );
+        }
     }
 
     /**
@@ -522,70 +413,82 @@ contract QFMACI is QFMACIBase, DomainObjs, Params {
         emit TallyResultsAdded(_voteOptionIndex, _voiceCreditsToAllocate);
     }
 
-    // TODO are we going to allow anyone to distribute the funds? or only the pool manager?
-    /// @notice Distribute the tokens to the recipients
-    /// @dev The "_sender" must be a pool manager and the allocation must have ended
-    function _distribute(
-        address[] memory /* _recipientIds */,
-        bytes memory data,
-        address /* _sender */
-    ) internal override onlyAfterAllocation {
-        if (!isFinalized) {
-            revert RoundNotFinalized();
+    /**
+     * @dev Publish the IPFS hash of the vote tally. Only coordinator can publish.
+     * @param _tallyHash IPFS hash of the vote tally.
+     */
+    function publishTallyHash(
+        string calldata _tallyHash
+    ) external onlyCoordinator onlyAfterAllocation {
+        if (isFinalized) {
+            revert RoundAlreadyFinalized();
+        }
+        if (bytes(_tallyHash).length == 0) {
+            revert EmptyTallyHash();
         }
 
-        if (isCancelled) {
-            revert RoundCancelled();
-        }
-
-        bytes[] memory claims = abi.decode(data, (bytes[]));
-
-        for (uint256 i = 0; i < claims.length; i++) {
-            _distributeFunds(claims[i]);
-        }
-
+        tallyHash = _tallyHash;
+        emit TallyPublished(_tallyHash);
     }
 
-    /// @notice Distribute the funds to the recipients
-    /// @param _claim The claim funds
-    function _distributeFunds(bytes memory _claim) internal {
-        claimFunds memory claim = abi.decode(_claim, (claimFunds));
+    /**
+     * @dev Get the total amount of votes from MACI,
+     * verify the total amount of spent voice credits across all recipients,
+     * calculate the quadratic alpha value,
+     * and allow recipients to claim funds.
+     * @param _totalSpent Total amount of spent voice credits.
+     * @param _totalSpentSalt The salt.
+     */
+    function finalize(
+        uint256 _totalSpent,
+        uint256 _totalSpentSalt,
+        uint256 _newResultCommitment,
+        uint256 _perVOSpentVoiceCreditsHash
+    ) external onlyPoolManager(msg.sender) onlyAfterAllocation {
+        (, Tally tally) = getMaciContracts();
 
-        uint256 index = claim.voteOptionIndex;
-
-        address recipientId = recipientIndexToAddress[index];
-
-        Recipient memory recipient = _recipients[recipientId];
-
-        uint256 amount = getAllocatedAmount(recipient.totalVotesReceived, claim.spent);
-
-        verifyClaim(claim);
-
-        if (!_validateDistribution(index) || !_isAcceptedRecipient(recipientId) || amount == 0) {
-            revert RECIPIENT_ERROR(recipientId);
+        if (isFinalized) {
+            revert RoundAlreadyFinalized();
         }
 
-        IAllo.Pool memory pool = allo.getPool(poolId);
+        if (isAddressZero(_maci)) revert MaciNotSet();
 
-        _transferAmount(pool.token, recipientId, amount);
+        if (!tally.isTallied()) {
+            revert VotesNotTallied();
+        }
 
-        _setDistributed(index);
+        if (bytes(tallyHash).length == 0) {
+            revert TallyHashNotPublished();
+        }
 
-        emit Distributed(recipientId, recipient.recipientAddress, amount, address(0));
-    }
+        // If nobody voted, the round should be cancelled to avoid locking of matching funds
+        if (_totalSpent == 0) {
+            revert NoVotes();
+        }
 
-    /// =========================
-    /// ==== View Functions =====
-    /// =========================
+        bool verified = tally.verifySpentVoiceCredits(
+            _totalSpent,
+            _totalSpentSalt,
+            _newResultCommitment,
+            _perVOSpentVoiceCreditsHash
+        );
 
-    function isAddressZero(address _address) internal pure returns (bool) {
-        return _address == address(0);
-    }
+        if (!verified) {
+            revert IncorrectSpentVoiceCredits();
+        }
 
-    // @notice get Poll and Tally contracts
-    // @return Poll and Tally contracts
-    function getMaciContracts() internal view returns (Poll _poll, Tally _tally) {
-        return (Poll(_pollContracts.poll), Tally(_pollContracts.tally));
+        totalSpent = _totalSpent;
+
+        uint256 _poolAmount = _getBalance(allo.getPool(poolId).token, address(this));
+
+        // Total amount of spent voice credits is the size of the pool of direct rewards.
+        // Everything else, including unspent voice credits and downscaling error,
+        // is considered a part of the matching pool
+        alpha = calcAlpha(_poolAmount, totalVotesSquares, _totalSpent);
+
+        matchingPoolSize = _poolAmount - _totalSpent * voiceCreditFactor;
+
+        isFinalized = true;
     }
 
     /**
@@ -612,7 +515,88 @@ contract QFMACI is QFMACIBase, DomainObjs, Params {
         }
     }
 
-    // ----------------- Zupass Specific View Functions -----------------
+    /**
+        * @dev Reset tally results. This should only be used if the tally script
+        * failed to proveOnChain due to unexpected error processing MACI logs
+    */
+    function resetTally()
+        external
+        onlyCoordinator
+        onlyAfterAllocation()
+    {
+        if (isAddressZero(address(_maci))) revert MaciNotSet();
+
+        if (isFinalized) {
+        revert RoundAlreadyFinalized();
+        }
+
+        (Poll poll, Tally tally) = getMaciContracts();
+
+        address verifier = address(tally.verifier());
+        address vkRegistry = address(tally.vkRegistry());
+
+        address mp = ClonableMACIFactory(maciFactory).deployMessageProcessor(verifier, vkRegistry, address(poll), coordinator);
+        address newTally = ClonableMACIFactory(maciFactory).deployTally(verifier, vkRegistry, address(poll), mp, coordinator);
+        
+        _pollContracts.tally = newTally;
+        // TODO Does this one needs to get updated ?
+        _pollContracts.messageProcessor = mp;
+    }
+
+    /**
+        * @dev Withdraw contributed funds for a list of contributors if the round has been cancelled.
+    */
+    function withdrawContributions(address[] memory _contributors)
+        public
+        returns (bool[] memory result)
+    {
+        if (!isCancelled) {
+            revert RoundNotCancelled();
+        }
+
+        result = new bool[](_contributors.length);
+        // Reconstruction of exact contribution amount from VCs may not be possible due to a loss of precision
+        for (uint256 i = 0; i < _contributors.length; i++) {
+            address contributor = _contributors[i];
+            uint256 amount = contributorCredits[contributor] * voiceCreditFactor;
+            if (amount > 0) {
+                contributorCredits[contributor] = 0;
+                if (allo.getPool(poolId).token != NATIVE) {
+                    _transferAmountFrom(allo.getPool(poolId).token, TransferData(address(this), contributor, amount));
+                } else {
+                    _transferAmountFrom(NATIVE, TransferData(address(this), contributor, amount));
+                }            
+                result[i] = true;
+            } else {
+                result[i] = false;
+            }
+        }
+    }
+
+    /**
+        * @dev Withdraw contributed funds by the caller.
+        */
+    function withdrawContribution()
+        external
+    {
+        address[] memory msgSender = new address[](1);
+        msgSender[0] = msg.sender;
+
+        bool[] memory results = withdrawContributions(msgSender);
+        if (!results[0]) {
+            revert NothingToWithdraw();
+        }
+    }
+
+    // @notice get Poll and Tally contracts
+    // @return Poll and Tally contracts
+    function getMaciContracts() internal view returns (Poll _poll, Tally _tally) {
+        return (Poll(_pollContracts.poll), Tally(_pollContracts.tally));
+    }
+
+    /// ===========================
+    /// ==== Zupass Functions =====
+    /// ===========================
 
     function validateEventIds(uint256[38] memory _pubSignals) internal view {
         uint256 numberOfValidEventIDs = getAmountOfValidEventIDsFromPublicSignals(_pubSignals);
@@ -655,12 +639,25 @@ contract QFMACI is QFMACIBase, DomainObjs, Params {
         validateEventIds(_pubSignals);
 
         validateSigner(_pubSignals);
-
+        // Nullifier check on the 9th public signal which is the email of the user zupass
         uint256 publicSignalsHash = _pubSignals[9];
 
         // make sure that the 9th public signal is not used before and not equal to 21888242871839275222246405745257275088548364400416034343698204186575808495616
         if (usedPublicSignals[publicSignalsHash]) revert AlreadyUsedZupass();
 
         usedPublicSignals[publicSignalsHash] = true;
+    }
+
+    // @notice Get the whitelisted events
+    function getWhitelistedEvents() external view returns (uint256[] memory) {
+        return VALID_EVENT_IDS.values();
+    }
+
+    /// =========================
+    /// ==== Util Functions =====
+    /// =========================
+
+    function isAddressZero(address _address) internal pure returns (bool) {
+        return _address == address(0);
     }
 }

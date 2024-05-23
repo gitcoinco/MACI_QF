@@ -14,6 +14,8 @@ import {
   NewDonation,
   LegacyProjectTable,
   ApplicationPayout,
+  ContributionTable,
+  MessageTable,
 } from "./schema.js";
 import { migrate } from "./migrate.js";
 import { encodeJsonWithBigInts } from "../utils/index.js";
@@ -37,6 +39,8 @@ interface Tables {
   prices: PriceTable;
   legacyProjects: LegacyProjectTable;
   applicationsPayouts: ApplicationPayout;
+  contributions: ContributionTable;
+  messages: MessageTable;
 }
 
 type KyselyDb = Kysely<Tables>;
@@ -496,6 +500,18 @@ export class Database {
           .insertInto("applicationsPayouts")
           .values(change.payout)
           .execute();
+        break;
+      }
+
+      // NEW CODE
+
+      case "InsertContribution": {
+        await this.#db.insertInto("contributions").values(change.contribution).execute();
+        break;
+      }
+
+      case "InsertMessage": {
+        await this.#db.insertInto("messages").values(change.message).execute();
         break;
       }
 

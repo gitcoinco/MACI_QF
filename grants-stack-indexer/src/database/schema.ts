@@ -212,6 +212,7 @@ export type DonationTable = {
   timestamp: Date;
 };
 
+
 export type NewDonation = Insertable<DonationTable>;
 export type Donation = Selectable<DonationTable>;
 export type PartialDonation = Updateable<DonationTable>;
@@ -250,3 +251,39 @@ export type ApplicationPayout = {
 };
 
 export type NewApplicationPayout = Insertable<ApplicationPayout>;
+
+
+export type Contribution = Selectable<ContributionTable>;
+export type NewContribution = Insertable<ContributionTable>;
+
+// NEW CODE
+
+export type ContributionTable = {
+  id: string;
+  chainId: ChainId;
+  maciId: Address | string;
+  stateIndex: bigint;
+  contributorAddress: Address;
+  voiceCreditBalance: bigint;
+  transactionHash: Hex;
+  timestamp: Date;
+};
+
+export type Message = Selectable<ContributionTable>;
+export type NewMessage = Insertable<MessageTable>;
+
+export type MessageTable = {
+  messageId: string;
+  contributionId: string;
+  chainId: ChainId;
+  pollId: Address | string;
+  maciId: Address | string;
+  message: string;
+  createdByAddress: Address;
+};
+
+
+export type MACIMessage = {
+  msgType: string;
+  data: string[];
+};
