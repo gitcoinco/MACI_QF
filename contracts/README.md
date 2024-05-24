@@ -129,53 +129,44 @@ Below is the sequence diagram for the QFMACI Strategy flow:
 ```mermaid
 sequenceDiagram
   actor Coordinator
-  actor Allocator
-  actor Recipient1
-  actor Recipient2
+  actor Alice
+  actor Bob
+  actor PoolManager
+  participant Allo
   participant QFMACIStrategy
   participant MACI
   participant Poll
   participant Tally
-  participant Allo
 
   %% Initialization and Deployment
-  Coordinator->>Allo: Create Profile
   Coordinator->>Allo: Create Pool with QFMACIStrategy
   Allo->>QFMACIStrategy: Initialize with MACI parameters
   QFMACIStrategy->>MACI: Deploy MACI Instance
   MACI->>Poll: Deploy Poll Contracts
   MACI->>Tally: Deploy Tally Contracts
-  QFMACIStrategy->>Allo: Notify Pool Created
+  Allo -->>Coordinator: Pool Created (poolId)
 
-  %% Contribution Phase
-  Allocator->>Allo: Fund Pool with ETH
-  Allocator->>QFMACIStrategy: Contribute to Pool
-  QFMACIStrategy->>MACI: Sign Up Allocator
+  %% Bob Adds Project
+  Bob->>Allo: Register Project (registerRecipient())
+  Allo->>QFMACIStrategy: registerRecipient
+  QFMACIStrategy-->>Allo: recipient1
+  Allo-->>Bob: recipient1
 
-  %% Registration Phase
-  Recipient1->>Allo: Register Recipient 1
-  Allo->>QFMACIStrategy: Add Recipient 1
-  Recipient2->>Allo: Register Recipient 2
-  Allo->>QFMACIStrategy: Add Recipient 2
+  %% Review Phase by Pool Manager
+  PoolManager-->>QFMACIStrategy: reviewRecipients()
 
-  %% Review Phase
-  Coordinator->>QFMACIStrategy: Review Recipients
-  QFMACIStrategy->>Recipient1: Approve Recipient 1
-  QFMACIStrategy->>Recipient2: Approve Recipient 2
+  %% Alice Allocates to Pool
+  Alice->>Allo: Allocate to Pool (allocate())
+  Allo-->>QFMACIStrategy: Forward Allocation _allocate()
+  QFMACIStrategy-->>MACI: Sign Up Alice
+  MACI-->>Alice: FundsTransfered 
 
-  %% Voting Phase
-  Allocator->>QFMACIStrategy: Cast Vote for Recipient 1
-  QFMACIStrategy->>MACI: Submit Vote for Recipient 1
-  Allocator->>QFMACIStrategy: Cast Vote for Recipient 2
-  QFMACIStrategy->>MACI: Submit Vote for Recipient 2
-  Recipient1->>QFMACIStrategy: Cast Vote for Recipient 1
-  QFMACIStrategy->>MACI: Submit Vote for Recipient 1
-  Recipient1->>QFMACIStrategy: Cast Vote for Recipient 2
-  QFMACIStrategy->>MACI: Submit Vote for Recipient 2
+   %% Voting Phase
+  Alice->>Poll: Submit (Encrypted MACI messages) Vote for Recipients
 
   %% Tally Phase
   Coordinator->>MACI: Merge MACI Subtrees
-  Coordinator->>MACI: Generate Proofs
+  Coordinator->>Coordinator: Generate Proofs
   Coordinator->>MACI: Submit Proofs On-Chain
   Coordinator->>QFMACIStrategy: Publish Tally Hash
   Coordinator->>QFMACIStrategy: Add Tally Results in Batches
@@ -184,12 +175,14 @@ sequenceDiagram
   Coordinator->>QFMACIStrategy: Finalize Round
 
   %% Distribution Phase
-  Coordinator->>Allo: Distribute Funds to Recipients
-  Allo->>QFMACIStrategy: Notify Distribution
-  QFMACIStrategy->>Recipient1: Transfer ETH to Recipient 1
-  QFMACIStrategy->>Recipient2: Transfer ETH to Recipient 2
-  Recipient1->>Recipient2: Receive ETH
+  Coordinator->>Allo: Distribute Funds to Projects distribute()
+  Allo-->>QFMACIStrategy: _distribute()
+  QFMACIStrategy-->>Tally: Verify Distributions
+  Tally-->>QFMACIStrategy: Distributions Verified ? 
+  QFMACIStrategy-->>QFMACIStrategy: Handle Distribution
 ```
+
+
 
 ### Description
 
