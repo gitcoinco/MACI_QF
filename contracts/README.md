@@ -222,7 +222,7 @@ sequenceDiagram
    **Copy 4 private keys and paste them into .env.example**
 
    ```sh
-   Rename .env.example to .env
+   copy .env.example .env
    ```
 
 4. **End2End Deployment & Tests**:
