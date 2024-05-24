@@ -1,4 +1,4 @@
-# Allo x MACI QF
+## README for MACIQF Strategy on Allo
 
 A QF implementation using MACI v1.2.0 integrated into the Allo protocol.
 
@@ -11,23 +11,22 @@ A QF implementation using MACI v1.2.0 integrated into the Allo protocol.
 - clr.fund code (https://github.com/clrfund/monorepo)
 - [ctrlc03](https://github.com/ctrlc03) minimalQF code (https://github.com/ctrlc03/minimalQF)
 
-## README for QFMACI Strategy
 
 ### Overview
 
-The QFMACI (Quadratic Funding MACI) strategy is a component of a larger decentralized application designed to facilitate quadratic funding rounds. Quadratic funding is a democratic allocation mechanism where the amount of funds a project receives is proportional to the square of the sum of the square roots of the contributions it receives. This strategy leverages MACI (Minimal Anti-Collusion Infrastructure) to ensure vote privacy and resistance to bribery.
+The MACIQF (Quadratic Funding MACI) strategy is a component of a larger decentralized application designed to facilitate quadratic funding rounds. Quadratic funding is a democratic allocation mechanism where the amount of funds a project receives is proportional to the square of the sum of the square roots of the contributions it receives. This strategy leverages MACI (Minimal Anti-Collusion Infrastructure) to ensure vote privacy and resistance to bribery.
 
 ### Key Components
 
-1. **QFMACIBase**: Defines the core logic for the QFMACI strategy, including recipient management, vote tallying, and fund distribution.
-2. **QFMACI**: Extends QFMACIBase and integrates with MACI contracts for secure and private voting.
+1. **MACIQFBase**: Defines the core logic for the MACIQF strategy, including recipient management, vote tallying, and fund distribution.
+2. **MACIQF**: Extends MACIQFBase and integrates with MACI contracts for secure and private voting.
 3. **ClonableMACIFactory**: Factory contract to deploy new MACI instances.
 4. **ClonableMACI**: MACI contract for managing voting sessions.
 5. **Constants and Interfaces**: Shared constants and interface definitions used across the contracts.
 
 ### Contracts
 
-#### QFMACIBase
+#### MACIQFBase
 
 - **Structs**
   - `ApplicationStatus`: Represents the status of an application.
@@ -53,7 +52,7 @@ The QFMACI (Quadratic Funding MACI) strategy is a component of a larger decentra
   - `onlyBeforeAllocationEnds`: Ensures allocation phase is ongoing.
 
 - **Functions**
-  - `__QFMACIBaseStrategy_init`: Internal initialization function.
+  - `__MACIQFBaseStrategy_init`: Internal initialization function.
   - `reviewRecipients`: Sets recipient statuses.
   - `withdraw`: Allows the pool manager to withdraw tokens if the pool is cancelled.
   - `registerRecipient`: Registers a recipient to the pool.
@@ -61,7 +60,7 @@ The QFMACI (Quadratic Funding MACI) strategy is a component of a larger decentra
   - `finalize`: Finalizes the round after tallying votes.
   - `distributeFunds`: Distributes funds to recipients based on votes.
 
-#### QFMACI
+#### MACIQF
 
 - **Structs**
   - `MaciParams`: Parameters for initializing MACI.
@@ -85,7 +84,7 @@ The QFMACI (Quadratic Funding MACI) strategy is a component of a larger decentra
 
 ### Diagram
 
-Below is the sequence diagram for the QFMACI Strategy flow:
+Below is the sequence diagram for the MACIQF Strategy flow:
 
 ```mermaid
 sequenceDiagram
@@ -94,32 +93,32 @@ sequenceDiagram
   actor Alice
   actor Bob
   participant Allo
-  participant QFMACIStrategy
+  participant MACIQFStrategy
   participant MACI
   participant Poll
   participant Tally
 
   %% Initialization and Deployment
-  Coordinator->>Allo: Create Pool with QFMACIStrategy
-  Allo->>QFMACIStrategy: Initialize with MACI parameters
-  QFMACIStrategy->>MACI: Deploy MACI Instance
+  Coordinator->>Allo: Create Pool with MACIQFStrategy
+  Allo->>MACIQFStrategy: Initialize with MACI parameters
+  MACIQFStrategy->>MACI: Deploy MACI Instance
   MACI->>Poll: Deploy Poll Contracts
   MACI->>Tally: Deploy Tally Contracts
   Allo -->>Coordinator: Pool Created (poolId)
 
   %% Bob Adds Project
   Bob->>Allo: Register Project (registerRecipient())
-  Allo->>QFMACIStrategy: registerRecipient
-  QFMACIStrategy-->>Allo: recipient1
+  Allo->>MACIQFStrategy: registerRecipient
+  MACIQFStrategy-->>Allo: recipient1
   Allo-->>Bob: recipient1
 
   %% Review Phase by Pool Manager
-  PoolManager-->>QFMACIStrategy: reviewRecipients()
+  PoolManager-->>MACIQFStrategy: reviewRecipients()
 
   %% Alice Allocates to Pool
   Alice->>Allo: Allocate to Pool (allocate())
-  Allo-->>QFMACIStrategy: Forward Allocation _allocate()
-  QFMACIStrategy-->>MACI: Sign Up Alice
+  Allo-->>MACIQFStrategy: Forward Allocation _allocate()
+  MACIQFStrategy-->>MACI: Sign Up Alice
   MACI-->>Alice: FundsTransfered 
 
    %% Voting Phase
@@ -129,18 +128,18 @@ sequenceDiagram
   Coordinator->>MACI: Merge MACI Subtrees
   Coordinator->>Coordinator: Generate Proofs
   Coordinator->>MACI: Submit Proofs On-Chain
-  Coordinator->>QFMACIStrategy: Publish Tally Hash
-  Coordinator->>QFMACIStrategy: Add Tally Results in Batches
+  Coordinator->>MACIQFStrategy: Publish Tally Hash
+  Coordinator->>MACIQFStrategy: Add Tally Results in Batches
 
   %% Finalization Phase
-  Coordinator->>QFMACIStrategy: Finalize Round
+  Coordinator->>MACIQFStrategy: Finalize Round
 
   %% Distribution Phase
   Coordinator->>Allo: Distribute Funds to Projects distribute()
-  Allo-->>QFMACIStrategy: _distribute()
-  QFMACIStrategy-->>Tally: Verify Distributions
-  Tally-->>QFMACIStrategy: Distributions Verified ? 
-  QFMACIStrategy-->>QFMACIStrategy: Handle Distribution
+  Allo-->>MACIQFStrategy: _distribute()
+  MACIQFStrategy-->>Tally: Verify Distributions
+  Tally-->>MACIQFStrategy: Distributions Verified ? 
+  MACIQFStrategy-->>MACIQFStrategy: Handle Distribution
 
 ```
 
@@ -151,19 +150,19 @@ sequenceDiagram
 ## Description
 
 1. **Initialization and Deployment**:
-    - The coordinator creates a pool with the QFMACIStrategy.
-    - The QFMACIStrategy initializes with MACI parameters and deploys the MACI instance, poll, and tally contracts.
+    - The coordinator creates a pool with the MACIQFStrategy.
+    - The MACIQFStrategy initializes with MACI parameters and deploys the MACI instance, poll, and tally contracts.
 
 2. **Bob Adds Project**:
     - Bob registers his project through Allo.
-    - The QFMACIStrategy adds Bob's project to the pool.
+    - The MACIQFStrategy adds Bob's project to the pool.
 
 3. **Review Phase by Pool Manager**:
     - The pool manager reviews and approves the projects.
 
 4. **Alice Allocates to Pool**:
     - Alice allocates funds to the pool through Allo.
-    - Allo forwards the allocation to the QFMACIStrategy which signs up Alice in the MACI.
+    - Allo forwards the allocation to the MACIQFStrategy which signs up Alice in the MACI.
 
 5. **Voting Phase**:
     - Alice casts her votes for the projects via the Poll contract using encrypted MACI messages.
@@ -177,11 +176,11 @@ sequenceDiagram
 
 8. **Distribution Phase**:
     - The coordinator initiates fund distribution to projects via Allo.
-    - The QFMACIStrategy verifies distributions in the Tally contract and then handles the distribution to the projects (e.g., to Bob).
+    - The MACIQFStrategy verifies distributions in the Tally contract and then handles the distribution to the projects (e.g., to Bob).
 
 ### Interactive Diagram Elements
 
-1. **Initialize QFMACI Strategy**: Initializes the strategy with parameters.
+1. **Initialize MACIQF Strategy**: Initializes the strategy with parameters.
 2. **Register Project**: Bob registers his project to receive contributions.
 3. **Allocate to Pool**: Alice allocates funds to the pool.
 4. **Review Projects**: Pool manager reviews and approves the projects.
@@ -193,7 +192,7 @@ sequenceDiagram
 
 ### Buttons and Interactive Elements
 
-- **Initialize**: Start the QFMACI strategy.
+- **Initialize**: Start the MACIQF strategy.
 - **Register Project**: Bob registers his project.
 - **Allocate**: Alice allocates funds to the pool.
 - **Review**: Pool manager reviews and approves projects.
@@ -235,7 +234,7 @@ sequenceDiagram
 
 ### Testing Script
 
-The provided script tests the end-to-end functionality of the QFMACI strategy. It includes:
+The provided script tests the end-to-end functionality of the MACIQF strategy. It includes:
 
 - Setting up test accounts and contracts.
 - Funding the pool and making contributions.
@@ -255,4 +254,4 @@ For more detailed information about quadratic funding and MACI, refer to the fol
 - [Quadratic Funding](https://wtfisqf.com/)
 - [MACI (Minimal Anti-Collusion Infrastructure)](https://github.com/appliedzkp/maci)
 
-This README provides an overview of the QFMACI strategy, its components, deployment instructions, and a detailed diagram to help users understand the workflow. The interactive elements in the diagram and buttons make it easier to navigate through the different stages of the strategy.
+This README provides an overview of the MACIQF strategy, its components, deployment instructions, and a detailed diagram to help users understand the workflow. The interactive elements in the diagram and buttons make it easier to navigate through the different stages of the strategy.
