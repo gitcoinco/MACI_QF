@@ -24,6 +24,7 @@ import {
   Contribution,
   RoundForExplorer,
   ExpandedApplicationRef,
+  MACIContribution,
 } from "./data.types";
 import {
   ApplicationSummary,
@@ -49,6 +50,7 @@ import {
   getRoundsQuery,
   getDonationsByDonorAddress,
   getApplicationsForExplorer,
+  getContributionsByAddressAndId,
 } from "./queries";
 import { mergeCanonicalAndLinkedProjects } from "./utils";
 
@@ -837,5 +839,34 @@ export class DataLayer {
     id: string,
   ): Promise<SearchBasedProjectCategory | null> {
     return await categories.getSearchBasedCategoryById(id);
+  }
+
+  // NEW CODE
+
+  /**
+   * getContributionsByAddressAndId() returns a list of MACI contributions (Encrypted messages) by address and id.
+   * id is the keccak256 hash of encoded( MaciContractAddress, chainId , ContributorAddress)
+   * @param contributorAddress
+   * @param contributionId
+   */
+  async getContributionsByAddressAndId({
+    contributorAddress,
+    contributionId,
+  }: {
+    contributorAddress: string;
+    contributionId: string;
+  }): Promise<MACIContribution[]> {
+    const requestVariables = {
+      contributorAddress: contributorAddress,
+      contributionId: contributionId,
+    };
+
+    const response: { contributions: MACIContribution[] } = await request(
+      this.gsIndexerEndpoint,
+      getContributionsByAddressAndId,
+      requestVariables,
+    );
+
+    return response.contributions ?? [];
   }
 }

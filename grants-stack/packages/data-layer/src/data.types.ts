@@ -762,3 +762,24 @@ export type Contribution = {
   };
   timestamp?: bigint;
 };
+
+// NEW CODE
+
+export type MACIContribution = {
+  contributorAddress: string;
+  stateIndex: string;
+  maciId: string;
+  id: string;
+  messages: Message[];
+};
+
+export type Message = {
+  message: {
+    data: string[];
+    msgType: string;
+  };
+  messageId: string;
+  pollId: string;
+  createdByAddress: string;
+  contributionId: string;
+};

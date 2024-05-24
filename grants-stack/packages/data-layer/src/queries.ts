@@ -645,3 +645,31 @@ export const getDonationsByDonorAddress = gql`
     }
   }
 `;
+
+// NEW CODE 
+
+export const getContributionsByAddressAndId = gql`
+  query getContributionsByAddressAndId(
+    $contributorAddress: String!
+    $contributionId: String!
+  ) {
+    contributions(
+      filter: {
+        contributorAddress: { equalTo: $contributorAddress }
+        id: { equalTo: $contributionId }
+      }
+    ) {
+      contributorAddress
+      stateIndex
+      maciId
+      id
+      messages {
+        message
+        messageId
+        pollId
+        createdByAddress
+        contributionId
+      }
+    }
+  }
+`;

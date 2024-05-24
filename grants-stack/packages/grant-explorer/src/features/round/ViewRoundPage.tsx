@@ -61,8 +61,13 @@ import Breadcrumb, { BreadcrumbItem } from "../common/Breadcrumb";
 const builderURL = process.env.REACT_APP_BUILDER_URL;
 import CartNotification from "../common/CartNotification";
 import { useCartStorage } from "../../store";
-import { useAccount, useToken } from "wagmi";
-import { getAddress } from "viem";
+import { useAccount, usePublicClient, useToken } from "wagmi";
+import {
+  encodeAbiParameters,
+  getAddress,
+  parseAbi,
+  parseAbiParameters,
+} from "viem";
 import { getAlloVersion } from "common/src/config";
 import { ExclamationCircleIcon } from "@heroicons/react/24/solid";
 import { DefaultLayout } from "../common/DefaultLayout";
@@ -76,6 +81,11 @@ import {
 } from "@heroicons/react/24/outline";
 import { Box, Tab, Tabs } from "@chakra-ui/react";
 import GenericModal from "../common/GenericModal";
+import { String, get } from "lodash";
+import { getPublicClient } from "@wagmi/core";
+import { ethers } from "ethers";
+
+// NEW CODE
 
 export default function ViewRound() {
   datadogLogs.logger.info("====> Route: /round/:chainId/:roundId");
@@ -212,6 +222,7 @@ function AfterRoundStart(props: {
   const [projects, setProjects] = useState<Project[]>();
   const [randomizedProjects, setRandomizedProjects] = useState<Project[]>();
   const { address: walletAddress } = useAccount();
+  const walletClient = usePublicClient();
   const isSybilDefenseEnabled =
     round.roundMetadata?.quadraticFundingConfig?.sybilDefense === true;
 
@@ -224,6 +235,17 @@ function AfterRoundStart(props: {
   const disableAddToCartButton =
     (alloVersion === "allo-v2" && roundId.startsWith("0x")) ||
     props.isAfterRoundEndDate;
+
+  // NEW CODE
+  const [alreadyContributed, setAlreadyContributed] = useState(false);
+
+  useEffect(() => {
+    if (walletAddress) {
+      getContributed().then((resp) => {
+        setAlreadyContributed(resp);
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (showCartNotification) {
@@ -347,6 +369,68 @@ function AfterRoundStart(props: {
     setSelectedTab(tabIndex);
   };
 
+  async function getMaciAddress() {
+    const publicClient = getPublicClient({
+      chainId,
+    });
+
+    const abi = parseAbi([
+      "function getPool(uint256) view returns ((bytes32 profileId, address strategy, address token, (uint256,string) metadata, bytes32 managerRole, bytes32 adminRole))",
+      "function _maci() public view returns (address)",
+    ]);
+
+    const alloContractAddress = "0x1133ea7af70876e64665ecd07c0a0476d09465a1";
+
+    const [Pool] = await Promise.all([
+      publicClient.readContract({
+        abi: abi,
+        address: alloContractAddress,
+        functionName: "getPool",
+        args: [BigInt(roundId)],
+      }),
+    ]);
+
+    const pool = Pool as {
+      profileId: string;
+      strategy: string;
+      token: string;
+      metadata: [bigint, string];
+      managerRole: string;
+      adminRole: string;
+    };
+    console.log("pool", pool.strategy);
+
+    return await walletClient.readContract({
+      abi: abi,
+      address: pool.strategy as `0x${string}`,
+      functionName: "_maci",
+    });
+  }
+
+  const dataLayer = useDataLayer();
+
+  // NEW CODE
+  const getContributed = async () => {
+    const maciAddress = (await getMaciAddress()) as `0x${string}`;
+
+    console.log("maciAddress", maciAddress);
+
+    const types = "uint256,address,address";
+    const bytes = encodeAbiParameters(parseAbiParameters(types), [
+      BigInt(props.round.chainId ?? 0n),
+      maciAddress,
+      walletAddress as `0x${string}`,
+    ]);
+
+    const id = ethers.utils.solidityKeccak256(["bytes"], [bytes]);
+    const resp = await dataLayer.getContributionsByAddressAndId({
+      contributorAddress: walletAddress?.toLowerCase() as `0x${string}`,
+      contributionId: id.toLowerCase() as `0x${string}`,
+    });
+    console.log("resp", resp);
+    return resp[0].messages.length > 0;
+  };
+
   const projectDetailsTabs = useMemo(() => {
     const projectsTab = {
       name: isDirectRound(round)
@@ -364,6 +448,7 @@ function AfterRoundStart(props: {
             chainId={chainId}
             setCurrentProjectAddedToCart={setCurrentProjectAddedToCart}
             setShowCartNotification={setShowCartNotification}
+            alreadyContributed={alreadyContributed}
           />
         </>
       ),
@@ -611,6 +696,7 @@ const ProjectList = (props: {
   isProjectsLoading: boolean;
   setCurrentProjectAddedToCart: React.Dispatch<React.SetStateAction<Project>>;
   setShowCartNotification: React.Dispatch<React.SetStateAction<boolean>>;
+  alreadyContributed?: boolean;
 }): JSX.Element => {
   const { projects, roundRoutePath, chainId, roundId } = props;
   const dataLayer = useDataLayer();
@@ -674,6 +760,7 @@ const ProjectList = (props: {
                       project.projectRegistryId
                     )?.uniqueDonorsCount ?? 0
                   }
+                  alreadyContributed={props.alreadyContributed}
                 />
               );
             })}
@@ -697,6 +784,7 @@ function ProjectCard(props: {
   setShowCartNotification: React.Dispatch<React.SetStateAction<boolean>>;
   crowdfundedUSD: number;
   uniqueContributorsCount: number;
+  alreadyContributed?: boolean;
 }) {
   const { project, roundRoutePath, round } = props;
   const projectRecipient =
@@ -784,6 +872,9 @@ function ProjectCard(props: {
                     remove(cartProject);
                   }}
                   addToCart={() => {
+                    props.alreadyContributed
+                      ? () => {}
+                      : console.log("already ? : ", props.alreadyContributed);
                     add(cartProject);
                   }}
                   setCurrentProjectAddedToCart={
