@@ -219,11 +219,12 @@ sequenceDiagram
    ```sh
    npx hardhat node
    ```
-   **Copy 4 private keys and paste them into .env.example**
 
    ```sh
    copy .env.example .env
    ```
+
+   **Copy 5 private keys from hardhat node and paste them into .env**
 
 4. **End2End Deployment & Tests**:
 
