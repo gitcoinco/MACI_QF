@@ -82,45 +82,6 @@ The QFMACI (Quadratic Funding MACI) strategy is a component of a larger decentra
   - `verifyClaim`: Verifies the claim of allocated tokens.
   - `validateProofOfAttendance`: Validates the proof of attendance for Zupass-specific events.
 
-### Deployment and Testing
-
-1. **Download ZKeys**:
-  ```sh
-  chmod +x download_artifacts.sh
-  ./download_artifacts.sh
-  ```
-2. **Install Dependencies**:
-  ```sh
-  yarn install
-  ```
-3. **Start Local Node**:
-
-   ```sh
-   npx hardhat node
-   ```
-   **Copy 4 private keys and paste them into .env.example**
-
-   ```sh
-   Rename .env.example to .env
-   ```
-
-4. **End2End Deployment & Tests**:
-
-   **Open a new terminal**
-   ```sh
-   yarn test:live
-   ```
-
-### Testing Script
-
-The provided script tests the end-to-end functionality of the QFMACI strategy. It includes:
-
-- Setting up test accounts and contracts.
-- Funding the pool and making contributions.
-- Registering recipients and reviewing them.
-- Voting and tallying votes.
-- Publishing the tally hash and finalizing the round.
-- Distributing funds to recipients.
 
 ### Diagram
 
@@ -129,9 +90,9 @@ Below is the sequence diagram for the QFMACI Strategy flow:
 ```mermaid
 sequenceDiagram
   actor Coordinator
+  actor PoolManager
   actor Alice
   actor Bob
-  actor PoolManager
   participant Allo
   participant QFMACIStrategy
   participant MACI
@@ -180,32 +141,32 @@ sequenceDiagram
   QFMACIStrategy-->>Tally: Verify Distributions
   Tally-->>QFMACIStrategy: Distributions Verified ? 
   QFMACIStrategy-->>QFMACIStrategy: Handle Distribution
+
 ```
 
 
 
-### Description
+#Here's the revised description to fit the new diagram:
+
+## Description
 
 1. **Initialization and Deployment**:
-    - The coordinator creates a profile and a pool with the QFMACIStrategy.
+    - The coordinator creates a pool with the QFMACIStrategy.
     - The QFMACIStrategy initializes with MACI parameters and deploys the MACI instance, poll, and tally contracts.
 
-2. **Contribution Phase**:
-    - Allocators fund the pool and contribute to the pool via QFMACIStrategy.
-    - The QFMACIStrategy signs up the allocator in the MACI.
+2. **Bob Adds Project**:
+    - Bob registers his project through Allo.
+    - The QFMACIStrategy adds Bob's project to the pool.
 
-3. **Registration Phase
+3. **Review Phase by Pool Manager**:
+    - The pool manager reviews and approves the projects.
 
-**:
-    - Recipients register themselves through Allo.
-    - The QFMACIStrategy adds the recipients to the pool.
-
-4. **Review Phase**:
-    - The coordinator reviews and approves the recipients.
+4. **Alice Allocates to Pool**:
+    - Alice allocates funds to the pool through Allo.
+    - Allo forwards the allocation to the QFMACIStrategy which signs up Alice in the MACI.
 
 5. **Voting Phase**:
-    - Allocators and recipients cast their votes via the QFMACIStrategy.
-    - The QFMACIStrategy submits the votes to the MACI.
+    - Alice casts her votes for the projects via the Poll contract using encrypted MACI messages.
 
 6. **Tally Phase**:
     - The coordinator merges MACI subtrees, generates proofs, and submits them on-chain.
@@ -215,30 +176,73 @@ sequenceDiagram
     - The coordinator finalizes the round.
 
 8. **Distribution Phase**:
-    - The coordinator initiates fund distribution to recipients via Allo.
-    - The QFMACIStrategy transfers ETH to the recipients.
+    - The coordinator initiates fund distribution to projects via Allo.
+    - The QFMACIStrategy verifies distributions in the Tally contract and then handles the distribution to the projects (e.g., to Bob).
 
 ### Interactive Diagram Elements
 
 1. **Initialize QFMACI Strategy**: Initializes the strategy with parameters.
-2. **Register Recipients**: Registers recipients who will receive contributions.
-3. **Contribute to Pool**: Contributors allocate funds to the pool.
-4. **Vote Using MACI**: Contributors cast their votes securely using MACI.
-5. **Tally Votes**: Votes are tallied using the MACI infrastructure.
-6. **Publish Tally Hash**: The tally hash is published to IPFS.
-7. **Finalize Round**: Finalizes the round after verifying all tallies.
-8. **Distribute Funds**: Distributes funds to the recipients based on the vote tally.
+2. **Register Project**: Bob registers his project to receive contributions.
+3. **Allocate to Pool**: Alice allocates funds to the pool.
+4. **Review Projects**: Pool manager reviews and approves the projects.
+5. **Vote Using MACI**: Alice casts her votes securely using MACI.
+6. **Tally Votes**: Votes are tallied using the MACI infrastructure.
+7. **Publish Tally Hash**: The tally hash is published to IPFS.
+8. **Finalize Round**: Finalizes the round after verifying all tallies.
+9. **Distribute Funds**: Distributes funds to the projects based on the vote tally.
 
 ### Buttons and Interactive Elements
 
 - **Initialize**: Start the QFMACI strategy.
-- **Register**: Register as a recipient.
-- **Contribute**: Allocate funds to the pool.
-- **Vote**: Cast votes for recipients.
+- **Register Project**: Bob registers his project.
+- **Allocate**: Alice allocates funds to the pool.
+- **Review**: Pool manager reviews and approves projects.
+- **Vote**: Alice casts votes for the projects.
 - **Tally**: Tally the votes cast.
 - **Publish**: Publish the tally hash.
 - **Finalize**: Finalize the funding round.
-- **Distribute**: Distribute funds to recipients.
+- **Distribute**: Distribute funds to projects.
+
+
+### Deployment and Testing
+
+1. **Download ZKeys**:
+  ```sh
+  chmod +x download_artifacts.sh
+  ./download_artifacts.sh
+  ```
+2. **Install Dependencies**:
+  ```sh
+  yarn install
+  ```
+3. **Start Local Node**:
+
+   ```sh
+   npx hardhat node
+   ```
+   **Copy 4 private keys and paste them into .env.example**
+
+   ```sh
+   Rename .env.example to .env
+   ```
+
+4. **End2End Deployment & Tests**:
+
+   **Open a new terminal**
+   ```sh
+   yarn test:live
+   ```
+
+### Testing Script
+
+The provided script tests the end-to-end functionality of the QFMACI strategy. It includes:
+
+- Setting up test accounts and contracts.
+- Funding the pool and making contributions.
+- Registering recipients and reviewing them.
+- Voting and tallying votes.
+- Publishing the tally hash and finalizing the round.
+- Distributing funds to recipients.
 
 ### License
 
