@@ -1338,12 +1338,19 @@ export async function handleEvent(
       const { timestamp } = await getBlock();
       let uuid = randomUUID();
 
-      const uuidTypes = "string, string"
+      const uuidTypes = "string, string,string"
       const uuidBytes = encodeAbiParameters(parseAbiParameters(uuidTypes), [
         uuid,
         id,
+        timestamp.toString(),
       ]);
+
       const uuidId = ethers.utils.solidityKeccak256(["bytes"], [uuidBytes]);
+
+      logger.info({
+        msg: `data: ${message.data}`,
+      });
+
       return [
         {
           type: "InsertMessage",

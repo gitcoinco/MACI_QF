@@ -240,100 +240,6 @@ export function bnSqrt(val: bigint) {
 
 // NEW CODE
 
-export function encodedMACIQFSignUp(
-  donationToken: VotingToken,
-  donations: Pick<
-    CartProject,
-    | "amount"
-    | "recipient"
-    | "projectRegistryId"
-    | "applicationIndex"
-    | "anchorAddress"
-  >[]
-): Hex[] {
-  const tokenAddress =
-    donationToken.address === zeroAddress ? NATIVE : donationToken.address;
-
-  const encodedData = donations.map((donation) => {
-    if (!donation.anchorAddress) {
-      throw new Error("Anchor address is required for QF allocation");
-    }
-    return encodeAbiParameters(
-      parseAbiParameters(
-        "address,uint8,(((address,uint256),uint256,uint256),bytes)"
-      ),
-      [
-        getAddress(donation.anchorAddress),
-        0, // permit type of none on the strategy
-        [
-          [
-            [
-              getAddress(tokenAddress),
-              parseUnits(donation.amount, donationToken.decimal),
-            ],
-            0n, // nonce, since permit type is none
-            0n, // deadline, since permit type is none
-          ],
-          "0x0000000000000000000000000000000000000000000000000000000000000000", // signature, since permit type is none
-        ],
-      ]
-    );
-  });
-
-  return encodedData;
-}
-
-// (
-//   PubKey memory pubKey, TUPLE(UINT256, UINT256)
-//   uint256 amount,
-//   uint[2] memory _pA,
-//   uint[2][2] memory _pB,
-//   uint[2] memory _pC,
-//   uint[38] memory _pubSignals
-// ) = abi.decode(_data, (PubKey, uint256, uint[2], uint[2][2], uint[2], uint[38]));
-
-export function encodedMACIQFAllocation(
-  donationToken: VotingToken,
-  donations: Pick<
-    CartProject,
-    | "amount"
-    | "recipient"
-    | "projectRegistryId"
-    | "applicationIndex"
-    | "anchorAddress"
-  >[]
-): Hex[] {
-  const tokenAddress =
-    donationToken.address === zeroAddress ? NATIVE : donationToken.address;
-
-  const encodedData = donations.map((donation) => {
-    if (!donation.anchorAddress) {
-      throw new Error("Anchor address is required for QF allocation");
-    }
-    return encodeAbiParameters(
-      parseAbiParameters(
-        "address,uint8,(((address,uint256),uint256,uint256),bytes)"
-      ),
-      [
-        getAddress(donation.anchorAddress),
-        0, // permit type of none on the strategy
-        [
-          [
-            [
-              getAddress(tokenAddress),
-              parseUnits(donation.amount, donationToken.decimal),
-            ],
-            0n, // nonce, since permit type is none
-            0n, // deadline, since permit type is none
-          ],
-          "0x0000000000000000000000000000000000000000000000000000000000000000", // signature, since permit type is none
-        ],
-      ]
-    );
-  });
-
-  return encodedData;
-}
 
 // uint[2] memory _pA,
 // uint[2][2] memory _pB,
@@ -360,7 +266,7 @@ export interface IAllocateArgs {
   proof?: string;
 }
 
-export const prepareAllocationData = async ({
+export const prepareAllocationData = ({
   publicKey,
   amount,
   proof,
@@ -443,9 +349,103 @@ export const prepareAllocationData = async ({
   return data;
 };
 
+
 import { utils } from "ethers";
-import { Keypair as MaciKeypair, PrivKey, PubKey } from "maci-domainobjs";
+import {
+  Keypair as MaciKeypair,
+  PrivKey,
+  PubKey,
+  PCommand,
+  Message,
+} from "maci-domainobjs";
 import { generateWitness } from "./pcd";
+import { String } from "lodash";
+import { genRandomSalt } from "maci-crypto";
+
+/**
+ * Convert to MACI Message object
+ * @param type message type, 1 for key change or vote, 2 for topup
+ * @param data message data
+ * @returns Message
+ */
+function getMaciMessage(type: bigint, data: bigint[] | null): Message {
+  const msgType = BigInt(type);
+  const rawData = data || [];
+  const msgData = rawData;
+  const maciMessage = new Message(BigInt(msgType), msgData);
+  return maciMessage;
+}
+
+/**
+ * Get the latest set of vote messages submitted by contributor
+ * @param contributorKey Contributor key used to encrypt messages
+ * @param coordinatorPubKey Coordinator public key
+ * @param maciMessages MACI messages
+ * @returns MACI messages
+ */
+export async function getContributorMessages({
+  contributorKey,
+  coordinatorPubKey,
+  maciMessages,
+}: {
+  contributorKey: Keypair;
+  coordinatorPubKey: PubKey;
+  maciMessages: {
+    messages: {
+      msgType: bigint;
+      data: bigint[];
+    }[];
+  };
+}): Promise<PCommand[]> {
+  if (!(maciMessages.messages && maciMessages.messages.length)) {
+    return [];
+  }
+
+  const sharedKey = Keypair.genEcdhSharedKey(
+    contributorKey.privKey,
+    coordinatorPubKey
+  );
+
+  console.log("sharedKey", sharedKey);
+
+  const Z = {
+    stateIndex: BigInt(0),
+    voteOptionIndex: BigInt(0),
+    newVoteWeight: BigInt(0),
+    nonce: BigInt(0),
+  };
+
+  // create the command object
+  const command = new PCommand(
+    BigInt(0),
+    contributorKey.pubKey,
+    0n,
+    10n,
+    10n,
+    // we only support one poll for now
+    BigInt(0),
+    genRandomSalt()
+  );
+
+  // sign the command with the user private key
+  const signature = command.sign(contributorKey.privKey);
+
+  const message = command.encrypt(signature, sharedKey);
+
+  // decrypt the message
+
+  const macimsg = getMaciMessage(message.msgType, message.data);
+  const { command: decryptedCommand, signature: decryptedSignature } =
+    PCommand.decrypt(macimsg, sharedKey, true);
+  console.log("decryptedCommand", decryptedCommand);
+
+  return maciMessages.messages.map((message) => {
+    const macimsg = getMaciMessage(message.msgType, message.data);
+    const { command, signature } = PCommand.decrypt(macimsg, sharedKey, true);
+    return command;
+  });
+}
+
 
 /**
  * Derives the MACI private key from the users signature hash

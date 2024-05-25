@@ -61,7 +61,7 @@ import Breadcrumb, { BreadcrumbItem } from "../common/Breadcrumb";
 const builderURL = process.env.REACT_APP_BUILDER_URL;
 import CartNotification from "../common/CartNotification";
 import { useCartStorage } from "../../store";
-import { useAccount, usePublicClient, useToken } from "wagmi";
+import { useAccount, usePublicClient, useToken, useWalletClient } from "wagmi";
 import {
   encodeAbiParameters,
   getAddress,
@@ -81,11 +81,15 @@ import {
 } from "@heroicons/react/24/outline";
 import { Box, Tab, Tabs } from "@chakra-ui/react";
 import GenericModal from "../common/GenericModal";
-import { String, get } from "lodash";
-import { getPublicClient } from "@wagmi/core";
+import { String, chain, get } from "lodash";
+import { WalletClient, getPublicClient, signMessage } from "@wagmi/core";
 import { ethers } from "ethers";
 
 // NEW CODE
+import { getContributorMessages } from "../api/voting";
+import { generatePubKey, generatePubKeyWithSeed } from "../../checkoutStore";
+import { poll } from "ethers/lib/utils.js";
+import { PubKey } from "maci-domainobjs";
 
 export default function ViewRound() {
   datadogLogs.logger.info("====> Route: /round/:chainId/:roundId");
@@ -222,7 +226,7 @@ function AfterRoundStart(props: {
   const [projects, setProjects] = useState<Project[]>();
   const [randomizedProjects, setRandomizedProjects] = useState<Project[]>();
   const { address: walletAddress } = useAccount();
-  const walletClient = usePublicClient();
+  const { data: walletClient } = useWalletClient();
   const isSybilDefenseEnabled =
     round.roundMetadata?.quadraticFundingConfig?.sybilDefense === true;
 
@@ -239,13 +243,9 @@ function AfterRoundStart(props: {
   // NEW CODE
   const [alreadyContributed, setAlreadyContributed] = useState(false);
 
-  useEffect(() => {
-    if (walletAddress) {
-      getContributed().then((resp) => {
-        setAlreadyContributed(resp);
-      });
-    }
-  }, []);
+  async function fetch() {
+    return await getContributed();
+  }
 
   useEffect(() => {
     if (showCartNotification) {
@@ -377,6 +377,8 @@ function AfterRoundStart(props: {
     const abi = parseAbi([
       "function getPool(uint256) view returns ((bytes32 profileId, address strategy, address token, (uint256,string) metadata, bytes32 managerRole, bytes32 adminRole))",
       "function _maci() public view returns (address)",
+      "function _pollContracts() public view returns ((address,address,address,address))",
+      "function coordinatorPubKey() public view returns ((uint256,uint256))",
     ]);
 
     const alloContractAddress = "0x1133ea7af70876e64665ecd07c0a0476d09465a1";
@@ -398,20 +400,52 @@ function AfterRoundStart(props: {
       managerRole: string;
       adminRole: string;
     };
+    const [pollContracts, maci] = await Promise.all([
+      publicClient.readContract({
+        abi: abi,
+        address: pool.strategy as `0x${string}`,
+        functionName: "_pollContracts",
+      }),
+      publicClient.readContract({
+        abi: abi,
+        address: pool.strategy as `0x${string}`,
+        functionName: "_maci",
+      }),
+    ]);
+
+    const _coordinatorPubKey = await publicClient.readContract({
+      abi: abi,
+      address: pollContracts[0] as `0x${string}`,
+      functionName: "coordinatorPubKey",
+    });
+
+    const coordinatorPubKey = new PubKey([
+      BigInt(_coordinatorPubKey[0]),
+      BigInt(_coordinatorPubKey[1]),
+    ]);
+
     console.log("pool", pool.strategy);
 
-    return await walletClient.readContract({
-      abi: abi,
-      address: pool.strategy as `0x${string}`,
-      functionName: "_maci",
-    });
+    return {
+      maci: maci,
+      pollContracts: pollContracts,
+      strategy: pool.strategy,
+      coordinatorPubKey: coordinatorPubKey,
+      roundId: roundId,
+    };
   }
 
   const dataLayer = useDataLayer();
 
   // NEW CODE
   const getContributed = async () => {
-    const maciAddress = (await getMaciAddress()) as `0x${string}`;
+    const maciContracts = await getMaciAddress();
+    const maciAddress = maciContracts.maci as `0x${string}`;
+    const pollContract = maciContracts.pollContracts[0] as `0x${string}`;
+    const signature = await signMessage({
+      message: `Sign this message to get your public key for MACI voting on Allo for the round with address ${maciContracts.roundId} on chain ${props.chainId}`,
+    });
+    const pk = await generatePubKeyWithSeed(signature);
 
     console.log("maciAddress", maciAddress);
 
@@ -427,8 +461,25 @@ function AfterRoundStart(props: {
       contributorAddress: walletAddress?.toLowerCase() as `0x${string}`,
       contributionId: id.toLowerCase() as `0x${string}`,
     });
+
     console.log("resp", resp);
-    return resp[0].messages.length > 0;
+    const decryptedMessages = await getContributorMessages({
+      // Poll contract address
+      contributorKey: pk,
+      coordinatorPubKey: maciContracts.coordinatorPubKey,
+      maciMessages: {
+        messages: resp[0].messages.map((m) => {
+          return {
+            msgType: BigInt(m.message.msgType),
+            data: m.message.data.map((d) => BigInt(d)),
+          };
+        }),
+      },
+    });
+    console.log("decryptedMessages", decryptedMessages);
+
+    console.log("resp", resp);
+    return 1 > 0;
   };
 
   const projectDetailsTabs = useMemo(() => {
@@ -438,18 +489,28 @@ function AfterRoundStart(props: {
         : `All Projects (${projects?.length ?? 0})`,
       content: (
         <>
-          <ProjectList
-            projects={projects}
-            roundRoutePath={`/round/${chainId}/${roundId}`}
-            isBeforeRoundEndDate={!disableAddToCartButton}
-            roundId={roundId}
-            isProjectsLoading={isProjectsLoading}
-            round={round}
-            chainId={chainId}
-            setCurrentProjectAddedToCart={setCurrentProjectAddedToCart}
-            setShowCartNotification={setShowCartNotification}
-            alreadyContributed={alreadyContributed}
-          />
+          <div>
+            <Button
+              className="w-full"
+              onClick={async () => {
+                await fetch();
+              }}
+            >
+              View More
+            </Button>
+            <ProjectList
+              projects={projects}
+              roundRoutePath={`/round/${chainId}/${roundId}`}
+              isBeforeRoundEndDate={!disableAddToCartButton}
+              roundId={roundId}
+              isProjectsLoading={isProjectsLoading}
+              round={round}
+              chainId={chainId}
+              setCurrentProjectAddedToCart={setCurrentProjectAddedToCart}
+              setShowCartNotification={setShowCartNotification}
+              alreadyContributed={alreadyContributed}
+            />
+          </div>
         </>
       ),
     };
