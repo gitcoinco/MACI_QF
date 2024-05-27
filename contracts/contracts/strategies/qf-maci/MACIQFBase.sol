@@ -3,66 +3,30 @@ pragma solidity 0.8.20;
 
 // External Libraries
 import {Constants, Metadata, IRegistry, IAllo, IVerifier} from "./interfaces/Constants.sol";
-
 import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
-
-import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
 
 // Core Contracts
 import {BaseStrategy} from "../BaseStrategy.sol";
 
-// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣗⠀⠀⠀⢸⣿⣿⣿⡯⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣿⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣗⠀⠀⠀⢸⣿⣿⣿⡯⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⣿⢿⣿⣿⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣗⠀⠀⠀⢸⣿⣿⣿⡯⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣿⣿⡟⠘⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣗⠀⠀⠀⢸⣿⣿⣿⡯⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-// ⠀⠀⠀⠀⠀⠀⠀⠀⣀⣴⣾⣿⣿⣿⣿⣾⠻⣿⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⡿⠀⠀⠸⣿⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣗⠀⠀⠀⢸⣿⣿⣿⡯⠀⠀⠀⠀⠀⠀⢀⣠⣴⣴⣶⣶⣶⣦⣦⣀⡀⠀⠀⠀⠀⠀⠀
-// ⠀⠀⠀⠀⠀⠀⠀⣴⣿⣿⣿⣿⣿⣿⡿⠃⠀⠙⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⠁⠀⠀⠀⢻⣿⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣗⠀⠀⠀⢸⣿⣿⣿⡯⠀⠀⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⡀⠀⠀⠀⠀
-// ⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿⣿⣿⣿⡿⠁⠀⠀⠀⠘⣿⣿⣿⣿⣿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿⠃⠀⠀⠀⠀⠈⢿⣿⣿⣿⣆⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣗⠀⠀⠀⢸⣿⣿⣿⡯⠀⠀⠀⣰⣿⣿⣿⡿⠋⠁⠀⠀⠈⠘⠹⣿⣿⣿⣿⣆⠀⠀⠀
-// ⠀⠀⠀⠀⢀⣾⣿⣿⣿⣿⣿⣿⡿⠀⠀⠀⠀⠀⠀⠈⢿⣿⣿⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣾⣿⣿⣿⠏⠀⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⢸⣿⣿⣿⣗⠀⠀⠀⢸⣿⣿⣿⡯⠀⠀⢰⣿⣿⣿⣿⠁⠀⠀⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⡀⠀⠀
-// ⠀⠀⠀⢠⣿⣿⣿⣿⣿⣿⣿⣟⠀⡀⢀⠀⡀⢀⠀⡀⢈⢿⡟⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⢸⣿⣿⣿⣗⠀⠀⠀⢸⣿⣿⣿⡯⠀⠀⢸⣿⣿⣿⣗⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⡇⠀⠀
-// ⠀⠀⣠⣿⣿⣿⣿⣿⣿⡿⠋⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⣿⡿⢿⠿⠿⠿⠿⠿⠿⠿⠿⠿⢿⣿⣿⣿⣷⡀⠀⠀⠀⢸⣿⣿⣿⣗⠀⠀⠀⢸⣿⣿⣿⡯⠀⠀⠸⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⠂⠀⠀
-// ⠀⠀⠙⠛⠿⠻⠻⠛⠉⠀⠀⠈⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣿⣿⣿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢿⣿⣿⣿⣧⠀⠀⠀⢸⣿⣿⣿⣗⠀⠀⠀⢸⣿⣿⣿⡯⠀⠀⠀⢻⣿⣿⣿⣷⣀⢀⠀⠀⠀⡀⣰⣾⣿⣿⣿⠏⠀⠀⠀
-// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣧⠀⠀⢸⣿⣿⣿⣗⠀⠀⠀⢸⣿⣿⣿⡯⠀⠀⠀⠀⠹⢿⣿⣿⣿⣿⣾⣾⣷⣿⣿⣿⣿⡿⠋⠀⠀⠀⠀
-// ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⠙⠋⠛⠙⠋⠛⠙⠋⠛⠙⠋⠃⠀⠀⠀⠀⠀⠀⠀⠀⠠⠿⠻⠟⠿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⠟⠿⠟⠿⠆⠀⠸⠿⠿⠟⠯⠀⠀⠀⠸⠿⠿⠿⠏⠀⠀⠀⠀⠀⠈⠉⠻⠻⡿⣿⢿⡿⡿⠿⠛⠁⠀⠀⠀⠀⠀⠀
-//                    allo.gitcoin.co
+abstract contract MACIQFBase is BaseStrategy, Multicall, Constants {
 
-abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
-
-   /// ================================
-    /// ========== Struct ==============
+    /// ================================
+    /// ========== Structs =============
     /// ================================
 
     /// @notice Struct to hold details of the application status
     /// @dev Application status is stored in a bitmap. Each 4 bits represents the status of a recipient,
     /// defined as 'index' here. The first 4 bits of the 256 bits represent the status of the first recipient,
     /// the second 4 bits represent the status of the second recipient, and so on.
-    ///
-    /// The 'rowIndex' is the index of the row in the bitmap, and the 'statusRow' is the value of the row.
-    /// The 'statusRow' is updated when the status of a recipient changes.
-    ///
-    /// Note: Since we need 4 bits to store a status, one row of the bitmap can hold the status information of 256/4 recipients.
-    ///
-    /// For example, if we have 5 recipients, the bitmap will look like this:
-    /// | recipient1 | recipient2 | recipient3 | recipient4 | recipient5 | 'rowIndex'
-    /// |     0000   |    0001    |    0010    |    0011    |    0100    | 'statusRow'
-    /// |     none   |   pending  |  accepted  |  rejected  |  appealed  | converted status (0, 1, 2, 3, 4)
-    ///
     struct ApplicationStatus {
         uint256 index;
         uint256 statusRow;
     }
 
-    struct RecipientIndex {
-        uint256 statusIndex;
-        uint256 votingOption;
-    }
-
     /// @notice The parameters used to initialize the strategy
     struct InitializeParams {
-        // slot 0
         bool useRegistryAnchor;
         bool metadataRequired;
-        // slot 1
         uint64 registrationStartTime;
         uint64 registrationEndTime;
         uint64 allocationStartTime;
@@ -77,113 +41,80 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
         uint256 totalVotesReceived;
         bool tallyVerified;
     }
+
     /// ======================
     /// ======= Storage ======
     /// ======================
-    using Counters for Counters.Counter;
 
-    // slot 0
     /// @notice The total number of votes cast for all recipients
     uint256 public totalRecipientVotes;
 
-    // slot 1
-    /// @notice The number of votes required to review a recipient
-    uint256 public reviewThreshold;
-
-    // slot 2
     /// @notice The start and end times for registrations and allocations
-    /// @dev The values will be in milliseconds since the epoch
     uint64 public registrationStartTime;
     uint64 public registrationEndTime;
     uint64 public allocationStartTime;
     uint64 public allocationEndTime;
 
-    // slot 3
-
-    /// @notice Flag to indicate whether to use the registry anchor or not.
+    /// @notice Flag to indicate whether to use the registry anchor or not
     bool public useRegistryAnchor;
 
-    /// @notice Flag to indicate whether metadata is required or not.
+    /// @notice Flag to indicate whether metadata is required or not
     bool public metadataRequired;
-
 
     /// @notice The registry contract
     IRegistry private _registry;
 
-    /// @notice The total number of recipients.
+    /// @notice The total number of recipients
     uint256 public recipientsCounter;
 
-    uint256 public votingOptionsCounter;
+    /// @notice The total number of accepted recipients
+    uint256 public acceptedRecipientsCounter;
 
-    /// @notice This is a packed array of booleans, 'statuses[0]' is the first row of the bitmap and allows to
-    /// store 256 bits to describe the status of 256 projects. 'statuses[1]' is the second row, and so on
-    /// Instead of using 1 bit for each recipient status, we will use 4 bits for each status
-    /// to allow 5 statuses:
-    /// 0: none
-    /// 1: pending
-    /// 2: accepted
-    /// 3: rejected
-    /// 4: appealed
-    /// Since it's a mapping the storage it's pre-allocated with zero values, so if we check the
-    /// status of an existing recipient, the value is by default 0 (none).
-    /// If we want to check the status of an recipient, we take its index from the `recipients` array
-    /// and convert it to the 2-bits position in the bitmap.
+    /// @notice Mapping to store the status of recipients in a bitmap
     mapping(uint256 => uint256) public statusesBitMap;
 
-    /// @notice 'recipientId' => 'statusIndex'
-    /// @dev 'statusIndex' is the index of the recipient in the 'statusesBitMap' bitmap.
+    /// @notice Mapping from recipient address to their status index
     mapping(address => uint256) public recipientToStatusIndexes;
 
+    /// @notice Mapping from recipient index to their address
     mapping(uint256 => address) public recipientIndexToAddress;
 
-    mapping
+    /// @notice Mapping from recipient address to their vote index
+    mapping(address => uint256) public recipientToVoteIndex;
 
-    /// @notice This is a packed array of booleans to keep track of claims distributed.
-    /// @dev distributedBitMap[0] is the first row of the bitmap and allows to store 256 bits to describe
-    /// the status of 256 claims
+    /// @notice Mapping to track distributed claims in a bitmap
     mapping(uint256 => uint256) private distributedBitMap;
 
-
-    uint256 public constant voiceCreditFactor = (MAX_CONTRIBUTION_AMOUNT * uint256(10) ** 18) / MAX_VOICE_CREDITS;
-
-
+    uint256 public voiceCreditFactor;
     uint256 public totalVotesSquares;
-
     uint256 public matchingPoolSize;
-
     uint256 public totalContributed;
-
     uint256 public totalSpent;
 
-    /// @notice The status of pool true after Coordinator has finalized the pool
-    // By submitting the final tally ZK proof verified by the Tally contract
+    /// @notice Flag to indicate if the pool is finalized
     bool public isFinalized;
 
+    /// @notice Flag to indicate if the pool is cancelled
     bool public isCancelled;
 
-    // The alpha used in quadratic funding formula
+    /// @notice The alpha used in quadratic funding formula
     uint256 public alpha;
 
-
-    address public coordinator; // coordinator address
+    /// @notice The coordinator's address
+    address public coordinator;
 
     IVerifier public verifier;
-
     string public tallyHash;
-
     address public _maci;
 
-    /// @notice The details of the recipient are returned using their ID
-    /// @dev recipientId => Recipient
+    /// @notice Mapping from recipient address to their details
     mapping(address => Recipient) public _recipients;
 
-    /// @notice The details of the total credits per Contributor "allocator"
-    /// @dev address => uint256
+    /// @notice Mapping from contributor address to their total credits
     mapping(address => uint256) public contributorCredits;
 
-
     /// ================================
-    /// ========== Modifier ============
+    /// ========== Modifiers ===========
     /// ================================
 
     /// @notice Modifier to check if the caller is the coordinator
@@ -209,8 +140,8 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
         _;
     }
 
-    /// @notice Modifier to check if the allocation has ended
-    /// @dev This will revert if the allocation has ended.
+    /// @notice Modifier to check if the allocation has not ended
+    /// @dev Reverts if the allocation has ended
     modifier onlyBeforeAllocationEnds() {
         _checkOnlyBeforeAllocationEnds();
         _;
@@ -235,6 +166,9 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
         metadataRequired = _params.metadataRequired;
         _registry = allo.getRegistry();
 
+        voiceCreditFactor = (MAX_CONTRIBUTION_AMOUNT * uint256(10) ** 18) / MAX_VOICE_CREDITS;
+        voiceCreditFactor = voiceCreditFactor > 0 ? voiceCreditFactor : 1;
+
         // Set the updated timestamps
         registrationStartTime = _params.registrationStartTime;
         registrationEndTime = _params.registrationEndTime;
@@ -242,8 +176,6 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
         allocationEndTime = _params.allocationEndTime;
 
         recipientsCounter = 1;
-
-        votingOptionsCounter = 1;
 
         // If the timestamps are invalid this will revert - See details in '_isPoolTimestampValid'
         _isPoolTimestampValid(registrationStartTime, registrationEndTime, allocationStartTime, allocationEndTime);
@@ -258,7 +190,7 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
     /// ====== External/Public =========
     /// ================================
 
-    /// @notice Sets recipient statuses.
+    /// @notice Sets recipient statuses
     /// @dev The statuses are stored in a bitmap of 4 bits for each recipient. The first 4 bits of the 256 bits represent
     ///      the status of the first recipient, the second 4 bits represent the status of the second recipient, and so on.
     ///      'msg.sender' must be a pool manager and the registration must be active.
@@ -269,8 +201,8 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
     /// - 3: rejected
     /// - 4: appealed
     /// Emits the RecipientStatusUpdated() event.
-    /// @param statuses new statuses
-    /// @param refRecipientsCounter the recipientCounter the transaction is based on
+    /// @param statuses New statuses
+    /// @param refRecipientsCounter The recipientCounter the transaction is based on
     function reviewRecipients(ApplicationStatus[] memory statuses, uint256 refRecipientsCounter)
         external
         onlyBeforeAllocationEnds
@@ -284,14 +216,23 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
 
             statusesBitMap[rowIndex] = fullRow;
 
+            address recipientId = recipientIndexToAddress[rowIndex];
+
+            if (recipientId == address(0)) {
+                revert INVALID();
+            }
+
+            if(Status(fullRow) == Status.Accepted) {
+                recipientToVoteIndex[recipientId] = acceptedRecipientsCounter;
+
+                unchecked {
+                    acceptedRecipientsCounter++;
+                }
+            }
+
             // Emit that the recipient status has been updated with the values
             emit RecipientStatusUpdated(rowIndex, fullRow, msg.sender);
 
-            address recipientId = recipientIndexToAddress[rowIndex];
-
-            if(Status(_getUintRecipientStatus(recipientId)) == Status.Accepted) recipientToStatusIndexes[recipientId].votingOption = votingOptionsCounter;
-            
-            votingOptionsCounter++;
             unchecked {
                 i++;
             }
@@ -321,7 +262,7 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
     /// ============ Internal ==============
     /// ====================================
 
-    /// @notice Checks if the timestamps are valid.
+    /// @notice Checks if the timestamps are valid
     /// @dev This will revert if any of the timestamps are invalid. This is determined by the strategy
     /// and may vary from strategy to strategy. Checks if '_registrationStartTime' is greater than the '_registrationEndTime'
     /// or if '_registrationStartTime' is greater than the '_allocationStartTime' or if '_registrationEndTime'
@@ -356,8 +297,8 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
     /// ======= External/Custom =======
     /// ===============================
 
-    /// @notice Submit recipient to pool and set their status.
-    /// @param _data The data to be decoded.
+    /// @notice Submit recipient to pool and set their status
+    /// @param _data The data to be decoded
     /// @custom:data if 'useRegistryAnchor' is 'true' (address recipientId, address recipientAddress, Metadata metadata)
     /// @custom:data if 'useRegistryAnchor' is 'false' (address registryAnchor, address recipientAddress, Metadata metadata)
     /// @param _sender The sender of the transaction
@@ -373,7 +314,7 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
         address registryAnchor;
         Metadata memory metadata;
 
-        // decode data custom to this strategy
+        // Decode data custom to this strategy
         if (useRegistryAnchor) {
             (recipientId, recipientAddress, metadata) = abi.decode(_data, (address, address, Metadata));
 
@@ -409,14 +350,14 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
         // Get the recipient
         Recipient storage recipient = _recipients[recipientId];
 
-        // update the recipients data
+        // Update the recipient's data
         recipient.recipientAddress = recipientAddress;
         recipient.metadata = metadata;
         recipient.useRegistryAnchor = useRegistryAnchor ? true : isUsingRegistryAnchor;
 
-        if (recipientToStatusIndexes[recipientId].statusIndex == 0) {
-            // recipient registering new application
-            recipientToStatusIndexes[recipientId].statusIndex = recipientsCounter;
+        if (recipientToStatusIndexes[recipientId] == 0) {
+            // Recipient registering new application
+            recipientToStatusIndexes[recipientId] = recipientsCounter;
             _setRecipientStatus(recipientId, uint8(Status.Pending));
 
             bytes memory extendedData = abi.encode(_data, recipientsCounter);
@@ -428,25 +369,20 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
         } else {
             uint8 currentStatus = _getUintRecipientStatus(recipientId);
             if (currentStatus == uint8(Status.Accepted)) {
-                // recipient updating accepted application
+                // Recipient updating accepted application
                 _setRecipientStatus(recipientId, uint8(Status.Pending));
             } else if (currentStatus == uint8(Status.Rejected)) {
-                // recipient updating rejected application
+                // Recipient updating rejected application
                 _setRecipientStatus(recipientId, uint8(Status.Appealed));
             }
             emit UpdatedRegistration(recipientId, _data, _sender, _getUintRecipientStatus(recipientId));
         }
     }
 
-    /**
-    * @dev Cancel funding round.
-    */
-    function cancel()
-        external
-        onlyCoordinator
-    {
+    /// @notice Cancel funding round
+    function cancel() external onlyCoordinator {
         if (isFinalized) {
-        revert RoundAlreadyFinalized();
+            revert RoundAlreadyFinalized();
         }
         isFinalized = true;
         isCancelled = true;
@@ -462,14 +398,10 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
         return recipientsCounter;
     }
 
-
     /// @notice Checks if a pool is active or not
     /// @return Whether the pool is active or not
     function _isPoolActive() internal view override returns (bool) {
-        if (registrationStartTime <= block.timestamp && block.timestamp <= registrationEndTime) {
-            return true;
-        }
-        return false;
+        return registrationStartTime <= block.timestamp && block.timestamp <= registrationEndTime;
     }
 
     /// @notice Returns if the recipient is accepted
@@ -500,8 +432,8 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
         if (block.timestamp <= allocationEndTime) revert ALLOCATION_NOT_ENDED();
     }
 
-    /// @notice Checks if the allocation has not ended and reverts if it has.
-    /// @dev This will revert if the allocation has ended.
+    /// @notice Checks if the allocation has not ended and reverts if it has
+    /// @dev This will revert if the allocation has ended
     function _checkOnlyBeforeAllocationEnds() internal view {
         if (block.timestamp > allocationEndTime) {
             revert ALLOCATION_NOT_ACTIVE();
@@ -511,33 +443,23 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
     /// @notice Get the payout for a single recipient
     /// @param _recipientId The ID of the recipient
     /// @return _payoutSummary payout as a "PayoutSummary" struct
-    function _getPayout(
-        address _recipientId,
-        bytes memory data
-    ) internal view override returns (PayoutSummary memory _payoutSummary) {}
+    function _getPayout(address _recipientId, bytes memory data)
+        internal
+        view
+        override
+        returns (PayoutSummary memory _payoutSummary)
+    {}
 
-    /**
-     * @dev Get the amount of voice credits for a given address.
-     * This function is a part of the InitialVoiceCreditProxy interface.
-     * @param _data Encoded address of a user.
-     */
-    function getVoiceCredits(
-        address /* _caller */,
-        bytes memory _data
-    ) external view returns (uint256) {
+    /// @notice Get the amount of voice credits for a given address
+    /// @dev This function is a part of the InitialVoiceCreditProxy interface
+    /// @param _data Encoded address of a user
+    /// @return The amount of voice credits
+    function getVoiceCredits(address, bytes memory _data) external view returns (uint256) {
         address _allocator = abi.decode(_data, (address));
         if (!_isValidAllocator(_allocator)) {
             return 0;
         }
         return contributorCredits[_allocator];
-    }
-
-    function _beforeIncreasePoolAmount(uint256) internal view override {
-        // Cannot increase pool amount after the round has been finalized
-        // This is to prevent any additional funds from being added to the pool so that Alpha value is calculated correctly
-        if (isFinalized) {
-            revert INVALID();
-        }
     }
 
     /// @notice Check if sender is a profile member
@@ -549,12 +471,10 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
         return _registry.isOwnerOrMemberOfProfile(profile.id, _sender);
     }
 
-    /// @notice Validate the distribution for the payout.
-    /// @param _index index of the distribution
+    /// @notice Validate the distribution for the payout
+    /// @param _index Index of the distribution
     /// @return 'true' if the distribution is valid, otherwise 'false'
-    function _validateDistribution(
-        uint256 _index
-    ) internal view returns (bool) {
+    function _validateDistribution(uint256 _index) internal view returns (bool) {
         // If the '_index' has been distributed this will return 'false'
         if (_hasBeenDistributed(_index)) {
             return false;
@@ -573,8 +493,8 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
         return Status(_getUintRecipientStatus(_recipientId));
     }
 
-    /// @notice Check if the distribution has been distributed.
-    /// @param _index index of the distribution
+    /// @notice Check if the distribution has been distributed
+    /// @param _index Index of the distribution
     /// @return 'true' if the distribution has been distributed, otherwise 'false'
     function _hasBeenDistributed(uint256 _index) internal view returns (bool) {
         // Get the word index by dividing the '_index' by 256
@@ -593,8 +513,8 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
         return distributedWord & mask == mask;
     }
 
-    /// @notice Mark distribution as done.
-    /// @param _index index of the distribution
+    /// @notice Mark distribution as done
+    /// @param _index Index of the distribution
     function _setDistributed(uint256 _index) internal {
         // Get the word index by dividing the '_index' by 256
         uint256 distributedWordIndex = _index / 256;
@@ -606,7 +526,7 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
         distributedBitMap[distributedWordIndex] |= (1 << distributedBitIndex);
     }
 
-    /// @notice Set the recipient status.
+    /// @notice Set the recipient status
     /// @param _recipientId ID of the recipient
     /// @param _status Status of the recipient
     function _setRecipientStatus(address _recipientId, uint256 _status) internal {
@@ -624,7 +544,7 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
     /// @param _recipientId ID of the recipient
     /// @return status The status of the recipient
     function _getUintRecipientStatus(address _recipientId) internal view returns (uint8 status) {
-        if (recipientToStatusIndexes[_recipientId].statusIndex == 0) return 0;
+        if (recipientToStatusIndexes[_recipientId] == 0) return 0;
         // Get the column index and current row
         (, uint256 colIndex, uint256 currentRow) = _getStatusRowColumn(_recipientId);
 
@@ -635,11 +555,11 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
         return status;
     }
 
-    /// @notice Get recipient status 'rowIndex', 'colIndex' and 'currentRow'.
+    /// @notice Get recipient status 'rowIndex', 'colIndex' and 'currentRow'
     /// @param _recipientId ID of the recipient
     /// @return (rowIndex, colIndex, currentRow)
     function _getStatusRowColumn(address _recipientId) internal view returns (uint256, uint256, uint256) {
-        uint256 recipientIndex = recipientToStatusIndexes[_recipientId].statusIndex - 1;
+        uint256 recipientIndex = recipientToStatusIndexes[_recipientId] - 1;
 
         uint256 rowIndex = recipientIndex / 64; // 256 / 4
         uint256 colIndex = (recipientIndex % 64) * 4;
@@ -648,49 +568,36 @@ abstract contract QFMACIBase is BaseStrategy, Multicall, Constants {
     }
 
     /// ====================================
-    /// ============ QV Helper ==============
+    /// ============ QV Helper =============
     /// ====================================
 
-    /**
-     * @dev Calculate the alpha for the capital constrained quadratic formula
-     *  in page 17 of https://arxiv.org/pdf/1809.06421.pdf
-     * @param _budget Total budget of the round to be distributed
-     * @param _totalVotesSquares Total of the squares of votes
-     * @param _totalSpent Total amount of spent voice credits
-     */
-    function calcAlpha(
-        uint256 _budget,
-        uint256 _totalVotesSquares,
-        uint256 _totalSpent
-    ) internal view returns (uint256 _alpha) {
-        // make sure budget = contributions + matching pool
+    /// @dev Calculate the alpha for the capital constrained quadratic formula
+    /// @param _budget Total budget of the round to be distributed
+    /// @param _totalVotesSquares Total of the squares of votes
+    /// @param _totalSpent Total amount of spent voice credits
+    /// @return _alpha Calculated alpha value
+    function calcAlpha(uint256 _budget, uint256 _totalVotesSquares, uint256 _totalSpent) internal view returns (uint256 _alpha) {
+        // Ensure budget = contributions + matching pool
         uint256 contributions = _totalSpent * voiceCreditFactor;
 
         if (_budget < contributions) {
             revert InvalidBudget();
         }
 
-        // guard against division by zero.
-        // This happens when no project receives more than one vote
+        // Guard against division by zero
         if (_totalVotesSquares <= _totalSpent) {
             revert NoProjectHasMoreThanOneVote();
         }
 
-        return
-            ((_budget - contributions) * ALPHA_PRECISION) /
-            (voiceCreditFactor * (_totalVotesSquares - _totalSpent));
+        return ((_budget - contributions) * ALPHA_PRECISION) / (voiceCreditFactor * (_totalVotesSquares - _totalSpent));
     }
 
-    /**
-     * @dev Get allocated token amount (without verification).
-     * @param _tallyResult The result of vote tally for the recipient.
-     * @param _spent The amount of voice credits spent on the recipient.
-     */
-    function getAllocatedAmount(
-        uint256 _tallyResult,
-        uint256 _spent
-    ) internal view returns (uint256) {
-        // amount = ( alpha * (quadratic votes)^2 + (precision - alpha) * totalSpent ) / precision
+    /// @dev Get allocated token amount (without verification)
+    /// @param _tallyResult The result of vote tally for the recipient
+    /// @param _spent The amount of voice credits spent on the recipient
+    /// @return The allocated token amount
+    function getAllocatedAmount(uint256 _tallyResult, uint256 _spent) internal view returns (uint256) {
+        // Calculate the allocated amount using quadratic funding formula
         uint256 quadratic = alpha * voiceCreditFactor * _tallyResult * _tallyResult;
         uint256 totalSpentCredits = voiceCreditFactor * _spent;
         uint256 linearPrecision = ALPHA_PRECISION * totalSpentCredits;

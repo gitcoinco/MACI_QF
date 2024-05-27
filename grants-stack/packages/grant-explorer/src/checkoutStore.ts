@@ -1,7 +1,16 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { CartProject, ProgressStatus } from "./features/api/types";
+import {
+  CartProject,
+  ProgressStatus,
+  IPublishBatchArgs,
+  IPublishMessage,
+  PoolInfo,
+  MACIPollContracts,
+  IMessageContractParams,
+  IPubKey,
+} from "./features/api/types";
 import { Allo, ChainId } from "common";
 import { useCartStorage } from "./store";
 import {
@@ -14,10 +23,6 @@ import {
   zeroAddress,
 } from "viem";
 import {
-  encodeQFVotes,
-  encodedQFAllocation,
-  signPermit2612,
-  signPermitDai,
   Keypair as GenKeyPair,
   prepareAllocationData,
   bnSqrt,
@@ -30,6 +35,8 @@ import { getPermitType } from "common/dist/allo/voting";
 import { MRC_CONTRACTS } from "common/dist/allo/addresses/mrc";
 import { getConfig } from "common/src/config";
 import { DataLayer } from "data-layer";
+
+import { decodeAbiParameters, parseAbiParameters, formatEther } from "viem";
 
 // NEW CODE
 import { Keypair, PCommand, PubKey, PrivKey } from "maci-domainobjs";
@@ -44,6 +51,17 @@ interface CheckoutState {
     chain: ChainId,
     permitStatus: ProgressStatus
   ) => void;
+  maciKeyStatus: ChainMap<ProgressStatus>;
+  setMaciKeyStatusForChain: (
+    chain: ChainId,
+    maciKeyStatus: ProgressStatus
+  ) => void;
+  contributionStatus: ChainMap<ProgressStatus>;
+  setContributionStatusForChain: (
+    chain: ChainId,
+    contributionStatus: ProgressStatus
+  ) => void;
+
   voteStatus: ChainMap<ProgressStatus>;
   setVoteStatusForChain: (chain: ChainId, voteStatus: ProgressStatus) => void;
   chainSwitchStatus: ChainMap<ProgressStatus>;
@@ -62,6 +80,13 @@ interface CheckoutState {
     walletClient: WalletClient,
     pcd?: string
   ) => Promise<void>;
+
+  changeDonations: (
+    chainsToCheckout: { chainId: ChainId; permitDeadline: number }[],
+    walletClient: WalletClient,
+    previousMessages: PCommand[]
+  ) => Promise<void>;
+
   getCheckedOutProjects: () => CartProject[];
   checkedOutProjects: CartProject[];
   setCheckedOutProjects: (newArray: CartProject[]) => void;
@@ -80,6 +105,22 @@ export const useCheckoutStore = create<CheckoutState>()(
     setPermitStatusForChain: (chain: ChainId, permitStatus: ProgressStatus) =>
       set((oldState) => ({
         permitStatus: { ...oldState.permitStatus, [chain]: permitStatus },
+      })),
+    maciKeyStatus: defaultProgressStatusForAllChains,
+    setMaciKeyStatusForChain: (chain: ChainId, maciKeyStatus: ProgressStatus) =>
+      set((oldState) => ({
+        maciKeyStatus: { ...oldState.maciKeyStatus, [chain]: maciKeyStatus },
+      })),
+    contributionStatus: defaultProgressStatusForAllChains,
+    setContributionStatusForChain: (
+      chain: ChainId,
+      contributionStatus: ProgressStatus
+    ) =>
+      set((oldState) => ({
+        contributionStatus: {
+          ...oldState.contributionStatus,
+          [chain]: contributionStatus,
+        },
       })),
     voteStatus: defaultProgressStatusForAllChains,
     setVoteStatusForChain: (chain: ChainId, voteStatus: ProgressStatus) =>
@@ -161,9 +202,6 @@ export const useCheckoutStore = create<CheckoutState>()(
 
       const token = getVotingTokenForChain(chainId);
 
-      let sig;
-      let nonce;
-
       if (token.address !== zeroAddress) {
         try {
           get().setPermitStatusForChain(chainId, ProgressStatus.IN_PROGRESS);
@@ -174,44 +212,24 @@ export const useCheckoutStore = create<CheckoutState>()(
             abi: parseAbi([
               "function nonces(address) public view returns (uint256)",
               "function name() public view returns (string)",
+              "function approve(address, uint256) public",
             ]),
             walletClient,
             chainId,
           });
 
-          nonce = await erc20Contract.read.nonces([owner]);
-          const tokenName = await erc20Contract.read.name();
-          if (getPermitType(token) === "dai") {
-            sig = await signPermitDai({
-              walletClient: walletClient,
-              spenderAddress: MRC_CONTRACTS[chainId],
-              chainId,
-              deadline: BigInt(deadline),
-              contractAddress: token.address,
-              erc20Name: tokenName,
-              ownerAddress: owner,
-              nonce,
-              permitVersion: token.permitVersion ?? "1",
-            });
-          } else {
-            sig = await signPermit2612({
-              walletClient: walletClient,
-              value: totalDonationPerChain[chainId],
-              spenderAddress: MRC_CONTRACTS[chainId],
-              nonce,
-              chainId,
-              deadline: BigInt(deadline),
-              contractAddress: token.address,
-              erc20Name: tokenName,
-              ownerAddress: owner,
-              permitVersion: token.permitVersion ?? "1",
-            });
-          }
+          // TODO Make this dynamic
+          const approve = await walletClient.writeContract({
+            address: token.address as Hex,
+            abi: parseAbi(["function approve(address, uint256) public"]),
+            functionName: "approve",
+            args: [MRC_CONTRACTS[chainId], totalDonationPerChain[chainId]],
+          });
 
           get().setPermitStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
         } catch (e) {
           if (!(e instanceof UserRejectedRequestError)) {
-            console.error("permit error", e, {
+            console.error("approve error", e, {
               donations,
               chainId,
               tokenAddress: token.address,
@@ -220,14 +238,190 @@ export const useCheckoutStore = create<CheckoutState>()(
           get().setPermitStatusForChain(chainId, ProgressStatus.IS_ERROR);
           return;
         }
-
-        if (!sig) {
-          get().setPermitStatusForChain(chainId, ProgressStatus.IS_ERROR);
-          return;
-        }
       } else {
         get().setPermitStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
       }
+
+      try {
+        const groupedDonations = groupBy(
+          donations.map((d) => ({
+            ...d,
+            roundId: d.roundId,
+          })),
+          "roundId"
+        );
+
+        const firstRoundId = Object.keys(groupedDonations)[0];
+
+        get().setMaciKeyStatusForChain(chainId, ProgressStatus.IN_PROGRESS);
+
+        const groupedKeyPairs: Record<string, GenKeyPair> = {};
+        groupedKeyPairs[firstRoundId] = await generatePubKey(
+          walletClient,
+          groupedDonations[firstRoundId][0].roundId,
+          chainId.toString()
+        );
+
+        get().setMaciKeyStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
+
+        const groupedEncodedVotes: Record<string, Hex> = {};
+
+        const groupedAmounts: Record<string, bigint> = {};
+        groupedDonations[firstRoundId].forEach((donation) => {
+          groupedAmounts[firstRoundId] =
+            (groupedAmounts[firstRoundId] || 0n) +
+            parseUnits(donation.amount, token.decimal);
+        });
+
+        console.log("groupedDonations", groupedDonations);
+
+        const DonationVotesEachRound: Record<
+          string,
+          Record<string, bigint>
+        > = {};
+        const SINGLEVOTE = 10n ** 5n;
+
+        // Process each donation
+        groupedDonations[firstRoundId].forEach((donation) => {
+          const donationAmount = parseUnits(donation.amount, token.decimal);
+
+          // Calculate the vote weight
+          const voteWeight = (SINGLEVOTE * donationAmount) / 10n ** 18n;
+
+          // Ensure DonationVotesEachRound is correctly updated
+          if (!DonationVotesEachRound[donation.roundId]) {
+            DonationVotesEachRound[donation.roundId] = {};
+          }
+
+          DonationVotesEachRound[donation.roundId][donation.applicationIndex] =
+            voteWeight;
+        });
+
+        const messagesPerRound: Record<string, IPublishMessage[]> = {};
+        let nonceValue = 0;
+
+        groupedEncodedVotes[firstRoundId] = prepareAllocationData({
+          publicKey: groupedKeyPairs[firstRoundId].pubKey,
+          amount: groupedAmounts[firstRoundId],
+          proof: pcd,
+        });
+
+        const messages: IPublishMessage[] = [];
+
+        groupedDonations[firstRoundId].forEach((donation) => {
+          messages.push({
+            stateIndex: 1n,
+            voteOptionIndex: BigInt(donation.applicationIndex),
+            nonce: BigInt(nonceValue++),
+            newVoteWeight: bnSqrt(
+              DonationVotesEachRound[firstRoundId][
+                donation.applicationIndex
+              ] as bigint
+            ),
+          });
+        });
+
+        console.log(messages);
+
+        console.log("messages", messages);
+
+        messagesPerRound[firstRoundId] = messages;
+
+        get().setContributionStatusForChain(
+          chainId,
+          ProgressStatus.IN_PROGRESS
+        );
+
+        const PublishBatchArgs = await allocate({
+          messages,
+          walletClient,
+          roundId: firstRoundId,
+          chainId,
+          amount: groupedAmounts[firstRoundId],
+          bytes: groupedEncodedVotes[firstRoundId],
+          pubKey: groupedKeyPairs[firstRoundId].pubKey,
+          privateKey: groupedKeyPairs[firstRoundId].privKey,
+        });
+
+        get().setContributionStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
+
+        // Publish the batch of messages
+        await publishBatch(PublishBatchArgs);
+
+        donations.forEach((donation) => {
+          useCartStorage.getState().remove(donation);
+        });
+        set((oldState) => ({
+          voteStatus: {
+            ...oldState.voteStatus,
+            [chainId]: ProgressStatus.IS_SUCCESS,
+          },
+        }));
+        set({
+          checkedOutProjects: [...get().checkedOutProjects, ...donations],
+        });
+      } catch (error) {
+        let context: Record<string, unknown> = {
+          chainId,
+          donations,
+          token,
+        };
+
+        if (error instanceof Error) {
+          context = {
+            ...context,
+            error: error.message,
+            cause: error.cause,
+          };
+        }
+
+        if (!(error instanceof UserRejectedRequestError)) {
+          console.error("donation error", error, context);
+        }
+
+        get().setVoteStatusForChain(chainId, ProgressStatus.IS_ERROR);
+        throw error;
+      }
+    },
+
+    /** Checkout the given chains
+     * this has the side effect of adding the chains to the wallet if they are not yet present
+     * We get the data necessary to construct the votes from the cart store */
+    changeDonations: async (
+      chainsToCheckout: { chainId: ChainId; permitDeadline: number }[],
+      walletClient: WalletClient,
+      previousMessages: PCommand[]
+    ) => {
+      const firstChainToCheckout = chainsToCheckout[0];
+      const chainId = firstChainToCheckout.chainId;
+
+      const chainIdsToCheckOut = [chainId];
+      get().setChainsToCheckout(
+        uniq([...get().chainsToCheckout, ...chainIdsToCheckOut])
+      );
+
+      const projectsToCheckOut = useCartStorage
+        .getState()
+        .projects.filter((project) =>
+          chainIdsToCheckOut.includes(project.chainId)
+        );
+
+      const projectsByChain = groupBy(projectsToCheckOut, "chainId") as {
+        [chain: number]: CartProject[];
+      };
+
+      const getVotingTokenForChain =
+        useCartStorage.getState().getVotingTokenForChain;
+
+      const donations = projectsByChain[chainId];
+
+      set({
+        currentChainBeingCheckedOut: chainId,
+      });
+
+      await switchToChain(chainId, walletClient, get);
+
+      const token = getVotingTokenForChain(chainId);
 
       try {
         get().setVoteStatusForChain(chainId, ProgressStatus.IN_PROGRESS);
@@ -242,6 +436,8 @@ export const useCheckoutStore = create<CheckoutState>()(
 
         const firstRoundId = Object.keys(groupedDonations)[0];
 
+        get().setMaciKeyStatusForChain(chainId, ProgressStatus.IN_PROGRESS);
+
         const groupedKeyPairs: Record<string, GenKeyPair> = {};
         groupedKeyPairs[firstRoundId] = await generatePubKey(
           walletClient,
@@ -249,7 +445,7 @@ export const useCheckoutStore = create<CheckoutState>()(
           chainId.toString()
         );
 
-        const groupedEncodedVotes: Record<string, Hex> = {};
+        get().setMaciKeyStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
 
         const groupedAmounts: Record<string, bigint> = {};
         groupedDonations[firstRoundId].forEach((donation) => {
@@ -258,51 +454,106 @@ export const useCheckoutStore = create<CheckoutState>()(
             parseUnits(donation.amount, token.decimal);
         });
 
+        console.log("groupedDonations", groupedDonations);
+
         const DonationVotesEachRound: Record<
           string,
           Record<string, bigint>
         > = {};
         const SINGLEVOTE = 10n ** 5n;
 
+        // Process each donation
         groupedDonations[firstRoundId].forEach((donation) => {
-          DonationVotesEachRound[donation.roundId] = {
-            [donation.applicationIndex]:
-              (parseUnits(donation.amount, token.decimal) * SINGLEVOTE) /
-              groupedAmounts[firstRoundId],
-          };
+          const donationAmount = parseUnits(donation.amount, token.decimal);
+
+          // Calculate the vote weight
+          const voteWeight = (SINGLEVOTE * donationAmount) / 10n ** 18n;
+
+          // Ensure DonationVotesEachRound is correctly updated
+          if (!DonationVotesEachRound[donation.roundId]) {
+            DonationVotesEachRound[donation.roundId] = {};
+          }
+
+          DonationVotesEachRound[donation.roundId][donation.applicationIndex] =
+            voteWeight;
         });
 
         const messagesPerRound: Record<string, IPublishMessage[]> = {};
         let nonceValue = 0;
 
-        groupedEncodedVotes[firstRoundId] = prepareAllocationData({
-          publicKey: groupedKeyPairs[firstRoundId].pubKey,
-          amount: groupedAmounts[firstRoundId],
-          proof: pcd,
-        });
+        const messages: IPublishMessage[] = [];
 
-        const messages: IPublishMessage[] = groupedDonations[firstRoundId].map(
-          (donation) => ({
+        groupedDonations[firstRoundId].forEach((donation) => {
+          messages.push({
             stateIndex: 1n,
             voteOptionIndex: BigInt(donation.applicationIndex),
             nonce: BigInt(nonceValue++),
             newVoteWeight: bnSqrt(
-              DonationVotesEachRound[firstRoundId][donation.applicationIndex]
+              DonationVotesEachRound[firstRoundId][
+                donation.applicationIndex
+              ] as bigint
             ),
-          })
-        );
+          });
+        });
+
+        console.log(messages);
+
+        console.log("messages", messages);
 
         messagesPerRound[firstRoundId] = messages;
 
-        await allocate({
-          messages,
-          walletClient,
-          roundId: firstRoundId,
+        const publicClient = getPublicClient({
           chainId,
-          amount: groupedAmounts[firstRoundId],
-          bytes: groupedEncodedVotes[firstRoundId],
-          pubKey: groupedKeyPairs[firstRoundId].pubKey,
+        });
+
+        const abi = parseAbi([
+          "function getPool(uint256) view returns ((bytes32 profileId, address strategy, address token, (uint256,string) metadata, bytes32 managerRole, bytes32 adminRole))",
+          "function _pollContracts() view returns ((address poll, address messageProcessor,address tally,address subsidy))",
+          "function coordinatorPubKey() view returns (uint256 x, uint256 y)",
+          "function allocate(uint256, bytes) external payable",
+        ]);
+
+        const alloContractAddress =
+          "0x1133ea7af70876e64665ecd07c0a0476d09465a1";
+
+        const [Pool] = await Promise.all([
+          publicClient.readContract({
+            abi: abi,
+            address: alloContractAddress as Hex,
+            functionName: "getPool",
+            args: [BigInt(firstRoundId)],
+          }),
+        ]);
+
+        const pool = Pool as PoolInfo;
+        console.log("pool", pool.strategy);
+
+        const pollContracts = await publicClient.readContract({
+          abi: abi,
+          address: pool.strategy as Hex,
+          functionName: "_pollContracts",
+        });
+
+        const poll = pollContracts as MACIPollContracts;
+
+        const stateIndex = previousMessages[0].stateIndex;
+
+        const Messages = messages.map((message) => {
+          return {
+            stateIndex: stateIndex,
+            voteOptionIndex: message.voteOptionIndex,
+            nonce: message.nonce,
+            newVoteWeight: message.newVoteWeight,
+          };
+        });
+
+        await publishBatch({
+          messages: Messages,
+          Poll: poll.poll,
+          publicKey: groupedKeyPairs[firstRoundId].pubKey,
           privateKey: groupedKeyPairs[firstRoundId].privKey,
+          walletClient,
+          chainId,
         });
 
         donations.forEach((donation) => {
@@ -351,121 +602,6 @@ export const useCheckoutStore = create<CheckoutState>()(
     },
   }))
 );
-
-/** This function handles switching to a chain
- * if the chain is not present in the wallet, it will add it, and then switch */
-async function switchToChain(
-  chainId: ChainId,
-  walletClient: WalletClient,
-  get: () => CheckoutState
-) {
-  get().setChainSwitchStatusForChain(chainId, ProgressStatus.IN_PROGRESS);
-  const nextChainData = getEnabledChains().find(
-    (chain) => chain.id === chainId
-  );
-  if (!nextChainData) {
-    get().setChainSwitchStatusForChain(chainId, ProgressStatus.IS_ERROR);
-    throw "next chain not found";
-  }
-  try {
-    /* Try switching normally */
-    await walletClient.switchChain({
-      id: chainId,
-    });
-  } catch (e) {
-    if (e instanceof UserRejectedRequestError) {
-      console.log("Rejected!");
-      get().setChainSwitchStatusForChain(chainId, ProgressStatus.IS_ERROR);
-      return;
-    } else if (e instanceof SwitchChainError || e instanceof InternalRpcError) {
-      console.log("Chain not added yet, adding", { e });
-      /** Chain might not be added in wallet yet. Request to add it to the wallet */
-      try {
-        await walletClient.addChain({
-          chain: {
-            id: nextChainData.id,
-            name: nextChainData.name,
-            network: nextChainData.network,
-            nativeCurrency: nextChainData.nativeCurrency,
-            rpcUrls: nextChainData.rpcUrls,
-            blockExplorers: nextChainData.blockExplorers,
-          },
-        });
-      } catch (e) {
-        get().setChainSwitchStatusForChain(chainId, ProgressStatus.IS_ERROR);
-        return;
-      }
-    } else {
-      console.log("unhandled error when switching chains", { e });
-      get().setChainSwitchStatusForChain(chainId, ProgressStatus.IS_ERROR);
-      return;
-    }
-  }
-  get().setChainSwitchStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
-}
-
-// NEW CODE
-
-/**
- * Interface that represents user publish message
- */
-export interface IPublishMessage {
-  /**
-   * The index of the state leaf
-   */
-  stateIndex: bigint;
-
-  /**
-   * The index of the vote option
-   */
-  voteOptionIndex: bigint;
-
-  /**
-   * The nonce of the message
-   */
-  nonce: bigint;
-
-  /**
-   * The new vote weight
-   */
-  newVoteWeight: bigint;
-}
-
-/**
- * Interface for the arguments to the batch publish command
- */
-export interface IPublishBatchArgs {
-  /**
-   * User messages
-   */
-  messages: IPublishMessage[];
-
-  /**
-   * The address of the MACI contract
-   */
-  Poll: string;
-
-  /**
-   * The public key of the user
-   */
-  publicKey: PubKey;
-
-  /**
-   * The private key of the user
-   */
-
-  privateKey: PrivKey;
-
-  /**
-   * A signer object
-   */
-  walletClient: WalletClient;
-
-  /**
-   * The chain id
-   */
-  chainId: ChainId;
-}
 
 export const generatePubKey = async (
   walletClient: WalletClient,
@@ -527,14 +663,7 @@ const allocate = async ({
     }),
   ]);
 
-  const pool = Pool as {
-    profileId: string;
-    strategy: string;
-    token: string;
-    metadata: [bigint, string];
-    managerRole: string;
-    adminRole: string;
-  };
+  const pool = Pool as PoolInfo;
   console.log("pool", pool.strategy);
 
   const pollContracts = await publicClient.readContract({
@@ -543,40 +672,52 @@ const allocate = async ({
     functionName: "_pollContracts",
   });
 
-  const poll = pollContracts as {
-    poll: string;
-    messageProcessor: string;
-    tally: string;
-    subsidy: string;
-  };
+  const poll = pollContracts as MACIPollContracts;
   console.log("poll", roundId, poll.poll);
 
   console.log("bytes", bytes);
 
-  // const allocate = await walletClient.writeContract({
-  //   address: alloContractAddress as Hex,
-  //   abi: abi,
-  //   functionName: "allocate",
-  //   args: [BigInt(roundId), bytes],
-  //   value: amount,
-  // });
+  const allocate = await walletClient.writeContract({
+    address: alloContractAddress as Hex,
+    abi: abi,
+    functionName: "allocate",
+    args: [BigInt(roundId), bytes],
+    value: amount,
+  });
 
-  // console.log("Transaction Sent");
-  // const transaction = await publicClient.waitForTransactionReceipt({
-  //   hash: allocate,
-  // });
+  console.log("Transaction Sent");
+  const transaction = await publicClient.waitForTransactionReceipt({
+    hash: allocate,
+  });
+
+  const data = transaction.logs;
+
+  const [stateIndex, voiceCreditsBalance, timestampt] = decodeAbiParameters(
+    parseAbiParameters("uint256,uint256,uint256"),
+    data[0].data
+  );
+
+  console.log(stateIndex);
 
   console.log("Transaction Mined");
 
-  // Publish the batch of messages
-  await publishBatch({
-    messages,
+  const Messages = messages.map((message) => {
+    return {
+      stateIndex: stateIndex,
+      voteOptionIndex: message.voteOptionIndex,
+      nonce: message.nonce,
+      newVoteWeight: message.newVoteWeight,
+    };
+  });
+
+  return {
+    messages: Messages,
     Poll: poll.poll,
     publicKey: pubKey,
     privateKey: privateKey,
     walletClient,
     chainId,
-  });
+  };
 };
 
 export const publishBatch = async ({
@@ -597,8 +738,6 @@ export const publishBatch = async ({
 
   const abi = parseAbi([
     "function publishMessageBatch((uint256 msgType,uint256[10] data)[] _messages,(uint256 x,uint256 y)[] _pubKeys)",
-    "function publishMessageBatch((uint256,uint256[10])[] _messages,(uint256,uint256 )[])",
-
     "function maxValues() view returns (uint256 maxVoteOptions)",
     "function coordinatorPubKey() view returns ((uint256, uint256))",
   ]);
@@ -674,30 +813,10 @@ export const publishBatch = async ({
     }
   );
 
-  interface IPubKey {
-    x: bigint;
-    y: bigint;
-  }
-
-  interface IMessageContractParams {
-    msgType: bigint;
-    data: readonly [
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-    ];
-  }
   const preparedMessages = payload.map(
     (obj) => obj.message
-  ) as unknown as IMessageContractParams[];
-  const preparedKeys = payload.map((obj) => obj.key) as unknown as IPubKey[];
+  ).reverse() as unknown as IMessageContractParams[];
+  const preparedKeys = payload.map((obj) => obj.key).reverse() as unknown as IPubKey[];
 
   console.log("preparedMessages", preparedMessages);
   console.log("preparedKeys", preparedKeys);
@@ -719,3 +838,55 @@ export const publishBatch = async ({
     hash: hash,
   });
 };
+
+/** This function handles switching to a chain
+ * if the chain is not present in the wallet, it will add it, and then switch */
+async function switchToChain(
+  chainId: ChainId,
+  walletClient: WalletClient,
+  get: () => CheckoutState
+) {
+  get().setChainSwitchStatusForChain(chainId, ProgressStatus.IN_PROGRESS);
+  const nextChainData = getEnabledChains().find(
+    (chain) => chain.id === chainId
+  );
+  if (!nextChainData) {
+    get().setChainSwitchStatusForChain(chainId, ProgressStatus.IS_ERROR);
+    throw "next chain not found";
+  }
+  try {
+    /* Try switching normally */
+    await walletClient.switchChain({
+      id: chainId,
+    });
+  } catch (e) {
+    if (e instanceof UserRejectedRequestError) {
+      console.log("Rejected!");
+      get().setChainSwitchStatusForChain(chainId, ProgressStatus.IS_ERROR);
+      return;
+    } else if (e instanceof SwitchChainError || e instanceof InternalRpcError) {
+      console.log("Chain not added yet, adding", { e });
+      /** Chain might not be added in wallet yet. Request to add it to the wallet */
+      try {
+        await walletClient.addChain({
+          chain: {
+            id: nextChainData.id,
+            name: nextChainData.name,
+            network: nextChainData.network,
+            nativeCurrency: nextChainData.nativeCurrency,
+            rpcUrls: nextChainData.rpcUrls,
+            blockExplorers: nextChainData.blockExplorers,
+          },
+        });
+      } catch (e) {
+        get().setChainSwitchStatusForChain(chainId, ProgressStatus.IS_ERROR);
+        return;
+      }
+    } else {
+      console.log("unhandled error when switching chains", { e });
+      get().setChainSwitchStatusForChain(chainId, ProgressStatus.IS_ERROR);
+      return;
+    }
+  }
+  get().setChainSwitchStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
+}

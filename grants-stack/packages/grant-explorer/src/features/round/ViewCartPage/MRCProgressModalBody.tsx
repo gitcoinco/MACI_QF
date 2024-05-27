@@ -27,7 +27,13 @@ export function MRCProgressModalBody({
   const chainId = (checkoutStore.currentChainBeingCheckedOut ??
     chainIdsBeingCheckedOut[0]) as ChainId;
 
-  const { voteStatus, permitStatus, chainSwitchStatus } = useCheckoutStore();
+  const {
+    voteStatus,
+    permitStatus,
+    chainSwitchStatus,
+    maciKeyStatus,
+    contributionStatus,
+  } = useCheckoutStore();
 
   const progressSteps = useMemo(() => {
     const stepsWithChainSwitch = [
@@ -37,16 +43,24 @@ export function MRCProgressModalBody({
         status: chainSwitchStatus[chainId],
       },
       {
-        name: "Permit",
-        description: "Approve checkout contract",
+        name: "Generate maci key",
+        description: "Sign to generate your voting PrivKey",
         status:
           chainSwitchStatus[chainId] !== ProgressStatus.IS_SUCCESS
             ? ProgressStatus.NOT_STARTED
-            : permitStatus[chainId],
+            : maciKeyStatus[chainId],
+      },
+      {
+        name: "Contribute",
+        description: "Contribute to the pool",
+        status:
+          chainSwitchStatus[chainId] !== ProgressStatus.IS_SUCCESS
+            ? ProgressStatus.NOT_STARTED
+            : contributionStatus[chainId],
       },
       {
         name: "Submit",
-        description: "Finalize your contribution",
+        description: "Finalize your private funding",
         status:
           permitStatus[chainId] !== ProgressStatus.IS_SUCCESS
             ? ProgressStatus.NOT_STARTED

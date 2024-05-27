@@ -706,7 +706,7 @@ export async function handleEvent(
 
       const bitmap = new StatusesBitmap(256n, 4n);
       // @ts-ignore
-      bitmap.setRow(event.params.rowIndex, event.params.fullRow);
+      bitmap.setRow(BigInt(event.params.rowIndex), BigInt(event.params.fullRow));
       // @ts-ignore
       const startIndex = event.params.rowIndex * bitmap.itemsPerRow;
 
@@ -1170,12 +1170,6 @@ export async function handleEvent(
           const token = parseAddress(event.params.token);
           const origin = parseAddress(event.params.origin);
 
-          const application = await db.getApplicationByAnchorAddress(
-            chainId,
-            round.id,
-            recipientId
-          );
-
           const roundMatchTokenAddress = round.matchTokenAddress;
 
           const donationId = ethers.utils.solidityKeccak256(
@@ -1336,7 +1330,7 @@ export async function handleEvent(
       const id = ethers.utils.solidityKeccak256(["bytes"], [bytes]);
 
       const { timestamp } = await getBlock();
-      let uuid = randomUUID();
+      const uuid = randomUUID();
 
       const uuidTypes = "string, string,string"
       const uuidBytes = encodeAbiParameters(parseAbiParameters(uuidTypes), [

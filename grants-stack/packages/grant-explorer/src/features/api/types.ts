@@ -2,6 +2,7 @@ import { ChainId } from "common";
 import { WalletClient } from "wagmi";
 
 import type { Project } from "data-layer";
+import { PrivKey, PubKey } from "maci-domainobjs";
 
 export type {
   ApplicationStatus,
@@ -63,4 +64,104 @@ export enum ProgressStatus {
   IN_PROGRESS = "IN_PROGRESS",
   NOT_STARTED = "NOT_STARTED",
   IS_ERROR = "IS_ERROR",
+}
+
+// NEW CODE
+
+/**
+ * Interface that represents user publish message
+ */
+export interface IPublishMessage {
+  /**
+   * The index of the state leaf
+   */
+  stateIndex: bigint;
+
+  /**
+   * The index of the vote option
+   */
+  voteOptionIndex: bigint;
+
+  /**
+   * The nonce of the message
+   */
+  nonce: bigint;
+
+  /**
+   * The new vote weight
+   */
+  newVoteWeight: bigint;
+}
+
+/**
+ * Interface for the arguments to the batch publish command
+ */
+export interface IPublishBatchArgs {
+  /**
+   * User messages
+   */
+  messages: IPublishMessage[];
+
+  /**
+   * The address of the MACI contract
+   */
+  Poll: string;
+
+  /**
+   * The public key of the user
+   */
+  publicKey: PubKey;
+
+  /**
+   * The private key of the user
+   */
+
+  privateKey: PrivKey;
+
+  /**
+   * A signer object
+   */
+  walletClient: WalletClient;
+
+  /**
+   * The chain id
+   */
+  chainId: ChainId;
+}
+
+export interface PoolInfo {
+  profileId: string;
+  strategy: string;
+  token: string;
+  metadata: [bigint, string];
+  managerRole: string;
+  adminRole: string;
+}
+
+export interface MACIPollContracts {
+  poll: string;
+  messageProcessor: string;
+  tally: string;
+  subsidy: string;
+}
+
+export interface IPubKey {
+  x: bigint;
+  y: bigint;
+}
+
+export interface IMessageContractParams {
+  msgType: bigint;
+  data: readonly [
+    bigint,
+    bigint,
+    bigint,
+    bigint,
+    bigint,
+    bigint,
+    bigint,
+    bigint,
+    bigint,
+    bigint,
+  ];
 }

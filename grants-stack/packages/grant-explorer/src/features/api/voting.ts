@@ -239,12 +239,6 @@ export function bnSqrt(val: bigint) {
 }
 
 // NEW CODE
-
-
-// uint[2] memory _pA,
-// uint[2][2] memory _pB,
-// uint[2] memory _pC,
-// uint[38] memory _pubSignals
 export interface ProofArgs {
   _pA: string[];
   _pB: string[][];
@@ -359,8 +353,6 @@ import {
   Message,
 } from "maci-domainobjs";
 import { generateWitness } from "./pcd";
-import { String } from "lodash";
-import { genRandomSalt } from "maci-crypto";
 
 /**
  * Convert to MACI Message object
@@ -405,39 +397,6 @@ export async function getContributorMessages({
     contributorKey.privKey,
     coordinatorPubKey
   );
-
-  console.log("sharedKey", sharedKey);
-
-  const Z = {
-    stateIndex: BigInt(0),
-    voteOptionIndex: BigInt(0),
-    newVoteWeight: BigInt(0),
-    nonce: BigInt(0),
-  };
-
-  // create the command object
-  const command = new PCommand(
-    BigInt(0),
-    contributorKey.pubKey,
-    0n,
-    10n,
-    10n,
-    // we only support one poll for now
-    BigInt(0),
-    genRandomSalt()
-  );
-
-  // sign the command with the user private key
-  const signature = command.sign(contributorKey.privKey);
-
-  const message = command.encrypt(signature, sharedKey);
-
-  // decrypt the message
-
-  const macimsg = getMaciMessage(message.msgType, message.data);
-  const { command: decryptedCommand, signature: decryptedSignature } =
-    PCommand.decrypt(macimsg, sharedKey, true);
-  console.log("decryptedCommand", decryptedCommand);
 
   return maciMessages.messages.map((message) => {
     const macimsg = getMaciMessage(message.msgType, message.data);

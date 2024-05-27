@@ -14,10 +14,13 @@ import { InformationCircleIcon } from "@heroicons/react/24/solid";
 import { BoltIcon } from "@heroicons/react/24/outline";
 import { getClassForPassportColor } from "../../api/passport";
 import useSWR from "swr";
-import { groupBy, uniqBy } from "lodash-es";
+import { get, groupBy, uniqBy } from "lodash-es";
 import MRCProgressModal from "../../common/MRCProgressModal";
 import { MRCProgressModalBody } from "./MRCProgressModalBody";
-import { useCheckoutStore } from "../../../checkoutStore";
+import {
+  generatePubKeyWithSeed,
+  useCheckoutStore,
+} from "../../../checkoutStore";
 import { Address, formatUnits, parseUnits, zeroAddress } from "viem";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import {
@@ -27,16 +30,22 @@ import {
 import { Skeleton } from "@chakra-ui/react";
 import { MatchingEstimateTooltip } from "../../common/MatchingEstimateTooltip";
 import { parseChainId } from "common/src/chains";
-import { useDataLayer } from "data-layer";
-import { fetchBalance } from "@wagmi/core";
+import { Message, useDataLayer } from "data-layer";
+import { fetchBalance, signMessage } from "@wagmi/core";
 import { isPresent } from "ts-is-present";
 import { useAllo } from "../../api/AlloWrapper";
 import { getFormattedRoundId } from "../../common/utils/utils";
 import { datadogLogs } from "@datadog/browser-logs";
 import { useZuAuth } from "zupass-auth";
 import { Switch } from "@headlessui/react";
+import { PCommand, PubKey } from "maci-domainobjs";
+import { getContributorMessages } from "../../api/voting";
+import { useRoundMaciMessages } from "../../projects/hooks/useRoundMaciMessages";
 
-export function SummaryContainer() {
+export function SummaryContainer(props?: {
+  alreadyContributed: boolean;
+  decryptedMessages: PCommand[] | null;
+}) {
   const { data: walletClient } = useWalletClient();
   const navigate = useNavigate();
   const { address, isConnected } = useAccount();
@@ -46,15 +55,22 @@ export function SummaryContainer() {
     chainToVotingToken,
     remove: removeProjectFromCart,
   } = useCartStorage();
-  const { voteStatus, chainsToCheckout, checkoutMaci } =
+  const { voteStatus, chainsToCheckout, checkoutMaci, changeDonations } =
     useCheckoutStore();
   const dataLayer = useDataLayer();
 
   const { openConnectModal } = useConnectModal();
+  const { address: walletAddress } = useAccount();
   const allo = useAllo();
   const projectsByChain = useMemo(
     () => groupBy(projects, "chainId"),
     [projects]
+  );
+  const chainID = 11155111;
+  const roundID = "187";
+  const { data: maciMessages } = useRoundMaciMessages(
+    { chainId: chainID, roundId: roundID, address: walletAddress as string },
+    dataLayer
   );
 
   /*  This needs to be a useMemo to prevent an infinite loop in the below useEffect */
@@ -310,9 +326,15 @@ export function SummaryContainer() {
       <>
         <ChainConfirmationModal
           title={"Checkout"}
-          confirmButtonText={(pcd && enabled) ? "Checkout" : !enabled ? "Checkout" : "Generate Proof"}
+          confirmButtonText={
+            pcd && enabled
+              ? "Checkout"
+              : !enabled
+              ? "Checkout"
+              : "Generate Proof"
+          }
           confirmButtonAction={
-          (pcd && enabled) || !enabled
+            (pcd && enabled) || !enabled
               ? handleSubmitDonation
               : async () => {
                   await getProof();
@@ -336,7 +358,8 @@ export function SummaryContainer() {
                     as="span"
                     className="text-sm text-gray-500"
                   >
-                    You will gain access to the Allowlist and be able to donate more
+                    You will gain access to the Allowlist and be able to donate
+                    more
                   </Switch.Description>
                 </span>
                 <Switch
@@ -413,7 +436,32 @@ export function SummaryContainer() {
       </>
     );
   }
-  
+
+  const getContributed = async () => {
+    const signature = await signMessage({
+      message: `Sign this message to get your public key for MACI voting on Allo for the round with address ${maciMessages?.maciInfo.roundId} on chain ${chainID}`,
+    });
+    const pk = await generatePubKeyWithSeed(signature);
+
+    const messages = maciMessages?.encrypted[0].messages as Message[];
+
+    const decryptedMessages = await getContributorMessages({
+      // Poll contract address
+      contributorKey: pk,
+      coordinatorPubKey: maciMessages?.maciInfo.coordinatorPubKey as PubKey,
+      maciMessages: {
+        messages: messages.map((m) => {
+          return {
+            msgType: BigInt(m.message.msgType),
+            data: m.message.data.map((d) => BigInt(d)),
+          };
+        }),
+      },
+    });
+
+    return decryptedMessages;
+  };
+
   async function handleSubmitDonation() {
     try {
       if (!walletClient || !allo) {
@@ -424,15 +472,25 @@ export function SummaryContainer() {
         setOpenMRCProgressModal(true);
         setOpenChainConfirmationModal(false);
       }, modalDelayMs);
-
-      await checkoutMaci(
-        chainIdsBeingCheckedOut.map((chainId) => ({
-          chainId,
-          permitDeadline: currentPermitDeadline,
-        })),
-        walletClient,
-        pcd
-      );
+      if (props?.alreadyContributed) {
+        await changeDonations(
+          chainIdsBeingCheckedOut.map((chainId) => ({
+            chainId,
+            permitDeadline: currentPermitDeadline,
+          })),
+          walletClient,
+          props.decryptedMessages ? props.decryptedMessages : await getContributed(),
+        );
+      } else {
+        await checkoutMaci(
+          chainIdsBeingCheckedOut.map((chainId) => ({
+            chainId,
+            permitDeadline: currentPermitDeadline,
+          })),
+          walletClient,
+          pcd
+        );
+      }
     } catch (error) {
       console.error(error);
     }
@@ -614,7 +672,7 @@ export function SummaryContainer() {
         {isConnected
           ? notEnoughFunds
             ? "Not enough funds to donate"
-            : "Submit your donation!"
+            : props?.alreadyContributed? "change donations" : "Submit your donation!"
           : "Connect wallet to continue"}
       </Button>
       <PayoutModals />

@@ -61,7 +61,7 @@ import Breadcrumb, { BreadcrumbItem } from "../common/Breadcrumb";
 const builderURL = process.env.REACT_APP_BUILDER_URL;
 import CartNotification from "../common/CartNotification";
 import { useCartStorage } from "../../store";
-import { useAccount, usePublicClient, useToken, useWalletClient } from "wagmi";
+import { useAccount, useToken, useWalletClient } from "wagmi";
 import {
   encodeAbiParameters,
   getAddress,
@@ -242,10 +242,6 @@ function AfterRoundStart(props: {
 
   // NEW CODE
   const [alreadyContributed, setAlreadyContributed] = useState(false);
-
-  async function fetch() {
-    return await getContributed();
-  }
 
   useEffect(() => {
     if (showCartNotification) {
@@ -437,51 +433,6 @@ function AfterRoundStart(props: {
 
   const dataLayer = useDataLayer();
 
-  // NEW CODE
-  const getContributed = async () => {
-    const maciContracts = await getMaciAddress();
-    const maciAddress = maciContracts.maci as `0x${string}`;
-    const pollContract = maciContracts.pollContracts[0] as `0x${string}`;
-    const signature = await signMessage({
-      message: `Sign this message to get your public key for MACI voting on Allo for the round with address ${maciContracts.roundId} on chain ${props.chainId}`,
-    });
-    const pk = await generatePubKeyWithSeed(signature);
-
-    console.log("maciAddress", maciAddress);
-
-    const types = "uint256,address,address";
-    const bytes = encodeAbiParameters(parseAbiParameters(types), [
-      BigInt(props.round.chainId ?? 0n),
-      maciAddress,
-      walletAddress as `0x${string}`,
-    ]);
-
-    const id = ethers.utils.solidityKeccak256(["bytes"], [bytes]);
-    const resp = await dataLayer.getContributionsByAddressAndId({
-      contributorAddress: walletAddress?.toLowerCase() as `0x${string}`,
-      contributionId: id.toLowerCase() as `0x${string}`,
-    });
-
-    console.log("resp", resp);
-    const decryptedMessages = await getContributorMessages({
-      // Poll contract address
-      contributorKey: pk,
-      coordinatorPubKey: maciContracts.coordinatorPubKey,
-      maciMessages: {
-        messages: resp[0].messages.map((m) => {
-          return {
-            msgType: BigInt(m.message.msgType),
-            data: m.message.data.map((d) => BigInt(d)),
-          };
-        }),
-      },
-    });
-    console.log("decryptedMessages", decryptedMessages);
-
-    console.log("resp", resp);
-    return 1 > 0;
-  };
-
   const projectDetailsTabs = useMemo(() => {
     const projectsTab = {
       name: isDirectRound(round)
@@ -489,28 +440,18 @@ function AfterRoundStart(props: {
         : `All Projects (${projects?.length ?? 0})`,
       content: (
         <>
-          <div>
-            <Button
-              className="w-full"
-              onClick={async () => {
-                await fetch();
-              }}
-            >
-              View More
-            </Button>
-            <ProjectList
-              projects={projects}
-              roundRoutePath={`/round/${chainId}/${roundId}`}
-              isBeforeRoundEndDate={!disableAddToCartButton}
-              roundId={roundId}
-              isProjectsLoading={isProjectsLoading}
-              round={round}
-              chainId={chainId}
-              setCurrentProjectAddedToCart={setCurrentProjectAddedToCart}
-              setShowCartNotification={setShowCartNotification}
-              alreadyContributed={alreadyContributed}
-            />
-          </div>
+          <ProjectList
+            projects={projects}
+            roundRoutePath={`/round/${chainId}/${roundId}`}
+            isBeforeRoundEndDate={!disableAddToCartButton}
+            roundId={roundId}
+            isProjectsLoading={isProjectsLoading}
+            round={round}
+            chainId={chainId}
+            setCurrentProjectAddedToCart={setCurrentProjectAddedToCart}
+            setShowCartNotification={setShowCartNotification}
+            alreadyContributed={alreadyContributed}
+          />
         </>
       ),
     };
@@ -769,6 +710,8 @@ const ProjectList = (props: {
     },
     dataLayer
   );
+
+  console.log("applications", applications);
 
   const applicationsMapByGrantApplicationId:
     | Map<string, Application>
