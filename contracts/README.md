@@ -113,7 +113,7 @@ sequenceDiagram
   Allo-->>Bob: recipient1
 
   %% Review Phase by Pool Manager
-  PoolManager-->>MACIQFStrategy: reviewRecipients()
+  PoolManager->>MACIQFStrategy: reviewRecipients()
 
   %% Alice Allocates to Pool
   Alice->>Allo: Allocate to Pool (allocate())
