@@ -1,6 +1,6 @@
 import "@nomicfoundation/hardhat-toolbox";
 import "hardhat-artifactor";
-import "@openzeppelin/hardhat-upgrades";
+import '@openzeppelin/hardhat-upgrades';
 
 import type { HardhatUserConfig } from "hardhat/config";
 
@@ -85,7 +85,7 @@ const config: HardhatUserConfig = {
     tests: "./test",
     artifacts: "./artifacts",
   },
-  defaultNetwork: "localhost",
+  defaultNetwork: "sepolia",
   networks: {
     arbsepolia: {
       chainId: 421614,
@@ -95,7 +95,7 @@ const config: HardhatUserConfig = {
     sepolia: {
       chainId: 11155111,
       url: `https://eth-sepolia.g.alchemy.com/v2/w07A2I5WCXg65VfLx_lHcVBkh2LN7E7z`,
-      accounts: [process.env.SEPOLIA_KEY! ?? process.env.PRIVATE_KEY!],
+      accounts: [process.env.SEPOLIA_KEY!],
     },
     localhost: {
       url: "http://127.0.0.1:8545",

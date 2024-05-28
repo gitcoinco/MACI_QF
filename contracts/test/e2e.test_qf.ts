@@ -28,7 +28,7 @@ import { JSONFile } from "./utils/JSONFile";
 
 import { getIpfsHash } from "./utils/ipfs";
 
-import { genProofs, proveOnChain, GenProofsArgs } from "maci-cli";
+import { genProofs, proveOnChain, GenProofsArgs, ProveOnChainArgs } from "maci-cli";
 
 import type { EthereumProvider } from "hardhat/types";
 
@@ -46,8 +46,22 @@ import { getTalyFilePath } from "./utils/misc";
 import path from "path";
 
 // MACI zkFiles
-const circuitDirectory = process.env.CIRCUIT_DIRECTORY || "./zkeys/zkeys";
+let circuitDirectory = process.env.CIRCUIT_DIRECTORY || "./zkeys/zkeys";
+
+// Define the path
+const fs = require("fs").promises;
+// Use fs.promises.access to check if the path exists
+async function checkDirectoryExists(directory) {
+  try {
+    await fs.access(directory);
+  } catch (err) {
+    circuitDirectory = "../../zkeys/zkeys";
+  }
+}
+
+checkDirectoryExists(circuitDirectory);
 const proofOutputDirectory = process.env.PROOF_OUTPUT_DIR || "./proof_output";
+
 const tallyBatchSize = Number(process.env.TALLY_BATCH_SIZE || 8);
 
 const voteOptionTreeDepth = 3;
@@ -226,57 +240,17 @@ describe("e2e", function test() {
     ).registerRecipient(1n, data);
     await RecipientRegistrationTx2.wait();
 
-    console.log(
-      "Recipient Index",
-      await QFMACIStrategy.recipientToStatusIndexes(recipientAddress1)
-    );
-    console.log(
-      "Recipient Index",
-      await QFMACIStrategy.recipientToStatusIndexes(recipientAddress2)
-    );
 
     console.log(
       "recipient statys",
       await QFMACIStrategy._isAcceptedRecipient(recipientAddress1)
     );
 
-    // Review Acccept recipient
-    let status = 2; // Accepted
 
-    const totalApplications =
-      await QFMACIStrategy.connect(Coordinator).recipientsCounter();
-
-    const rows = buildUpdatedRowsOfApplicationStatuses({
-      applicationsToUpdate: [
-        {
-          index: 0,
-          status: "APPROVED" as any,
-        },
-        {
-          index: 1,
-          status: "APPROVED" as any,
-        },
-      ],
-      currentApplications: [
-        {
-          index: 0,
-          status: "IN_REVIEW" as any,
-        },
-        {
-          index: 1,
-          status: "IN_REVIEW" as any,
-        },
-      ],
-      statusToNumber: applicationStatusToNumber,
-      bitsPerStatus: 4,
-    });
-
-    console.log("Rows", rows);
-    console.log("Total Applications", totalApplications);
 
     const reviewRecipientsTx = await QFMACIStrategy.connect(
       Coordinator
-    ).reviewRecipients(rows, totalApplications);
+    ).reviewRecipients([recipientAddress1, recipientAddress2], [2, 2]);
 
     await reviewRecipientsTx.wait();
 
@@ -289,23 +263,19 @@ describe("e2e", function test() {
       "recipient statys",
       await QFMACIStrategy._isAcceptedRecipient(recipientAddress2)
     );
-    console.log(
-      "recipient statys",
-      await QFMACIStrategy.statusesBitMap(0)
-    );
     
   });
 
   it("Should allow the Contributors to vote", async () => {
     // create 1 vote message for the recipient1
     const votingOption1 =
-      await QFMACIStrategy.connect(Coordinator).recipientToStatusIndexes(
+      await QFMACIStrategy.connect(Coordinator).recipientToVoteIndex(
         recipientAddress1
       );
 
     // create 1 vote message for the recipient1
     const votingOption2 =
-      await QFMACIStrategy.connect(Coordinator).recipientToStatusIndexes(
+      await QFMACIStrategy.connect(Coordinator).recipientToVoteIndex(
         recipientAddress2
       );
 
@@ -331,8 +301,8 @@ describe("e2e", function test() {
       ],
       pollId: 0n,
       Poll: pollContract,
-      publicKey: keypair.pubKey.serialize(),
-      privateKey: keypair.privKey.serialize(),
+      publicKey: keypair.pubKey,
+      privateKey: keypair.privKey,
       signer: allocator,
     });
 
@@ -355,8 +325,8 @@ describe("e2e", function test() {
       ],
       pollId: 0n,
       Poll: pollContract,
-      publicKey: keypair2.pubKey.serialize(),
-      privateKey: keypair2.privKey.serialize(),
+      publicKey: keypair2.pubKey,
+      privateKey: keypair2.privKey,
       signer: recipient1,
     });
 
@@ -425,7 +395,7 @@ describe("e2e", function test() {
       tallyAddress,
       signer: Coordinator,
       quiet: true,
-    });
+    } as ProveOnChainArgs);
 
     console.log("finished proveOnChain");
   });
@@ -518,7 +488,7 @@ describe("e2e", function test() {
 
     const recipientTreeDepth = voteOptionTreeDepth;
 
-    const recipientIndex1 = await QFMACIStrategy.recipientToStatusIndexes(
+    const recipientIndex1 = await QFMACIStrategy.recipientToVoteIndex(
       await recipient1.getAddress()
     );
 
@@ -532,7 +502,7 @@ describe("e2e", function test() {
 
     const distributeData2 = getRecipientClaimData(
       Number(
-        await QFMACIStrategy.recipientToStatusIndexes(
+        await QFMACIStrategy.recipientToVoteIndex(
           await recipient2.getAddress()
         )
       ),

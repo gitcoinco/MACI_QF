@@ -194,21 +194,21 @@ export const deployTestContracts = async () => {
 console.log(deployParams.processVk.asContractParam() as IVerifyingKeyStruct);
 console.log(deployParams.tallyVk.asContractParam() as IVerifyingKeyStruct);
 
-  await vkRegistryContract.setVerifyingKeys(
-    deployParams.stateTreeDepth,
-    deployParams.treeDepths.intStateTreeDepth,
-    deployParams.treeDepths.messageTreeDepth,
-    deployParams.treeDepths.voteOptionTreeDepth,
-    deployParams.getMessageBatchSize(),
-    deployParams.processVk.asContractParam() as IVerifyingKeyStruct,
-    deployParams.tallyVk.asContractParam() as IVerifyingKeyStruct,
-  );
+  // await vkRegistryContract.setVerifyingKeys(
+  //   deployParams.stateTreeDepth,
+  //   deployParams.treeDepths.intStateTreeDepth,
+  //   deployParams.treeDepths.messageTreeDepth,
+  //   deployParams.treeDepths.voteOptionTreeDepth,
+  //   deployParams.getMessageBatchSize(),
+  //   deployParams.processVk.asContractParam() as IVerifyingKeyStruct,
+  //   deployParams.tallyVk.asContractParam() as IVerifyingKeyStruct,
+  // );
 
-  // const QFMACIStrategyFactory = await ethers.getContractFactory("QFMACI");
+  const QFMACIStrategyFactory = await ethers.getContractFactory("QFMACI");
 
-  // const QFMACIStrategy = await QFMACIStrategyFactory.deploy(Allo, "QFMACI");
+  const QFMACIStrategy = await QFMACIStrategyFactory.deploy(Allo, "QFMACI__V1");
 
-  const QFMACIStrategyAddress = "0x59f93D2bF077d1Ca9d6d8667346Ae4665614F7D0";
+  const QFMACIStrategyAddress = await QFMACIStrategy.getAddress();
 
   console.log("QFMACIStrategy deployed at : ", QFMACIStrategyAddress);
 

@@ -85,12 +85,12 @@ export interface IPublishBatchArgs {
   /**
    * The public key of the user
    */
-  publicKey: string;
+  publicKey: PubKey;
 
   /**
    * The private key of the user
    */
-  privateKey: string;
+  privateKey: PrivKey;
 
   /**
    * A signer object
@@ -249,20 +249,15 @@ export const publishBatch = async ({
   privateKey,
   signer,
 }: IPublishBatchArgs) => {
-  if (!PubKey.isValidSerializedPubKey(publicKey)) {
-    throw new Error("invalid MACI public key");
-  }
-
-  if (!PrivKey.isValidSerializedPrivKey(privateKey)) {
-    throw new Error("invalid MACI private key");
-  }
+  
 
   if (pollId < 0n) {
     throw new Error(`invalid poll id ${pollId}`);
   }
 
-  const userMaciPubKey = PubKey.deserialize(publicKey);
-  const userMaciPrivKey = PrivKey.deserialize(privateKey);
+  const userMaciPubKey = publicKey;
+  console.log("userMaciPubKey", userMaciPubKey);
+  const userMaciPrivKey = privateKey;
   const pollContract = Poll.connect(signer);
 
   const [maxValues, coordinatorPubKeyResult] = await Promise.all([
@@ -390,130 +385,6 @@ export const prepareAllocationData = async ({
   return data;
 };
 
-export const prepareAllocationData2 = async ({
-  messages,
-  pollId,
-  Poll,
-  publicKey,
-  privateKey,
-  signer,
-  amount,
-}: IAllocateBatchArgs) => {
-  if (!PubKey.isValidSerializedPubKey(publicKey)) {
-    throw new Error("invalid MACI public key");
-  }
-
-  if (!PrivKey.isValidSerializedPrivKey(privateKey)) {
-    throw new Error("invalid MACI private key");
-  }
-
-  if (pollId < 0n) {
-    throw new Error(`invalid poll id ${pollId}`);
-  }
-
-  const userMaciPubKey = PubKey.deserialize(publicKey);
-  const userMaciPrivKey = PrivKey.deserialize(privateKey);
-  const pollContract = Poll.connect(signer);
-
-  const [maxValues, coordinatorPubKeyResult] = await Promise.all([
-    pollContract.maxValues(),
-    pollContract.coordinatorPubKey(),
-  ]);
-  const maxVoteOptions = Number(maxValues.maxVoteOptions);
-
-  // validate the vote options index against the max leaf index on-chain
-  messages.forEach(({ stateIndex, voteOptionIndex, salt, nonce }) => {
-    if (voteOptionIndex < 0 || maxVoteOptions < voteOptionIndex) {
-      throw new Error("invalid vote option index");
-    }
-
-    // check < 1 cause index zero is a blank state leaf
-    if (stateIndex < 1) {
-      throw new Error("invalid state index");
-    }
-
-    if (nonce < 0) {
-      throw new Error("invalid nonce");
-    }
-  });
-
-  const coordinatorPubKey = new PubKey([
-    BigInt(coordinatorPubKeyResult.x.toString()),
-    BigInt(coordinatorPubKeyResult.y.toString()),
-  ]);
-
-  const encryptionKeypair = new Keypair();
-  const sharedKey = Keypair.genEcdhSharedKey(
-    encryptionKeypair.privKey,
-    coordinatorPubKey
-  );
-
-  const payload: any[] = messages.map(
-    ({ salt, stateIndex, voteOptionIndex, newVoteWeight, nonce }) => {
-      const userSalt = salt ? BigInt(salt) : genRandomSalt();
-
-      // create the command object
-      const command = new PCommand(
-        stateIndex,
-        userMaciPubKey,
-        voteOptionIndex,
-        newVoteWeight,
-        nonce,
-        BigInt(pollId),
-        userSalt
-      );
-
-      // sign the command with the user private key
-      const signature = command.sign(userMaciPrivKey);
-
-      const message = command.encrypt(signature, sharedKey);
-
-      // Iterate through each value of message.asContractParam().data and convert it to a BigInt
-
-      const data = message.asContractParam().data.map((x) => BigInt(x));
-
-      return [
-        [BigInt(message.asContractParam().msgType), data],
-        [
-          encryptionKeypair.pubKey.asContractParam().x,
-          encryptionKeypair.pubKey.asContractParam().y,
-        ],
-      ];
-    }
-  );
-
-  const preparedMessages = payload.map(([message]) => message);
-  const preparedKeys = payload.map(([, key]) => key);
-
-  // Copy and reverse the arrays for encoding
-  const reversedMessages = [...preparedMessages].reverse();
-  const reversedKeys = [...preparedKeys].reverse();
-  let types = [
-    // Contributor PubKey
-    "(uint256,uint256)",
-    // Contribution amount
-    "uint256",
-    // Encrypted messages
-    "(uint256,uint256[])[]",
-    // Shared Encrypted PubKey with Coordinator
-    "(uint256,uint256)[]",
-  ];
-
-  let data;
-  try {
-    data = AbiCoder.defaultAbiCoder().encode(types, [
-      [userMaciPubKey.asContractParam().x, userMaciPubKey.asContractParam().y],
-      amount,
-      reversedMessages,
-      reversedKeys,
-    ]);
-  } catch (e) {
-    console.log(e);
-  }
-  console.log(data);
-
-  return data;
-};
 
 export const applicationStatusToNumber = (status: ApplicationStatus) => {
   switch (status) {
@@ -726,7 +597,7 @@ export async function addTallyResultsBatch(
   recipientTreeDepth: number,
   tallyData: any,
   batchSize: number,
-  startIndex = 1,
+  startIndex = 0,
   callback?: (processed: number, receipt: ContractTransactionReceipt) => void
 ): Promise<number> {
   let totalGasUsed = 0;

@@ -1,1928 +1,1815 @@
 export default [
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "address",
-        name: "_allo",
-        type: "address",
+        "internalType": "address",
+        "name": "_allo",
+        "type": "address"
       },
       {
-        internalType: "string",
-        name: "_name",
-        type: "string",
-      },
+        "internalType": "string",
+        "name": "_name",
+        "type": "string"
+      }
     ],
-    stateMutability: "nonpayable",
-    type: "constructor",
+    "stateMutability": "nonpayable",
+    "type": "constructor"
   },
   {
-    inputs: [],
-    name: "ALLOCATION_ACTIVE",
-    type: "error",
+    "inputs": [],
+    "name": "ALLOCATION_ACTIVE",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "ALLOCATION_NOT_ACTIVE",
-    type: "error",
+    "inputs": [],
+    "name": "ALLOCATION_NOT_ACTIVE",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "ALLOCATION_NOT_ENDED",
-    type: "error",
+    "inputs": [],
+    "name": "ALLOCATION_NOT_ENDED",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "ALREADY_INITIALIZED",
-    type: "error",
+    "inputs": [],
+    "name": "ALREADY_INITIALIZED",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "AMOUNT_MISMATCH",
-    type: "error",
+    "inputs": [],
+    "name": "AMOUNT_MISMATCH",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "ANCHOR_ERROR",
-    type: "error",
+    "inputs": [],
+    "name": "ANCHOR_ERROR",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "ARRAY_MISMATCH",
-    type: "error",
+    "inputs": [],
+    "name": "ARRAY_MISMATCH",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "AlreadyContributed",
-    type: "error",
+    "inputs": [],
+    "name": "AlreadyContributed",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "AlreadyUsedZupass",
-    type: "error",
+    "inputs": [],
+    "name": "AlreadyUsedZupass",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "ContributionAmountTooLarge",
-    type: "error",
+    "inputs": [],
+    "name": "ContributionAmountTooLarge",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "ContributionWithdrawn",
-    type: "error",
+    "inputs": [],
+    "name": "ContributionWithdrawn",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "EmptyTallyHash",
-    type: "error",
+    "inputs": [],
+    "name": "EmptyTallyHash",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "INVALID",
-    type: "error",
+    "inputs": [],
+    "name": "INVALID",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "INVALID_ADDRESS",
-    type: "error",
+    "inputs": [],
+    "name": "INVALID_ADDRESS",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "INVALID_FEE",
-    type: "error",
+    "inputs": [],
+    "name": "INVALID_FEE",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "INVALID_METADATA",
-    type: "error",
+    "inputs": [],
+    "name": "INVALID_METADATA",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "INVALID_REGISTRATION",
-    type: "error",
+    "inputs": [],
+    "name": "INVALID_REGISTRATION",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "IS_APPROVED_STRATEGY",
-    type: "error",
+    "inputs": [],
+    "name": "IS_APPROVED_STRATEGY",
+    "type": "error"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "uint256",
-        name: "total",
-        type: "uint256",
+        "internalType": "uint256",
+        "name": "total",
+        "type": "uint256"
       },
       {
-        internalType: "uint256",
-        name: "actual",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "actual",
+        "type": "uint256"
+      }
     ],
-    name: "IncompleteTallyResults",
-    type: "error",
+    "name": "IncompleteTallyResults",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "IncorrectPerVOSpentVoiceCredits",
-    type: "error",
+    "inputs": [],
+    "name": "IncorrectPerVOSpentVoiceCredits",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "IncorrectSpentVoiceCredits",
-    type: "error",
+    "inputs": [],
+    "name": "IncorrectSpentVoiceCredits",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "IncorrectTallyResult",
-    type: "error",
+    "inputs": [],
+    "name": "IncorrectTallyResult",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "InvalidAmount",
-    type: "error",
+    "inputs": [],
+    "name": "InvalidAmount",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "InvalidBudget",
-    type: "error",
+    "inputs": [],
+    "name": "InvalidBudget",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "InvalidProof",
-    type: "error",
+    "inputs": [],
+    "name": "InvalidProof",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "InvalidSigner",
-    type: "error",
+    "inputs": [],
+    "name": "InvalidSigner",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "MISMATCH",
-    type: "error",
+    "inputs": [],
+    "name": "MISMATCH",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "MaciNotSet",
-    type: "error",
+    "inputs": [],
+    "name": "MaciNotSet",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "NONCE_NOT_AVAILABLE",
-    type: "error",
+    "inputs": [],
+    "name": "NONCE_NOT_AVAILABLE",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "NON_ZERO_VALUE",
-    type: "error",
+    "inputs": [],
+    "name": "NON_ZERO_VALUE",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "NOT_APPROVED_STRATEGY",
-    type: "error",
+    "inputs": [],
+    "name": "NOT_APPROVED_STRATEGY",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "NOT_ENOUGH_FUNDS",
-    type: "error",
+    "inputs": [],
+    "name": "NOT_ENOUGH_FUNDS",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "NOT_IMPLEMENTED",
-    type: "error",
+    "inputs": [],
+    "name": "NOT_IMPLEMENTED",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "NOT_INITIALIZED",
-    type: "error",
+    "inputs": [],
+    "name": "NOT_INITIALIZED",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "NOT_PENDING_OWNER",
-    type: "error",
+    "inputs": [],
+    "name": "NOT_PENDING_OWNER",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "NoProjectHasMoreThanOneVote",
-    type: "error",
+    "inputs": [],
+    "name": "NoProjectHasMoreThanOneVote",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "NoVotes",
-    type: "error",
+    "inputs": [],
+    "name": "NoVotes",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "NotCoordinator",
-    type: "error",
+    "inputs": [],
+    "name": "NotCoordinator",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "NotEnoughValidEventIDs",
-    type: "error",
+    "inputs": [],
+    "name": "NotEnoughValidEventIDs",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "NothingToWithdraw",
-    type: "error",
+    "inputs": [],
+    "name": "NothingToWithdraw",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "OnlyMaciCanRegisterVoters",
-    type: "error",
+    "inputs": [],
+    "name": "OnlyMaciCanRegisterVoters",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "POOL_ACTIVE",
-    type: "error",
+    "inputs": [],
+    "name": "POOL_ACTIVE",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "POOL_INACTIVE",
-    type: "error",
+    "inputs": [],
+    "name": "POOL_INACTIVE",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "RECIPIENT_ALREADY_ACCEPTED",
-    type: "error",
+    "inputs": [],
+    "name": "RECIPIENT_ALREADY_ACCEPTED",
+    "type": "error"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "address",
-        name: "recipientId",
-        type: "address",
-      },
+        "internalType": "address",
+        "name": "recipientId",
+        "type": "address"
+      }
     ],
-    name: "RECIPIENT_ERROR",
-    type: "error",
+    "name": "RECIPIENT_ERROR",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "RECIPIENT_NOT_ACCEPTED",
-    type: "error",
+    "inputs": [],
+    "name": "RECIPIENT_NOT_ACCEPTED",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "REGISTRATION_ACTIVE",
-    type: "error",
+    "inputs": [],
+    "name": "REGISTRATION_ACTIVE",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "REGISTRATION_NOT_ACTIVE",
-    type: "error",
+    "inputs": [],
+    "name": "REGISTRATION_NOT_ACTIVE",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "RoundAlreadyFinalized",
-    type: "error",
+    "inputs": [],
+    "name": "RoundAlreadyFinalized",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "RoundCancelled",
-    type: "error",
+    "inputs": [],
+    "name": "RoundCancelled",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "RoundNotCancelled",
-    type: "error",
+    "inputs": [],
+    "name": "RoundNotCancelled",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "RoundNotFinalized",
-    type: "error",
+    "inputs": [],
+    "name": "RoundNotFinalized",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "TallyHashNotPublished",
-    type: "error",
+    "inputs": [],
+    "name": "TallyHashNotPublished",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "UNAUTHORIZED",
-    type: "error",
+    "inputs": [],
+    "name": "UNAUTHORIZED",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "UserNotVerified",
-    type: "error",
+    "inputs": [],
+    "name": "UserNotVerified",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "VoteResultsAlreadyVerified",
-    type: "error",
+    "inputs": [],
+    "name": "VoteResultsAlreadyVerified",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "VotesNotTallied",
-    type: "error",
+    "inputs": [],
+    "name": "VotesNotTallied",
+    "type": "error"
   },
   {
-    inputs: [],
-    name: "ZERO_ADDRESS",
-    type: "error",
+    "inputs": [],
+    "name": "ZERO_ADDRESS",
+    "type": "error"
   },
   {
-    anonymous: false,
-    inputs: [
+    "anonymous": false,
+    "inputs": [
       {
-        indexed: true,
-        internalType: "address",
-        name: "recipientId",
-        type: "address",
+        "indexed": true,
+        "internalType": "address",
+        "name": "recipientId",
+        "type": "address"
       },
       {
-        indexed: false,
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
       },
       {
-        indexed: false,
-        internalType: "address",
-        name: "token",
-        type: "address",
+        "indexed": false,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
       },
       {
-        indexed: false,
-        internalType: "address",
-        name: "sender",
-        type: "address",
-      },
+        "indexed": false,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
     ],
-    name: "Allocated",
-    type: "event",
+    "name": "Allocated",
+    "type": "event"
   },
   {
-    anonymous: false,
-    inputs: [
+    "anonymous": false,
+    "inputs": [
       {
-        indexed: true,
-        internalType: "address",
-        name: "recipientId",
-        type: "address",
+        "indexed": true,
+        "internalType": "address",
+        "name": "recipientId",
+        "type": "address"
       },
       {
-        indexed: false,
-        internalType: "address",
-        name: "recipientAddress",
-        type: "address",
+        "indexed": false,
+        "internalType": "address",
+        "name": "recipientAddress",
+        "type": "address"
       },
       {
-        indexed: false,
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
       },
       {
-        indexed: false,
-        internalType: "address",
-        name: "sender",
-        type: "address",
-      },
+        "indexed": false,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
     ],
-    name: "Distributed",
-    type: "event",
+    "name": "Distributed",
+    "type": "event"
   },
   {
-    anonymous: false,
-    inputs: [
+    "anonymous": false,
+    "inputs": [
       {
-        indexed: false,
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
       },
       {
-        indexed: false,
-        internalType: "address",
-        name: "grantee",
-        type: "address",
+        "indexed": false,
+        "internalType": "address",
+        "name": "grantee",
+        "type": "address"
       },
       {
-        indexed: true,
-        internalType: "address",
-        name: "token",
-        type: "address",
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
       },
       {
-        indexed: true,
-        internalType: "address",
-        name: "recipientId",
-        type: "address",
-      },
+        "indexed": true,
+        "internalType": "address",
+        "name": "recipientId",
+        "type": "address"
+      }
     ],
-    name: "FundsDistributed",
-    type: "event",
+    "name": "FundsDistributed",
+    "type": "event"
   },
   {
-    anonymous: false,
-    inputs: [
+    "anonymous": false,
+    "inputs": [
       {
-        indexed: false,
-        internalType: "uint256",
-        name: "poolId",
-        type: "uint256",
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "poolId",
+        "type": "uint256"
       },
       {
-        indexed: false,
-        internalType: "bytes",
-        name: "data",
-        type: "bytes",
-      },
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
     ],
-    name: "Initialized",
-    type: "event",
+    "name": "Initialized",
+    "type": "event"
   },
   {
-    anonymous: false,
-    inputs: [
+    "anonymous": false,
+    "inputs": [
       {
-        indexed: false,
-        internalType: "address",
-        name: "maci",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "address",
-        name: "poll",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "address",
-        name: "messageProcessor",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "address",
-        name: "tally",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "address",
-        name: "subsidy",
-        type: "address",
-      },
+        "indexed": false,
+        "internalType": "bool",
+        "name": "active",
+        "type": "bool"
+      }
     ],
-    name: "MaciSet",
-    type: "event",
+    "name": "PoolActive",
+    "type": "event"
   },
   {
-    anonymous: false,
-    inputs: [
+    "anonymous": false,
+    "inputs": [
       {
-        indexed: false,
-        internalType: "bool",
-        name: "active",
-        type: "bool",
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "rowIndex",
+        "type": "uint256"
       },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "fullRow",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
     ],
-    name: "PoolActive",
-    type: "event",
+    "name": "RecipientStatusUpdated",
+    "type": "event"
   },
   {
-    anonymous: false,
-    inputs: [
+    "anonymous": false,
+    "inputs": [
       {
-        indexed: true,
-        internalType: "uint256",
-        name: "rowIndex",
-        type: "uint256",
+        "indexed": true,
+        "internalType": "address",
+        "name": "recipientId",
+        "type": "address"
       },
       {
-        indexed: false,
-        internalType: "uint256",
-        name: "fullRow",
-        type: "uint256",
+        "indexed": false,
+        "internalType": "enum IStrategy.Status",
+        "name": "status",
+        "type": "uint8"
       },
       {
-        indexed: false,
-        internalType: "address",
-        name: "sender",
-        type: "address",
-      },
+        "indexed": false,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
     ],
-    name: "RecipientStatusUpdated",
-    type: "event",
+    "name": "RecipientStatusUpdated",
+    "type": "event"
   },
   {
-    anonymous: false,
-    inputs: [
+    "anonymous": false,
+    "inputs": [
       {
-        indexed: true,
-        internalType: "address",
-        name: "recipientId",
-        type: "address",
+        "indexed": false,
+        "internalType": "address",
+        "name": "recipientId",
+        "type": "address"
       },
       {
-        indexed: false,
-        internalType: "uint256",
-        name: "applicationId",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "enum IStrategy.Status",
-        name: "status",
-        type: "uint8",
-      },
-      {
-        indexed: false,
-        internalType: "address",
-        name: "sender",
-        type: "address",
-      },
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "recipientIndex",
+        "type": "uint256"
+      }
     ],
-    name: "RecipientStatusUpdated",
-    type: "event",
+    "name": "RecipientVotingOptionAdded",
+    "type": "event"
   },
   {
-    anonymous: false,
-    inputs: [
+    "anonymous": false,
+    "inputs": [
       {
-        indexed: false,
-        internalType: "address",
-        name: "recipientId",
-        type: "address",
+        "indexed": true,
+        "internalType": "address",
+        "name": "recipientId",
+        "type": "address"
       },
       {
-        indexed: false,
-        internalType: "uint256",
-        name: "recipientIndex",
-        type: "uint256",
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
       },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
     ],
-    name: "RecipientVotingOptionAdded",
-    type: "event",
+    "name": "Registered",
+    "type": "event"
   },
   {
-    anonymous: false,
-    inputs: [
+    "anonymous": false,
+    "inputs": [
       {
-        indexed: true,
-        internalType: "address",
-        name: "recipientId",
-        type: "address",
+        "indexed": true,
+        "internalType": "address",
+        "name": "recipientId",
+        "type": "address"
       },
       {
-        indexed: false,
-        internalType: "bytes",
-        name: "data",
-        type: "bytes",
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "applicationId",
+        "type": "uint256"
       },
       {
-        indexed: false,
-        internalType: "address",
-        name: "sender",
-        type: "address",
+        "indexed": false,
+        "internalType": "enum IStrategy.Status",
+        "name": "status",
+        "type": "uint8"
       },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
     ],
-    name: "Registered",
-    type: "event",
+    "name": "Reviewed",
+    "type": "event"
   },
   {
-    anonymous: false,
-    inputs: [
+    "anonymous": false,
+    "inputs": [
       {
-        indexed: true,
-        internalType: "address",
-        name: "recipientId",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "applicationId",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "enum IStrategy.Status",
-        name: "status",
-        type: "uint8",
-      },
-      {
-        indexed: false,
-        internalType: "address",
-        name: "sender",
-        type: "address",
-      },
+        "indexed": false,
+        "internalType": "string",
+        "name": "tallyHash",
+        "type": "string"
+      }
     ],
-    name: "Reviewed",
-    type: "event",
+    "name": "TallyPublished",
+    "type": "event"
   },
   {
-    anonymous: false,
-    inputs: [
+    "anonymous": false,
+    "inputs": [
       {
-        indexed: false,
-        internalType: "string",
-        name: "tallyHash",
-        type: "string",
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "voteOptionIndex",
+        "type": "uint256"
       },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "tally",
+        "type": "uint256"
+      }
     ],
-    name: "TallyPublished",
-    type: "event",
+    "name": "TallyResultsAdded",
+    "type": "event"
   },
   {
-    anonymous: false,
-    inputs: [
+    "anonymous": false,
+    "inputs": [
       {
-        indexed: true,
-        internalType: "uint256",
-        name: "voteOptionIndex",
-        type: "uint256",
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "registrationStartTime",
+        "type": "uint64"
       },
       {
-        indexed: false,
-        internalType: "uint256",
-        name: "tally",
-        type: "uint256",
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "registrationEndTime",
+        "type": "uint64"
       },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "allocationStartTime",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "allocationEndTime",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
     ],
-    name: "TallyResultsAdded",
-    type: "event",
+    "name": "TimestampsUpdated",
+    "type": "event"
   },
   {
-    anonymous: false,
-    inputs: [
+    "anonymous": false,
+    "inputs": [
       {
-        indexed: false,
-        internalType: "uint64",
-        name: "registrationStartTime",
-        type: "uint64",
+        "indexed": true,
+        "internalType": "address",
+        "name": "recipientId",
+        "type": "address"
       },
       {
-        indexed: false,
-        internalType: "uint64",
-        name: "registrationEndTime",
-        type: "uint64",
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
       },
       {
-        indexed: false,
-        internalType: "uint64",
-        name: "allocationStartTime",
-        type: "uint64",
+        "indexed": false,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
       },
       {
-        indexed: false,
-        internalType: "uint64",
-        name: "allocationEndTime",
-        type: "uint64",
-      },
-      {
-        indexed: false,
-        internalType: "address",
-        name: "sender",
-        type: "address",
-      },
+        "indexed": false,
+        "internalType": "enum IStrategy.Status",
+        "name": "status",
+        "type": "uint8"
+      }
     ],
-    name: "TimestampsUpdated",
-    type: "event",
+    "name": "UpdatedRegistration",
+    "type": "event"
   },
   {
-    anonymous: false,
-    inputs: [
+    "inputs": [],
+    "name": "ALPHA_PRECISION",
+    "outputs": [
       {
-        indexed: true,
-        internalType: "address",
-        name: "recipientId",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "bytes",
-        name: "data",
-        type: "bytes",
-      },
-      {
-        indexed: false,
-        internalType: "address",
-        name: "sender",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "uint8",
-        name: "status",
-        type: "uint8",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    name: "UpdatedRegistration",
-    type: "event",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    anonymous: false,
-    inputs: [
+    "inputs": [],
+    "name": "MAX_CONTRIBUTION_AMOUNT",
+    "outputs": [
       {
-        indexed: true,
-        internalType: "address",
-        name: "recipientId",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "applicationId",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "bytes",
-        name: "data",
-        type: "bytes",
-      },
-      {
-        indexed: false,
-        internalType: "address",
-        name: "sender",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "enum IStrategy.Status",
-        name: "status",
-        type: "uint8",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    name: "UpdatedRegistration",
-    type: "event",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "ALPHA_PRECISION",
-    outputs: [
+    "inputs": [],
+    "name": "MAX_VOICE_CREDITS",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "MAX_CONTRIBUTION_AMOUNT",
-    outputs: [
+    "inputs": [],
+    "name": "MESSAGE_DATA_LENGTH",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "MAX_VOICE_CREDITS",
-    outputs: [
+    "inputs": [],
+    "name": "NATIVE",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "MESSAGE_DATA_LENGTH",
-    outputs: [
+    "inputs": [],
+    "name": "ZUPASS_SIGNER_G1",
+    "outputs": [
       {
-        internalType: "uint8",
-        name: "",
-        type: "uint8",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "NATIVE",
-    outputs: [
+    "inputs": [],
+    "name": "ZUPASS_SIGNER_G2",
+    "outputs": [
       {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "ZUPASS_SIGNER_G1",
-    outputs: [
+    "inputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "address",
+        "name": "recipientId",
+        "type": "address"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "name": "_isAcceptedRecipient",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "ZUPASS_SIGNER_G2",
-    outputs: [
+    "inputs": [],
+    "name": "_maci",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [],
+    "name": "_pollContracts",
+    "outputs": [
       {
-        internalType: "address",
-        name: "_recipientId",
-        type: "address",
+        "internalType": "address",
+        "name": "poll",
+        "type": "address"
       },
-    ],
-    name: "_isAcceptedRecipient",
-    outputs: [
       {
-        internalType: "bool",
-        name: "",
-        type: "bool",
+        "internalType": "address",
+        "name": "messageProcessor",
+        "type": "address"
       },
+      {
+        "internalType": "address",
+        "name": "tally",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "subsidy",
+        "type": "address"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "_maci",
-    outputs: [
+    "inputs": [
       {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "_pollContracts",
-    outputs: [
+    "name": "_recipients",
+    "outputs": [
       {
-        internalType: "address",
-        name: "poll",
-        type: "address",
+        "internalType": "bool",
+        "name": "useRegistryAnchor",
+        "type": "bool"
       },
       {
-        internalType: "address",
-        name: "messageProcessor",
-        type: "address",
+        "internalType": "address",
+        "name": "recipientAddress",
+        "type": "address"
       },
       {
-        internalType: "address",
-        name: "tally",
-        type: "address",
-      },
-      {
-        internalType: "address",
-        name: "subsidy",
-        type: "address",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
-    ],
-    name: "_recipients",
-    outputs: [
-      {
-        internalType: "bool",
-        name: "useRegistryAnchor",
-        type: "bool",
-      },
-      {
-        internalType: "address",
-        name: "recipientAddress",
-        type: "address",
-      },
-      {
-        components: [
+        "components": [
           {
-            internalType: "uint256",
-            name: "protocol",
-            type: "uint256",
+            "internalType": "uint256",
+            "name": "protocol",
+            "type": "uint256"
           },
           {
-            internalType: "string",
-            name: "pointer",
-            type: "string",
-          },
+            "internalType": "string",
+            "name": "pointer",
+            "type": "string"
+          }
         ],
-        internalType: "struct Metadata",
-        name: "metadata",
-        type: "tuple",
+        "internalType": "struct Metadata",
+        "name": "metadata",
+        "type": "tuple"
       },
       {
-        internalType: "uint256",
-        name: "totalVotesReceived",
-        type: "uint256",
+        "internalType": "uint256",
+        "name": "totalVotesReceived",
+        "type": "uint256"
       },
       {
-        internalType: "bool",
-        name: "tallyVerified",
-        type: "bool",
+        "internalType": "bool",
+        "name": "tallyVerified",
+        "type": "bool"
       },
+      {
+        "internalType": "enum IStrategy.Status",
+        "name": "status",
+        "type": "uint8"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [],
+    "name": "acceptedRecipientsCounter",
+    "outputs": [
       {
-        internalType: "uint256[]",
-        name: "_voteOptionIndices",
-        type: "uint256[]",
-      },
-      {
-        internalType: "uint256[]",
-        name: "_tallyResults",
-        type: "uint256[]",
-      },
-      {
-        internalType: "uint256[][][]",
-        name: "_tallyResultProofs",
-        type: "uint256[][][]",
-      },
-      {
-        internalType: "uint256",
-        name: "_tallyResultSalt",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "_spentVoiceCreditsHashes",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "_perVOSpentVoiceCreditsHashes",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    name: "addTallyResultsBatch",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "bytes",
-        name: "_data",
-        type: "bytes",
+        "internalType": "uint256[]",
+        "name": "_voteOptionIndices",
+        "type": "uint256[]"
       },
       {
-        internalType: "address",
-        name: "_sender",
-        type: "address",
+        "internalType": "uint256[]",
+        "name": "_tallyResults",
+        "type": "uint256[]"
       },
+      {
+        "internalType": "uint256[][][]",
+        "name": "_tallyResultProofs",
+        "type": "uint256[][][]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_tallyResultSalt",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_spentVoiceCreditsHashes",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_perVOSpentVoiceCreditsHashes",
+        "type": "uint256"
+      }
     ],
-    name: "allocate",
-    outputs: [],
-    stateMutability: "payable",
-    type: "function",
+    "name": "addTallyResultsBatch",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "allocationEndTime",
-    outputs: [
+    "inputs": [
       {
-        internalType: "uint64",
-        name: "",
-        type: "uint64",
+        "internalType": "bytes",
+        "name": "_data",
+        "type": "bytes"
       },
+      {
+        "internalType": "address",
+        "name": "_sender",
+        "type": "address"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "name": "allocate",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "allocationStartTime",
-    outputs: [
+    "inputs": [],
+    "name": "allocationEndTime",
+    "outputs": [
       {
-        internalType: "uint64",
-        name: "",
-        type: "uint64",
-      },
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "alpha",
-    outputs: [
+    "inputs": [],
+    "name": "allocationStartTime",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "cancel",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
+    "inputs": [],
+    "name": "alpha",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [
-      {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
-    ],
-    name: "contributorCredits",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
+    "inputs": [],
+    "name": "cancel",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "coordinator",
-    outputs: [
+    "inputs": [
       {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "name": "contributorCredits",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "coordinatorPubKey",
-    outputs: [
+    "inputs": [],
+    "name": "coordinator",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "x",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "y",
-        type: "uint256",
-      },
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "address[]",
-        name: "_recipientIds",
-        type: "address[]",
+        "internalType": "address[]",
+        "name": "_recipientIds",
+        "type": "address[]"
       },
       {
-        internalType: "bytes",
-        name: "_data",
-        type: "bytes",
+        "internalType": "bytes",
+        "name": "_data",
+        "type": "bytes"
       },
       {
-        internalType: "address",
-        name: "_sender",
-        type: "address",
-      },
+        "internalType": "address",
+        "name": "_sender",
+        "type": "address"
+      }
     ],
-    name: "distribute",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
+    "name": "distribute",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "uint256",
-        name: "_totalSpent",
-        type: "uint256",
+        "internalType": "uint256",
+        "name": "_totalSpent",
+        "type": "uint256"
       },
       {
-        internalType: "uint256",
-        name: "_totalSpentSalt",
-        type: "uint256",
+        "internalType": "uint256",
+        "name": "_totalSpentSalt",
+        "type": "uint256"
       },
       {
-        internalType: "uint256",
-        name: "_newResultCommitment",
-        type: "uint256",
+        "internalType": "uint256",
+        "name": "_newResultCommitment",
+        "type": "uint256"
       },
       {
-        internalType: "uint256",
-        name: "_perVOSpentVoiceCreditsHash",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "_perVOSpentVoiceCreditsHash",
+        "type": "uint256"
+      }
     ],
-    name: "finalize",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
+    "name": "finalize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "getAllo",
-    outputs: [
+    "inputs": [],
+    "name": "getAllo",
+    "outputs": [
       {
-        internalType: "contract IAllo",
-        name: "",
-        type: "address",
-      },
+        "internalType": "contract IAllo",
+        "name": "",
+        "type": "address"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "address[]",
-        name: "_recipientIds",
-        type: "address[]",
+        "internalType": "address[]",
+        "name": "_recipientIds",
+        "type": "address[]"
       },
       {
-        internalType: "bytes[]",
-        name: "_data",
-        type: "bytes[]",
-      },
+        "internalType": "bytes[]",
+        "name": "_data",
+        "type": "bytes[]"
+      }
     ],
-    name: "getPayouts",
-    outputs: [
+    "name": "getPayouts",
+    "outputs": [
       {
-        components: [
+        "components": [
           {
-            internalType: "address",
-            name: "recipientAddress",
-            type: "address",
+            "internalType": "address",
+            "name": "recipientAddress",
+            "type": "address"
           },
           {
-            internalType: "uint256",
-            name: "amount",
-            type: "uint256",
-          },
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }
         ],
-        internalType: "struct IStrategy.PayoutSummary[]",
-        name: "",
-        type: "tuple[]",
-      },
+        "internalType": "struct IStrategy.PayoutSummary[]",
+        "name": "",
+        "type": "tuple[]"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "getPoolAmount",
-    outputs: [
+    "inputs": [],
+    "name": "getPoolAmount",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "getPoolId",
-    outputs: [
+    "inputs": [],
+    "name": "getPoolId",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "address",
-        name: "_recipientId",
-        type: "address",
-      },
+        "internalType": "address",
+        "name": "_recipientId",
+        "type": "address"
+      }
     ],
-    name: "getRecipient",
-    outputs: [
+    "name": "getRecipient",
+    "outputs": [
       {
-        components: [
+        "components": [
           {
-            internalType: "bool",
-            name: "useRegistryAnchor",
-            type: "bool",
+            "internalType": "bool",
+            "name": "useRegistryAnchor",
+            "type": "bool"
           },
           {
-            internalType: "address",
-            name: "recipientAddress",
-            type: "address",
+            "internalType": "address",
+            "name": "recipientAddress",
+            "type": "address"
           },
           {
-            components: [
+            "components": [
               {
-                internalType: "uint256",
-                name: "protocol",
-                type: "uint256",
+                "internalType": "uint256",
+                "name": "protocol",
+                "type": "uint256"
               },
               {
-                internalType: "string",
-                name: "pointer",
-                type: "string",
-              },
+                "internalType": "string",
+                "name": "pointer",
+                "type": "string"
+              }
             ],
-            internalType: "struct Metadata",
-            name: "metadata",
-            type: "tuple",
+            "internalType": "struct Metadata",
+            "name": "metadata",
+            "type": "tuple"
           },
           {
-            internalType: "uint256",
-            name: "totalVotesReceived",
-            type: "uint256",
+            "internalType": "uint256",
+            "name": "totalVotesReceived",
+            "type": "uint256"
           },
           {
-            internalType: "bool",
-            name: "tallyVerified",
-            type: "bool",
+            "internalType": "bool",
+            "name": "tallyVerified",
+            "type": "bool"
           },
+          {
+            "internalType": "enum IStrategy.Status",
+            "name": "status",
+            "type": "uint8"
+          }
         ],
-        internalType: "struct QFMACIBase.Recipient",
-        name: "recipient",
-        type: "tuple",
-      },
+        "internalType": "struct QFMACIBase.Recipient",
+        "name": "recipient",
+        "type": "tuple"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "getRecipientCount",
-    outputs: [
+    "inputs": [],
+    "name": "getRecipientCount",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "address",
-        name: "_recipientId",
-        type: "address",
-      },
+        "internalType": "address",
+        "name": "_recipientId",
+        "type": "address"
+      }
     ],
-    name: "getRecipientStatus",
-    outputs: [
+    "name": "getRecipientStatus",
+    "outputs": [
       {
-        internalType: "enum IStrategy.Status",
-        name: "",
-        type: "uint8",
-      },
+        "internalType": "enum IStrategy.Status",
+        "name": "",
+        "type": "uint8"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "getStrategyId",
-    outputs: [
+    "inputs": [],
+    "name": "getStrategyId",
+    "outputs": [
       {
-        internalType: "bytes32",
-        name: "",
-        type: "bytes32",
-      },
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "address",
-        name: "",
-        type: "address",
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       },
       {
-        internalType: "bytes",
-        name: "_data",
-        type: "bytes",
-      },
+        "internalType": "bytes",
+        "name": "_data",
+        "type": "bytes"
+      }
     ],
-    name: "getVoiceCredits",
-    outputs: [
+    "name": "getVoiceCredits",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "getWhitelistedEvents",
-    outputs: [
+    "inputs": [],
+    "name": "getWhitelistedEvents",
+    "outputs": [
       {
-        internalType: "uint256[]",
-        name: "",
-        type: "uint256[]",
-      },
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "uint256",
-        name: "_amount",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+      }
     ],
-    name: "increasePoolAmount",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
+    "name": "increasePoolAmount",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "uint256",
-        name: "_poolId",
-        type: "uint256",
+        "internalType": "uint256",
+        "name": "_poolId",
+        "type": "uint256"
       },
       {
-        internalType: "bytes",
-        name: "_data",
-        type: "bytes",
-      },
+        "internalType": "bytes",
+        "name": "_data",
+        "type": "bytes"
+      }
     ],
-    name: "initialize",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "isCancelled",
-    outputs: [
+    "inputs": [],
+    "name": "isCancelled",
+    "outputs": [
       {
-        internalType: "bool",
-        name: "",
-        type: "bool",
-      },
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "isFinalized",
-    outputs: [
+    "inputs": [],
+    "name": "isFinalized",
+    "outputs": [
       {
-        internalType: "bool",
-        name: "",
-        type: "bool",
-      },
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "isPoolActive",
-    outputs: [
+    "inputs": [],
+    "name": "isPoolActive",
+    "outputs": [
       {
-        internalType: "bool",
-        name: "",
-        type: "bool",
-      },
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "address",
-        name: "_allocator",
-        type: "address",
-      },
+        "internalType": "address",
+        "name": "_allocator",
+        "type": "address"
+      }
     ],
-    name: "isValidAllocator",
-    outputs: [
+    "name": "isValidAllocator",
+    "outputs": [
       {
-        internalType: "bool",
-        name: "",
-        type: "bool",
-      },
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "maciFactory",
-    outputs: [
+    "inputs": [],
+    "name": "maciFactory",
+    "outputs": [
       {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "matchingPoolSize",
-    outputs: [
+    "inputs": [],
+    "name": "matchingPoolSize",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "maxContributionAmountForNonZupass",
-    outputs: [
+    "inputs": [],
+    "name": "maxContributionAmountForNonZupass",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "maxContributionAmountForZupass",
-    outputs: [
+    "inputs": [],
+    "name": "maxContributionAmountForZupass",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "metadataRequired",
-    outputs: [
+    "inputs": [],
+    "name": "metadataRequired",
+    "outputs": [
       {
-        internalType: "bool",
-        name: "",
-        type: "bool",
-      },
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "bytes[]",
-        name: "data",
-        type: "bytes[]",
-      },
+        "internalType": "bytes[]",
+        "name": "data",
+        "type": "bytes[]"
+      }
     ],
-    name: "multicall",
-    outputs: [
+    "name": "multicall",
+    "outputs": [
       {
-        internalType: "bytes[]",
-        name: "results",
-        type: "bytes[]",
-      },
+        "internalType": "bytes[]",
+        "name": "results",
+        "type": "bytes[]"
+      }
     ],
-    stateMutability: "nonpayable",
-    type: "function",
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "string",
-        name: "_tallyHash",
-        type: "string",
-      },
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
     ],
-    name: "publishTallyHash",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
+    "name": "paidOut",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "string",
+        "name": "_tallyHash",
+        "type": "string"
+      }
     ],
-    name: "recipientIndexToAddress",
-    outputs: [
-      {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
+    "name": "publishTallyHash",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
     ],
-    name: "recipientToStatusIndexes",
-    outputs: [
+    "name": "recipientToVoteIndex",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "recipientsCounter",
-    outputs: [
+    "inputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "name": "recipientVoteIndexToAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "address",
-        name: "",
-        type: "address",
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       },
       {
-        internalType: "bytes",
-        name: "_data",
-        type: "bytes",
-      },
+        "internalType": "bytes",
+        "name": "_data",
+        "type": "bytes"
+      }
     ],
-    name: "register",
-    outputs: [],
-    stateMutability: "view",
-    type: "function",
+    "name": "register",
+    "outputs": [],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "bytes",
-        name: "_data",
-        type: "bytes",
+        "internalType": "bytes",
+        "name": "_data",
+        "type": "bytes"
       },
       {
-        internalType: "address",
-        name: "_sender",
-        type: "address",
-      },
+        "internalType": "address",
+        "name": "_sender",
+        "type": "address"
+      }
     ],
-    name: "registerRecipient",
-    outputs: [
+    "name": "registerRecipient",
+    "outputs": [
       {
-        internalType: "address",
-        name: "recipientId",
-        type: "address",
-      },
+        "internalType": "address",
+        "name": "recipientId",
+        "type": "address"
+      }
     ],
-    stateMutability: "payable",
-    type: "function",
+    "stateMutability": "payable",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "registrationEndTime",
-    outputs: [
+    "inputs": [],
+    "name": "registrationEndTime",
+    "outputs": [
       {
-        internalType: "uint64",
-        name: "",
-        type: "uint64",
-      },
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "registrationStartTime",
-    outputs: [
+    "inputs": [],
+    "name": "registrationStartTime",
+    "outputs": [
       {
-        internalType: "uint64",
-        name: "",
-        type: "uint64",
-      },
+        "internalType": "uint64",
+        "name": "",
+        "type": "uint64"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "requiredValidEventIds",
-    outputs: [
+    "inputs": [],
+    "name": "requiredValidEventIds",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "resetTally",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
+    "inputs": [],
+    "name": "resetTally",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        components: [
-          {
-            internalType: "uint256",
-            name: "index",
-            type: "uint256",
-          },
-          {
-            internalType: "uint256",
-            name: "statusRow",
-            type: "uint256",
-          },
-        ],
-        internalType: "struct QFMACIBase.ApplicationStatus[]",
-        name: "statuses",
-        type: "tuple[]",
+        "internalType": "address[]",
+        "name": "recipients",
+        "type": "address[]"
       },
       {
-        internalType: "uint256",
-        name: "refRecipientsCounter",
-        type: "uint256",
-      },
+        "internalType": "enum IStrategy.Status[]",
+        "name": "_statuses",
+        "type": "uint8[]"
+      }
     ],
-    name: "reviewRecipients",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
+    "name": "reviewRecipients",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "reviewThreshold",
-    outputs: [
+    "inputs": [],
+    "name": "tallyHash",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [],
+    "name": "totalContributed",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    name: "statusesBitMap",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "tallyHash",
-    outputs: [
+    "inputs": [],
+    "name": "totalRecipientVotes",
+    "outputs": [
       {
-        internalType: "string",
-        name: "",
-        type: "string",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "totalContributed",
-    outputs: [
+    "inputs": [],
+    "name": "totalSpent",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "totalRecipientVotes",
-    outputs: [
+    "inputs": [],
+    "name": "totalVotesSquares",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "totalSpent",
-    outputs: [
+    "inputs": [],
+    "name": "useRegistryAnchor",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "totalVotesSquares",
-    outputs: [
+    "inputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "name": "usedPublicSignals",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "useRegistryAnchor",
-    outputs: [
+    "inputs": [],
+    "name": "verifier",
+    "outputs": [
       {
-        internalType: "bool",
-        name: "",
-        type: "bool",
-      },
+        "internalType": "contract IVerifier",
+        "name": "",
+        "type": "address"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [],
+    "name": "voiceCreditFactor",
+    "outputs": [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
-    name: "usedPublicSignals",
-    outputs: [
-      {
-        internalType: "bool",
-        name: "",
-        type: "bool",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "verifier",
-    outputs: [
+    "inputs": [
       {
-        internalType: "contract IVerifier",
-        name: "",
-        type: "address",
-      },
+        "internalType": "address",
+        "name": "_token",
+        "type": "address"
+      }
     ],
-    stateMutability: "view",
-    type: "function",
+    "name": "withdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "voiceCreditFactor",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
+    "inputs": [],
+    "name": "withdrawContribution",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    inputs: [
+    "inputs": [
       {
-        internalType: "address",
-        name: "_token",
-        type: "address",
-      },
+        "internalType": "address[]",
+        "name": "_contributors",
+        "type": "address[]"
+      }
     ],
-    name: "withdraw",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
+    "name": "withdrawContributions",
+    "outputs": [
+      {
+        "internalType": "bool[]",
+        "name": "result",
+        "type": "bool[]"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    inputs: [],
-    name: "withdrawContribution",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address[]",
-        name: "_contributors",
-        type: "address[]",
-      },
-    ],
-    name: "withdrawContributions",
-    outputs: [
-      {
-        internalType: "bool[]",
-        name: "result",
-        type: "bool[]",
-      },
-    ],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    stateMutability: "payable",
-    type: "receive",
-  },
+    "stateMutability": "payable",
+    "type": "receive"
+  }
 ] as const;

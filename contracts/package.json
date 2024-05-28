@@ -1,12 +1,12 @@
 {
-  "name": "maci-qf",
-  "description": "An Implementation of Quadratic Funding on Allo protocol using MACI and clr.fund Capital Contstrained Quadratic Funding (CQF) formula proposed in ( A Flexible Design for Funding Public Goods ) By <Vitalik Buterin - Zo¨e Hitzig - E. Glen Weyl >",
+  "name": "minimal-qf",
+  "description": "A minimal implementation of Quadratic Funding",
   "version": "0.0.1",
-  "author": "nijoe1 - ctrlc03",
+  "author": "ctrlc03",
   "scripts": {
     "compile": "hardhat compile",
     "compileSol": "TS_NODE_TRANSPILE_ONLY=1 ts-node ./scripts/compileSol.ts",
-    "test:solidity": "hardhat test --network arbsepolia",
+    "test:solidity": "hardhat test --network sepolia",
     "test:live": "hardhat test --network localhost",
     "prettier:write": "prettier --write . --write **/*",
     "vote": "hardhat run scripts/publishMessages.ts"

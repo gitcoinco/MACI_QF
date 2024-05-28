@@ -8,6 +8,15 @@ export type DVMDApplicationData = {
   };
 };
 
+export type MACIApplicationData = {
+  anchorAddress: string;
+  recipientAddress: string;
+  metadata: {
+    protocol: number;
+    pointer: string;
+  };
+};
+
 export type DGApplicationData = {
   recipientAddress: string;
   anchorAddress: string;

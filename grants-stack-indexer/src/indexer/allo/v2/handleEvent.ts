@@ -26,6 +26,7 @@ import {
   DGTimeStampUpdatedData,
   DVMDApplicationData,
   DVMDTimeStampUpdatedData,
+  MACIApplicationData,
 } from "../../types.js";
 import { fetchPoolMetadata } from "./poolMetadata.js";
 import roleGranted from "./roleGranted.js";
@@ -45,6 +46,7 @@ import { ethers } from "ethers";
 import { UnknownTokenError } from "../../../prices/common.js";
 import { ApplicationMetadataSchema } from "../../applicationMetadata.js";
 import { randomUUID } from "crypto";
+import e from "express";
 
 const ALLO_NATIVE_TOKEN = parseAddress(
   "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
@@ -106,6 +108,36 @@ function decodeDVMDApplicationData(encodedData: Hex): DVMDApplicationData {
 
   const results: DVMDApplicationData = {
     recipientsCounter: values[1].toString(),
+    anchorAddress: decodedData[0],
+    recipientAddress: decodedData[1],
+    metadata: {
+      protocol: Number(decodedData[2].protocol),
+      pointer: decodedData[2].pointer,
+    },
+  };
+
+  return results;
+}
+
+// Decode the application data from MACIQF
+function decodeMACIApplicationData(encodedData: Hex): MACIApplicationData {
+  const decodedData = decodeAbiParameters(
+    [
+      { name: "registryAnchor", type: "address" },
+      { name: "recipientAddress", type: "address" },
+      {
+        name: "metadata",
+        type: "tuple",
+        components: [
+          { name: "protocol", type: "uint256" },
+          { name: "pointer", type: "string" },
+        ],
+      },
+    ],
+    encodedData
+  );
+
+  const results: MACIApplicationData = {
     anchorAddress: decodedData[0],
     recipientAddress: decodedData[1],
     metadata: {
@@ -704,60 +736,108 @@ export async function handleEvent(
         return [];
       }
 
-      const bitmap = new StatusesBitmap(256n, 4n);
-      // @ts-ignore
-      bitmap.setRow(BigInt(event.params.rowIndex), BigInt(event.params.fullRow));
-      // @ts-ignore
-      const startIndex = event.params.rowIndex * bitmap.itemsPerRow;
+      switch (round.strategyName) {
+        case "allov2.QFMACI": {
+          // @ts-ignore
+          const recipient = event.params.recipientId;
+          // @ts-ignore
+          const status = event.params.status;
 
-      const indexes = [];
+          const statusString = ApplicationStatus[
+            status
+          ] as ApplicationTable["status"];
+          const applicationId = recipient.toString().toLowerCase();
 
-      for (let i = startIndex; i < startIndex + bitmap.itemsPerRow; i++) {
-        indexes.push(i);
-      }
+          const application = await db.getApplicationById(
+            chainId,
+            round.id,
+            applicationId
+          );
 
-      // TODO: batch update
-      return (
-        await Promise.all(
-          indexes.map(async (i) => {
-            const status = bitmap.getStatus(i);
+          if (application === null) {
+            return [];
+          }
 
-            if (status < 1 || status > 5) {
-              return [];
-            }
-
-            const statusString = ApplicationStatus[
-              status
-            ] as ApplicationTable["status"];
-            const applicationId = i.toString();
-
-            const application = await db.getApplicationById(
+          return [
+            {
+              type: "UpdateApplication",
               chainId,
-              round.id,
-              applicationId
-            );
+              roundId: round.id,
+              applicationId: applicationId,
+              application: await updateApplicationStatus(
+                application,
+                statusString,
+                event.blockNumber,
+                getBlock
+              ),
+            } satisfies Changeset,
+          ];
+        }
+        
+        case "allov2.DonationVotingMerkleDistributionDirectTransferStrategy": {
+          const bitmap = new StatusesBitmap(256n, 4n);
+          // @ts-ignore
+          bitmap.setRow(
+            // @ts-ignore
+            BigInt(event.params.rowIndex),
+            // @ts-ignore
+            BigInt(event.params.fullRow)
+          );
+          // @ts-ignore
+          const startIndex = event.params.rowIndex * bitmap.itemsPerRow;
 
-            if (application === null) {
-              return [];
-            }
+          const indexes = [];
 
-            return [
-              {
-                type: "UpdateApplication",
-                chainId,
-                roundId: round.id,
-                applicationId: i.toString(),
-                application: await updateApplicationStatus(
-                  application,
-                  statusString,
-                  event.blockNumber,
-                  getBlock
-                ),
-              } satisfies Changeset,
-            ];
-          })
-        )
-      ).flat();
+          for (let i = startIndex; i < startIndex + bitmap.itemsPerRow; i++) {
+            indexes.push(i);
+          }
+
+          // TODO: batch update
+          return (
+            await Promise.all(
+              indexes.map(async (i) => {
+                const status = bitmap.getStatus(i);
+
+                if (status < 1 || status > 5) {
+                  return [];
+                }
+
+                const statusString = ApplicationStatus[
+                  status
+                ] as ApplicationTable["status"];
+                const applicationId = i.toString();
+
+                const application = await db.getApplicationById(
+                  chainId,
+                  round.id,
+                  applicationId
+                );
+
+                if (application === null) {
+                  return [];
+                }
+
+                return [
+                  {
+                    type: "UpdateApplication",
+                    chainId,
+                    roundId: round.id,
+                    applicationId: i.toString(),
+                    application: await updateApplicationStatus(
+                      application,
+                      statusString,
+                      event.blockNumber,
+                      getBlock
+                    ),
+                  } satisfies Changeset,
+                ];
+              })
+            )
+          ).flat();
+        }
+        default:
+          return [];
+      }
     }
 
     // -- Allo V2 Core
@@ -846,9 +926,12 @@ export async function handleEvent(
           break;
 
         case "allov2.DonationVotingMerkleDistributionDirectTransferStrategy":
-        case "allov2.QFMACI":
           values = decodeDVMDApplicationData(encodedData);
           id = (Number(values.recipientsCounter) - 1).toString();
+          break;
+        case "allov2.QFMACI":
+          values = decodeMACIApplicationData(encodedData);
+          id = event.params.recipientId;
           break;
 
         default:
@@ -1321,7 +1404,6 @@ export async function handleEvent(
         createdBy,
       ]);
 
-
       const message = {
         msgType: BigInt(event.params._message.msgType).toString(),
         data: event.params._message.data.map((x) => BigInt(x).toString()),
@@ -1332,7 +1414,7 @@ export async function handleEvent(
       const { timestamp } = await getBlock();
       const uuid = randomUUID();
 
-      const uuidTypes = "string, string,string"
+      const uuidTypes = "string, string,string";
       const uuidBytes = encodeAbiParameters(parseAbiParameters(uuidTypes), [
         uuid,
         id,
