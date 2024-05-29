@@ -46,6 +46,7 @@ import { getTalyFilePath } from "./utils/misc";
 import path from "path";
 
 import dotenv from "dotenv";
+import { homedir, arch } from "os";
 
 dotenv.config();
 
@@ -53,6 +54,10 @@ dotenv.config();
 let circuitDirectory = process.env.CIRCUIT_DIRECTORY || "./zkeys/zkeys";
 const proofOutputDirectory = process.env.PROOF_OUTPUT_DIR || "./proof_output";
 const tallyBatchSize = Number(process.env.TALLY_BATCH_SIZE || 8);
+
+export const RapidsnarkPath = `${homedir()}/rapidsnark/build/prover`;
+export const isArm = (): boolean => arch().includes("arm");
+console.log("isArm", arch());
 
 if (!existsSync(circuitDirectory)) {
   circuitDirectory = "../../zkeys/zkeys";
@@ -326,6 +331,10 @@ describe("e2e", function test() {
     const stateFilePath = path.join(outputDir, "state.json");
     JSONFile.write(stateFilePath, MaciState);
 
+    const useWasm = isArm() ? true : false;
+
+    console.log("useWasm", useWasm);
+
     const {
       processZkFile,
       tallyZkFile,
@@ -333,6 +342,8 @@ describe("e2e", function test() {
       processWasm,
       tallyWitness,
       tallyWasm,
+      processDatFile,
+      tallyDatFile,
     } = getCircuitFiles("micro", circuitDirectory);
     await genProofs({
       outputDir: outputDir,
@@ -340,17 +351,17 @@ describe("e2e", function test() {
       tallyZkey: tallyZkFile,
       processZkey: processZkFile,
       pollId: 0n,
-      rapidsnark: undefined,
+      rapidsnark: RapidsnarkPath,
       processWitgen: processWitness,
-      processDatFile: undefined,
+      processDatFile: processDatFile,
       tallyWitgen: tallyWitness,
-      tallyDatFile: undefined,
+      tallyDatFile: tallyDatFile,
       coordinatorPrivKey: coordinatorKeypair.privKey.serialize(),
       maciAddress: maciAddress,
       transactionHash: maciTransactionHash,
       processWasm: processWasm,
       tallyWasm: tallyWasm,
-      useWasm: true,
+      useWasm: !useWasm,
       stateFile: stateFilePath,
       startBlock: undefined,
       blocksPerBatch: 50,
@@ -378,9 +389,11 @@ describe("e2e", function test() {
 
     await QFMACIStrategy.connect(Coordinator).resetTally();
 
-    const pollContracts = await QFMACIStrategy.connect(Coordinator)._pollContracts();
-    const newTallyAddress = pollContracts[2]
-    const newMessageProcessorAddress = pollContracts[1]
+    const pollContracts = await QFMACIStrategy.connect(
+      Coordinator
+    )._pollContracts();
+    const newTallyAddress = pollContracts[2];
+    const newMessageProcessorAddress = pollContracts[1];
 
     await proveOnChain({
       pollId: 0n,
