@@ -2,7 +2,7 @@
 pragma solidity 0.8.20;
 
 // External Libraries
-import { Constants, Metadata, IRegistry, IAllo } from "./interfaces/Constants.sol";
+import { Constants, Metadata, IRegistry, IAllo, ERC20 } from "./interfaces/Constants.sol";
 import { Multicall } from "@openzeppelin/contracts/utils/Multicall.sol";
 import { BaseStrategy } from "../BaseStrategy.sol";
 
@@ -160,7 +160,15 @@ abstract contract MACIQFBase is BaseStrategy, Multicall, Constants {
         metadataRequired = _params.metadataRequired;
         _registry = allo.getRegistry();
 
-        voiceCreditFactor = (MAX_CONTRIBUTION_AMOUNT * uint256(10) ** 18) / MAX_VOICE_CREDITS;
+        IAllo.Pool memory pool = allo.getPool(_poolId);
+        uint256 tokenDecimals;
+        if( address(pool.token) == NATIVE ) {
+            tokenDecimals = 10 ** 18;
+        } else {
+            tokenDecimals = ERC20(pool.token).decimals();
+        }
+        // Calculate the voice credit factor
+        voiceCreditFactor = (MAX_CONTRIBUTION_AMOUNT * tokenDecimals) / MAX_VOICE_CREDITS;
         voiceCreditFactor = voiceCreditFactor > 0 ? voiceCreditFactor : 1;
 
         // Set the updated timestamps
@@ -282,7 +290,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall, Constants {
         if( msg.value != 0 ) {
             revert INVALID();
         }
-        
+
         bool isUsingRegistryAnchor;
         address recipientAddress;
         address registryAnchor;
@@ -417,6 +425,8 @@ abstract contract MACIQFBase is BaseStrategy, Multicall, Constants {
 
     /// @notice Ensures the pool amount can be increased
     function _beforeIncreasePoolAmount(uint256) internal view override {
+        // Ensure the pool is not finalized
+        // Otherwise the calc alpha will be outdated.
         if (isFinalized) {
             revert INVALID();
         }
@@ -439,31 +449,38 @@ abstract contract MACIQFBase is BaseStrategy, Multicall, Constants {
     }
 
     /// ====================================
-    /// ============ QV Helper =============
+    /// ============ QF Helpers ============
     /// ====================================
 
-    /// @notice Calculates the alpha for the quadratic funding formula
-    /// @param _budget The total budget of the round to be distributed
-    /// @param _totalVotesSquares The total squares of votes
-    /// @param _totalSpent The total amount of spent voice credits
-    /// @return The alpha value
+    /// @notice From clr.fund
+    /// @dev Calculate the alpha for the capital constrained quadratic formula
+    /// in page 17 of https://arxiv.org/pdf/1809.06421.pdf
+    /// @param _budget Total budget of the round to be distributed
+    /// @param _totalVotesSquares Total of the squares of votes
+    /// @param _totalSpent Total amount of spent voice credits
+    /// @return _alpha value
     function calcAlpha(
         uint256 _budget,
         uint256 _totalVotesSquares,
         uint256 _totalSpent
-    ) internal view returns (uint256) {
+    ) public view returns (uint256 _alpha) {
+
+        // make sure budget = contributions + matching pool
         uint256 contributions = _totalSpent * voiceCreditFactor;
 
         if (_budget < contributions) {
             revert InvalidBudget();
         }
 
+        // guard against division by zero.
+        // This happens when no project receives more than one vote
         if (_totalVotesSquares <= _totalSpent) {
             revert NoProjectHasMoreThanOneVote();
         }
 
-        return ((_budget - contributions) * ALPHA_PRECISION) /
-            (voiceCreditFactor * (_totalVotesSquares - _totalSpent));
+        return  (_budget - contributions) * ALPHA_PRECISION /
+                (voiceCreditFactor * (_totalVotesSquares - _totalSpent));
+
     }
 
     /// @notice Calculates the allocated token amount without verification

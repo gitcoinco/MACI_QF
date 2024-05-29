@@ -67,8 +67,6 @@ export function publicSignalsFromClaim(
 
   const negOne = BABY_JUB_NEGATIVE_ONE.toString();
 
-  console.log("t", t);
-
   // Outputs appear in public signals first
   ret.push(
     t.ticketId === undefined ? negOne : uuidToBigInt(t.ticketId).toString()

@@ -13,10 +13,12 @@ import {Poll} from "maci-contracts/contracts/Poll.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 // Core Contracts
-import {IAllo, IERC20, IZuPassVerifier} from "./interfaces/Constants.sol";
+import {IAllo} from "./interfaces/Constants.sol";
 import {MACIQFBase} from "./MACIQFBase.sol";
 
-/// @title MACIQF
+// Interfaces
+import {IZuPassVerifier} from "./interfaces/IZuPassVerifier.sol";
+
 /// @notice This contract handles the quadratic funding mechanism using MACI (Minimal Anti-Collusion Infrastructure).
 /// It extends the MACIQFBase contract and integrates MACI-related functionalities.
 contract MACIQF is MACIQFBase, DomainObjs, Params {
@@ -46,6 +48,9 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
 
     /// @notice The verifier contract instance
     IZuPassVerifier public zupassVerifier;
+
+    mapping(uint256 => bool) public usedPublicSignals;
+
 
     /// ======================
     /// ======= Structs ======
@@ -111,20 +116,11 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         address strategy = address(allo.getPool(_poolId).strategy);
 
         coordinator = _params.maciParams.coordinator;
+
         zupassVerifier = IZuPassVerifier(_params.maciParams.verifier);
 
-        for (uint i = 0; i < _params.maciParams.validEventIds.length; ) {
-            VALID_EVENT_IDS.add(_params.maciParams.validEventIds[i]);
-            unchecked {
-                i++;
-            }
-        }
+        zupassVerifier.roundRegistration(_params.maciParams.validEventIds);
 
-        if (_params.maciParams.validEventIds.length < _params.maciParams.requiredValidEventIds) {
-            revert INVALID();
-        }
-
-        requiredValidEventIds = _params.maciParams.requiredValidEventIds;
         maxContributionAmountForZupass = _params.maciParams.maxContributionAmountForZupass;
         maxContributionAmountForNonZupass = _params.maciParams.maxContributionAmountForNonZupass;
 
@@ -512,36 +508,6 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
     /// ==== Zupass Functions =====
     /// ===========================
 
-    /// @notice Validate the event IDs from the public signals
-    /// @param _pubSignals The public signals
-    function validateEventIds(uint256[38] memory _pubSignals) internal view {
-        uint256 numberOfValidEventIDs = getAmountOfValidEventIDsFromPublicSignals(_pubSignals);
-        if (requiredValidEventIds > numberOfValidEventIDs) revert NotEnoughValidEventIDs();
-    }
-
-    /// @notice Get the amount of valid event IDs from the public signals
-    /// @param _pubSignals The public signals
-    /// @return The number of valid event IDs
-    function getAmountOfValidEventIDsFromPublicSignals(
-        uint256[38] memory _pubSignals
-    ) internal view returns (uint256) {
-        uint256 validEvents;
-        for (uint256 i = 0; i < VALID_EVENT_IDS.length(); i++) {
-            uint256 currEvent = _pubSignals[15 + i];
-            if (VALID_EVENT_IDS.contains(currEvent)) {
-                validEvents++;
-            }
-        }
-        return validEvents;
-    }
-
-    /// @notice Validate the signer from the public signals
-    /// @param _pubSignals The public signals
-    function validateSigner(uint256[38] memory _pubSignals) internal pure {
-        uint256[2] memory signer = [_pubSignals[13], _pubSignals[14]];
-        if (signer[0] != ZUPASS_SIGNER_G1 || signer[1] != ZUPASS_SIGNER_G2) revert InvalidSigner();
-    }
-
     /// @notice Validate proof of attendance
     /// @param _pA Proof part A
     /// @param _pB Proof part B
@@ -556,21 +522,6 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         if (!zupassVerifier.verifyProof(_pA, _pB, _pC, _pubSignals)) {
             revert InvalidProof();
         }
-
-        validateEventIds(_pubSignals);
-        validateSigner(_pubSignals);
-
-        uint256 publicSignalsHash = _pubSignals[9];
-
-        if (usedPublicSignals[publicSignalsHash]) revert AlreadyUsedZupass();
-
-        usedPublicSignals[publicSignalsHash] = true;
-    }
-
-    /// @notice Get the whitelisted events
-    /// @return List of whitelisted event IDs
-    function getWhitelistedEvents() external view returns (uint256[] memory) {
-        return VALID_EVENT_IDS.values();
     }
 
     /// =========================

@@ -13,15 +13,10 @@ import {IStrategy} from "../../../core/interfaces/IStrategy.sol";
 import {Metadata} from "../../../core/libraries/Metadata.sol";
 
 // External Libraries
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-import {DomainObjs} from "maci-contracts/contracts/utilities/DomainObjs.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 
 contract Constants {
-
-    mapping(uint256 => bool) public usedPublicSignals;
-
     // Constants
     uint256 public constant MAX_VOICE_CREDITS = 10 ** 9; // MACI allows 2 ** 32 voice credits max
     uint256 public constant MAX_CONTRIBUTION_AMOUNT = 10 ** 4; // In tokens
@@ -76,12 +71,6 @@ contract Constants {
     /// @param sender The sender of the transaction
     /// @param status The updated status of the recipient
     event UpdatedRegistration(address indexed recipientId, bytes data, address sender, uint8 status);
-
-    /// @notice Emitted when a recipient is registered and the status is updated
-    /// @param rowIndex The index of the row in the bitmap
-    /// @param fullRow The value of the row
-    /// @param sender The sender of the transaction
-    event RecipientStatusUpdated(uint256 indexed rowIndex, uint256 fullRow, address sender);
 
     /// @notice Emitted when a recipient is registered and the status is updated
     /// @param recipientId The recipientId 
@@ -172,19 +161,3 @@ contract Constants {
     );
 }
 
-interface IZuPassVerifier {
-    function verifyProof(
-        uint[2] memory _pA,
-        uint[2][2] memory _pB,
-        uint[2] memory _pC,
-        uint[38] memory _pubSignals
-    ) external view returns (bool);
-}
-
-interface IClonableMACI {
-    function signUp(
-        DomainObjs.PubKey memory _pubKey,
-        bytes memory _signUpGatekeeperData,
-        bytes memory _initialVoiceCreditProxyData
-    ) external;
-}

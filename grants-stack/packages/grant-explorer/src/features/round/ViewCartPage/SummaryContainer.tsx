@@ -14,7 +14,7 @@ import { InformationCircleIcon } from "@heroicons/react/24/solid";
 import { BoltIcon } from "@heroicons/react/24/outline";
 import { getClassForPassportColor } from "../../api/passport";
 import useSWR from "swr";
-import { get, groupBy, uniqBy } from "lodash-es";
+import { get, groupBy, set, uniqBy } from "lodash-es";
 import MRCProgressModal from "../../common/MRCProgressModal";
 import { MRCProgressModalBody } from "./MRCProgressModalBody";
 import {
@@ -36,11 +36,12 @@ import { isPresent } from "ts-is-present";
 import { useAllo } from "../../api/AlloWrapper";
 import { getFormattedRoundId } from "../../common/utils/utils";
 import { datadogLogs } from "@datadog/browser-logs";
-import { useZuAuth } from "zupass-auth";
 import { Switch } from "@headlessui/react";
 import { PCommand, PubKey } from "maci-domainobjs";
 import { getContributorMessages } from "../../api/voting";
 import { useRoundMaciMessages } from "../../projects/hooks/useRoundMaciMessages";
+import { PipelineEdDSATicketZuAuthConfig } from "@pcd/passport-interface";
+import { zuAuthPopup } from "@pcd/zuauth";
 
 export function SummaryContainer(props?: {
   alreadyContributed: boolean;
@@ -79,6 +80,23 @@ export function SummaryContainer(props?: {
     () => Object.keys(projectsByChain).map(Number),
     [projectsByChain]
   );
+
+  const [pcd, setPcd] = useState<string | undefined>(undefined);
+  const [pcdFetched, setPcdFetched] = useState(false);
+
+  const ETHBERLIN_ZUAUTH_CONFIG: PipelineEdDSATicketZuAuthConfig[] = [
+    {
+      pcdType: "eddsa-ticket-pcd",
+      publicKey: [
+        "05e0c4e8517758da3a26c80310ff2fe65b9f85d89dfc9c80e6d0b6477f88173e",
+        "29ae64b615383a0ebb1bc37b3a642d82d37545f0f5b1444330300e4c4eedba3f",
+      ],
+      eventId: "91312aa1-5f74-4264-bdeb-f4a3ddb8670c",
+      eventName: "Zuconnect23",
+      productId: "cc9e3650-c29b-4629-b275-6b34fc70b2f9",
+      productName: "",
+    },
+  ];
 
   /** How much of the voting token for a chain does the address have*/
   const [tokenBalancesPerChain, setTokenBalancesPerChain] = useState<
@@ -158,8 +176,6 @@ export function SummaryContainer(props?: {
     ).then((rounds) => rounds.filter(isPresent));
   });
 
-  const { authenticate, pcd } = useZuAuth();
-
   const validEventIds = [
     "91312aa1-5f74-4264-bdeb-f4a3ddb8670c", // TEST event
   ];
@@ -172,18 +188,21 @@ export function SummaryContainer(props?: {
   const { address: connectedAddress } = useAccount();
 
   const getProof = useCallback(async () => {
-    try {
-      authenticate(
-        fieldsToReveal,
-        connectedAddress as `0x${string}`,
-        validEventIds
-      );
-      console.log("Authentication complete, proceeding to next step.");
-      // Your next steps after authentication
-    } catch (error) {
-      console.error("Authentication failed", error);
+    if (!connectedAddress) {
+      return;
     }
-  }, [fieldsToReveal, connectedAddress, validEventIds]);
+    const result = await zuAuthPopup({
+      fieldsToReveal,
+      watermark: connectedAddress,
+      config: ETHBERLIN_ZUAUTH_CONFIG,
+    });
+    if (result.type === "pcd") {
+      setPcd(JSON.parse(result.pcdStr).pcd);
+      setPcdFetched(true);
+    } else {
+      return;
+    }
+  }, [connectedAddress]);
 
   /** useEffect to clear projects from expired rounds (no longer accepting donations) */
   useEffect(() => {
@@ -327,14 +346,14 @@ export function SummaryContainer(props?: {
         <ChainConfirmationModal
           title={"Checkout"}
           confirmButtonText={
-            pcd && enabled
+            pcdFetched && enabled
               ? "Checkout"
               : !enabled
               ? "Checkout"
               : "Generate Proof"
           }
           confirmButtonAction={
-            (pcd && enabled) || !enabled
+            (pcdFetched && enabled) || !enabled
               ? handleSubmitDonation
               : async () => {
                   await getProof();
@@ -479,7 +498,9 @@ export function SummaryContainer(props?: {
             permitDeadline: currentPermitDeadline,
           })),
           walletClient,
-          props.decryptedMessages ? props.decryptedMessages : await getContributed(),
+          props.decryptedMessages
+            ? props.decryptedMessages
+            : await getContributed()
         );
       } else {
         await checkoutMaci(
@@ -488,7 +509,7 @@ export function SummaryContainer(props?: {
             permitDeadline: currentPermitDeadline,
           })),
           walletClient,
-          pcd
+          pcdFetched ? pcd : undefined
         );
       }
     } catch (error) {
@@ -672,7 +693,9 @@ export function SummaryContainer(props?: {
         {isConnected
           ? notEnoughFunds
             ? "Not enough funds to donate"
-            : props?.alreadyContributed? "change donations" : "Submit your donation!"
+            : props?.alreadyContributed
+            ? "change donations"
+            : "Submit your donation!"
           : "Connect wallet to continue"}
       </Button>
       <PayoutModals />

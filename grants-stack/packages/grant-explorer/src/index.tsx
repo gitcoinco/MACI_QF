@@ -7,10 +7,8 @@ import { DataLayer, DataLayerProvider } from "data-layer";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import {
-  BrowserRouter,
   HashRouter,
   Route,
-  Router,
   Routes,
 } from "react-router-dom";
 import { WagmiConfig } from "wagmi";
@@ -39,7 +37,6 @@ import ViewRound from "./features/round/ViewRoundPage";
 import AlloWrapper from "./features/api/AlloWrapper";
 import { merge } from "lodash";
 import { PostHogProvider } from "posthog-js/react";
-import Popup from "./features/common/ZuPopup";
 
 initSentry();
 initDatadog();
@@ -135,13 +132,6 @@ root.render(
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </HashRouter>
-                      {/* Popup */}
-
-                  <BrowserRouter>
-                    <Routes>
-                      <Route path="/popup" element={<Popup />} />
-                    </Routes>
-                  </BrowserRouter>
                 </AlloWrapper>
               </DataLayerProvider>
             </RoundProvider>

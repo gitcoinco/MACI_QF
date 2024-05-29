@@ -1406,7 +1406,7 @@ export async function handleEvent(
 
       const message = {
         msgType: BigInt(event.params._message.msgType).toString(),
-        data: event.params._message.data.map((x) => BigInt(x).toString()),
+        data: event.params._message.data.map((x:any) => BigInt(x).toString()),
       };
 
       const id = ethers.utils.solidityKeccak256(["bytes"], [bytes]);
