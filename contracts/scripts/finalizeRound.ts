@@ -24,8 +24,7 @@ const proofOutputDirectory = process.env.PROOF_OUTPUT_DIR || "./proof_output";
 const tallyBatchSize = Number(process.env.TALLY_BATCH_SIZE || 8);
 const voteOptionTreeDepth = 3;
 
-async function main() {
-
+async function finalizeRound() {
   const [Coordinator] = await ethers.getSigners();
 
   const SerializedPrivateKey = process.env.COORDINATOR_PRIVATE_KEY || "0x";
@@ -34,17 +33,19 @@ async function main() {
 
   const CoordinatorKeypair = new Keypair(deserializedPrivKey);
 
-  const MACIQFStrategyAddress = "0x"
+  const MACIQFStrategyAddress = "0x";
 
-  const QFMACIStrategy = await ethers.getContractAt("QFMACI", MACIQFStrategyAddress, Coordinator) as QFMACI;
+  const QFMACIStrategy = (await ethers.getContractAt(
+    "QFMACI",
+    MACIQFStrategyAddress,
+    Coordinator
+  )) as QFMACI;
 
   const pollContracts = await QFMACIStrategy._pollContracts();
   const maciContractAddress = await QFMACIStrategy._maci();
   const tallyContractAddress = pollContracts[2];
   const mpContractAddress = pollContracts[1];
 
-
-  
   const random = Math.floor(Math.random() * 10 ** 8);
 
   const outputDir = path.join(proofOutputDirectory, `${random}`);
@@ -56,7 +57,7 @@ async function main() {
   // Merge MACI Subtrees
   async function mergeSubtrees() {
     await mergeMaciSubtrees({
-      maciAddress:maciContractAddress,
+      maciAddress: maciContractAddress,
       pollId: 0n,
       numQueueOps: "1",
       signer: Coordinator,
@@ -106,12 +107,11 @@ async function main() {
       quiet: false,
     } as GenProofsArgs);
 
-
     await proveOnChain({
       pollId: 0n,
       proofDir: outputDir,
-      maciAddress:maciContractAddress,
-      messageProcessorAddress:mpContractAddress,
+      maciAddress: maciContractAddress,
+      messageProcessorAddress: mpContractAddress,
       tallyAddress: tallyContractAddress,
       signer: Coordinator,
       subsidyEnabled: false,
@@ -125,7 +125,9 @@ async function main() {
     const tally = JSONFile.read(tallyFile) as any;
     const tallyHash = await getIpfsHash(tally);
 
-    const publishTallyHashReceipt = await QFMACIStrategy.connect(Coordinator).publishTallyHash(tallyHash);
+    const publishTallyHashReceipt = await QFMACIStrategy.connect(
+      Coordinator
+    ).publishTallyHash(tallyHash);
     await publishTallyHashReceipt.wait();
   }
 
@@ -144,7 +146,7 @@ async function main() {
   }
 
   // Finalize the Round
-  async function finalizeRound() {
+  async function finalize() {
     const tallyFile = getTalyFilePath(outputDir);
     const tally = JSONFile.read(tallyFile) as any;
     const recipientTreeDepth = voteOptionTreeDepth;
@@ -175,10 +177,10 @@ async function main() {
   await generateProofsAndSubmit();
   await publishTallyHash();
   await addTallyResults();
-  await finalizeRound();
+  await finalize();
 }
 
-main().catch((error) => {
+finalizeRound().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });

@@ -15,6 +15,9 @@ import {Metadata} from "../../../core/libraries/Metadata.sol";
 // External Libraries
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+import {DomainObjs} from "maci-contracts/contracts/utilities/DomainObjs.sol";
+
+
 contract Constants {
 
     mapping(uint256 => bool) public usedPublicSignals;
@@ -176,4 +179,12 @@ interface IZuPassVerifier {
         uint[2] memory _pC,
         uint[38] memory _pubSignals
     ) external view returns (bool);
+}
+
+interface IClonableMACI {
+    function signUp(
+        DomainObjs.PubKey memory _pubKey,
+        bytes memory _signUpGatekeeperData,
+        bytes memory _initialVoiceCreditProxyData
+    ) external;
 }

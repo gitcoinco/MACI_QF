@@ -279,6 +279,10 @@ abstract contract MACIQFBase is BaseStrategy, Multicall, Constants {
         onlyActiveRegistration
         returns (address)
     {
+        if( msg.value != 0 ) {
+            revert INVALID();
+        }
+        
         bool isUsingRegistryAnchor;
         address recipientAddress;
         address registryAnchor;
