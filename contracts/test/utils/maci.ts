@@ -1,10 +1,4 @@
-import {
-  ContractTransactionReceipt,
-  Signer,
-  ethers,
-  AbiCoder,
-  BigNumberish,
-} from "ethers";
+import { ContractTransactionReceipt, Signer, AbiCoder } from "ethers";
 import {
   genTreeCommitment as genTallyResultCommitment,
   genRandomSalt,
@@ -15,7 +9,7 @@ import {
   hash2,
 } from "maci-crypto";
 
-import { Keypair, Message, PCommand, PrivKey, PubKey } from "maci-domainobjs";
+import { Keypair, PCommand, PrivKey, PubKey } from "maci-domainobjs";
 
 import * as os from "os";
 import {
@@ -26,154 +20,24 @@ import {
   GenProofsArgs,
   genLocalState,
   verify,
+  MergeMessagesArgs,
+  MergeSignupsArgs,
 } from "maci-cli";
 
 import { getTalyFilePath, isPathExist } from "./misc";
 import { getCircuitFiles } from "./circuits";
-import { QFMACI } from "../../typechain-types";
+import { MACIQF, QFMACI } from "../../typechain-types";
 
-import { ClonablePoll } from "../../typechain-types";
+import {
+  IPublishBatchArgs,
+  IAllocateArgs,
+  getGenProofArgsInput,
+} from "./types";
 
 export const isOsArm = os.arch().includes("arm");
 
 const LEAVES_PER_NODE = 5;
 
-/**
- * Interface that represents user publish message
- */
-export interface IPublishMessage {
-  /**
-   * The index of the state leaf
-   */
-  stateIndex: bigint;
-
-  /**
-   * The index of the vote option
-   */
-  voteOptionIndex: bigint;
-
-  /**
-   * The nonce of the message
-   */
-  nonce: bigint;
-
-  /**
-   * The new vote weight
-   */
-  newVoteWeight: bigint;
-}
-
-/**
- * Interface for the arguments to the batch publish command
- */
-export interface IPublishBatchArgs {
-  /**
-   * User messages
-   */
-  messages: IPublishMessage[];
-
-  /**
-   * The id of the poll
-   */
-  pollId: bigint;
-
-  /**
-   * The address of the MACI contract
-   */
-  Poll: ClonablePoll;
-
-  /**
-   * The public key of the user
-   */
-  publicKey: PubKey;
-
-  /**
-   * The private key of the user
-   */
-  privateKey: PrivKey;
-
-  /**
-   * A signer object
-   */
-  signer: Signer;
-
-  /**
-   * Whether to log the output
-   */
-  quiet?: boolean;
-}
-
-/**
- * Interface for the arguments to the batch publish command
- */
-export interface IAllocateArgs {
-  /**
-   * The public key of the user
-   */
-  publicKey: string;
-
-  amount: BigInt;
-
-  proof: ProofArgs;
-}
-
-  // uint[2] memory _pA,
-  // uint[2][2] memory _pB,
-  // uint[2] memory _pC,
-  // uint[38] memory _pubSignals
-export interface ProofArgs {
-  pA: bigint[];
-  pB: bigint[][];
-  pC: bigint[];
-  pubSignals: bigint[];
-}
-
-
-
-/**
- * Interface for the arguments to the batch publish command
- */
-export interface IAllocateBatchArgs {
-  /**
-   * User messages
-   */
-  messages: IPublishMessage[];
-
-  /**
-   * The id of the poll
-   */
-  pollId: bigint;
-
-  /**
-   * The address of the MACI contract
-   */
-  Poll: ClonablePoll;
-
-  /**
-   * The public key of the user
-   */
-  publicKey: string;
-
-  /**
-   * The private key of the user
-   */
-  privateKey: string;
-
-  /**
-   * A signer object
-   */
-  signer: Signer;
-
-  /**
-   * Whether to log the output
-   */
-  quiet?: boolean;
-
-  /**
-   * The amount to allocate
-   */
-  amount: bigint;
-}
 /**
  * Merge MACI message and signups subtrees
  * Must merge the subtrees before calling genProofs
@@ -196,49 +60,21 @@ export async function mergeMaciSubtrees({
   quiet?: boolean;
 }) {
   if (!maciAddress) throw new Error("Missing MACI address");
-
   await mergeMessages({
     pollId,
-    maciContractAddress: maciAddress,
+    maciAddress: maciAddress,
     numQueueOps,
     signer,
     quiet,
-  });
+  } as MergeMessagesArgs);
 
   await mergeSignups({
     pollId,
-    maciContractAddress: maciAddress,
+    maciAddress: maciAddress,
     numQueueOps,
     signer,
     quiet,
-  });
-}
-
-/**
- * Get the square root of a bigint
- * @param val the value to apply square root on
- */
-export function bnSqrt(val) {
-  // Take square root from a bigint
-  // https://stackoverflow.com/a/52468569/1868395
-  if (val < 0n) {
-    throw new Error("Complex numbers not support");
-  }
-  if (val < 2n) {
-    return val;
-  }
-  let loop = 100;
-  let x;
-  let x1 = val / 2n;
-  do {
-    x = x1;
-    x1 = (x + val / x) / 2n;
-    loop--;
-  } while (x !== x1 && loop);
-  if (loop === 0 && x !== x1) {
-    throw new Error("Sqrt took too long to calculate");
-  }
-  return x;
+  } as MergeSignupsArgs);
 }
 
 export const publishBatch = async ({
@@ -249,14 +85,11 @@ export const publishBatch = async ({
   privateKey,
   signer,
 }: IPublishBatchArgs) => {
-  
-
   if (pollId < 0n) {
     throw new Error(`invalid poll id ${pollId}`);
   }
 
   const userMaciPubKey = publicKey;
-  console.log("userMaciPubKey", userMaciPubKey);
   const userMaciPrivKey = privateKey;
   const pollContract = Poll.connect(signer);
 
@@ -267,7 +100,7 @@ export const publishBatch = async ({
   const maxVoteOptions = Number(maxValues.maxVoteOptions);
 
   // validate the vote options index against the max leaf index on-chain
-  messages.forEach(({ stateIndex, voteOptionIndex, salt, nonce }) => {
+  messages.forEach(({ stateIndex, voteOptionIndex, nonce }) => {
     if (voteOptionIndex < 0 || maxVoteOptions < voteOptionIndex) {
       throw new Error("invalid vote option index");
     }
@@ -294,8 +127,8 @@ export const publishBatch = async ({
   );
 
   const payload: any[] = messages.map(
-    ({ salt, stateIndex, voteOptionIndex, newVoteWeight, nonce }) => {
-      const userSalt = salt ? BigInt(salt) : genRandomSalt();
+    ({ stateIndex, voteOptionIndex, newVoteWeight, nonce }) => {
+      const userSalt = genRandomSalt();
 
       // create the command object
       const command = new PCommand(
@@ -338,13 +171,11 @@ export const publishBatch = async ({
 export const prepareAllocationData = async ({
   publicKey,
   amount,
-  proof
+  proof,
 }: IAllocateArgs) => {
   if (!PubKey.isValidSerializedPubKey(publicKey)) {
     throw new Error("invalid MACI public key");
   }
-
-
 
   const userMaciPubKey = PubKey.deserialize(publicKey);
 
@@ -372,19 +203,14 @@ export const prepareAllocationData = async ({
       proof.pA,
       proof.pB,
       proof.pC,
-      proof.pubSignals
+      proof.pubSignals,
     ]);
-    console.log("hey");
-
   } catch (e) {
     console.log(e);
-    console.log("hey");
-
   }
 
   return data;
 };
-
 
 export const applicationStatusToNumber = (status: ApplicationStatus) => {
   switch (status) {
@@ -398,7 +224,7 @@ export const applicationStatusToNumber = (status: ApplicationStatus) => {
     default:
       throw new Error(`Unknown status ${status}`);
   }
-}
+};
 
 function buildRowOfApplicationStatuses({
   rowIndex,
@@ -443,7 +269,6 @@ export type ApplicationStatus =
   | "RECEIVED"
   | "CANCELLED"
   | "IN_REVIEW";
-
 
 export function buildUpdatedRowsOfApplicationStatuses(args: {
   applicationsToUpdate: {
@@ -497,9 +322,9 @@ export function buildUpdatedRowsOfApplicationStatuses(args: {
 }
 
 export function getRecipientClaimData(
-  recipientIndex,
-  recipientTreeDepth,
-  tally
+  recipientIndex: any,
+  recipientTreeDepth: any,
+  tally: any
 ) {
   const LEAVES_PER_NODE = 5;
 
@@ -521,7 +346,7 @@ export function getRecipientClaimData(
   }
   const spentProof = spentTree.genProof(recipientIndex);
   const resultsCommitment = genTallyResultCommitment(
-    tally.results.tally.map((x) => BigInt(x)),
+    tally.results.tally.map((x: any) => BigInt(x)),
     BigInt(tally.results.salt),
     recipientTreeDepth
   );
@@ -593,7 +418,7 @@ export function getTallyResultProofBatch(
 }
 
 export async function addTallyResultsBatch(
-  QFMACI: QFMACI,
+  QFMACI: QFMACI | MACIQF,
   recipientTreeDepth: number,
   tallyData: any,
   batchSize: number,
@@ -636,18 +461,18 @@ export async function addTallyResultsBatch(
 
   let totalRecipients = await QFMACI.getRecipientCount();
 
-  for (let i = startIndex; i < totalRecipients ; i = i + batchSize) {
+  for (let i = startIndex; i < totalRecipients; i = i + batchSize) {
     const proofs = getTallyResultProofBatch(
       i,
       recipientTreeDepth,
       tallyData,
       batchSize
     );
-    proofs.map((i) => console.log(i.result));
+    proofs.map((i: any) => console.log(i.result));
     const tx = await QFMACI.addTallyResultsBatch(
-      proofs.map((i) => i.recipientIndex),
-      proofs.map((i) => i.result),
-      proofs.map((i) => i.proof),
+      proofs.map((i: any) => i.recipientIndex),
+      proofs.map((i: any) => i.result),
+      proofs.map((i: any) => i.proof),
       BigInt(tallyData.results.salt),
       spentVoiceCreditsHash,
       BigInt(perVOSpentVoiceCreditsHash)
@@ -667,33 +492,6 @@ export async function addTallyResultsBatch(
   }
   return totalGasUsed;
 }
-
-/* Input to getGenProofArgs() */
-type getGenProofArgsInput = {
-  maciAddress: string;
-  pollId: bigint;
-  // coordinator's MACI serialized secret key
-  coordinatorMacisk: string;
-  // the transaction hash of the creation of the MACI contract
-  maciTxHash?: string;
-  // the key get zkeys file mapping, see utils/circuits.ts
-  circuitType: string;
-  circuitDirectory: string;
-  rapidsnark?: string;
-  // where the proof will be produced
-  outputDir: string;
-  // number of blocks of logs to fetch per batch
-  blocksPerBatch: number;
-  // fetch logs from MACI from these start and end blocks
-  startBlock?: number;
-  endBlock?: number;
-  // MACI state file
-  maciStateFile?: string;
-  // transaction signer
-  signer: Signer;
-  // flag to turn on verbose logging in MACI cli
-  quiet?: boolean;
-};
 
 /*
  * Get the arguments to pass to the genProof function
@@ -802,24 +600,31 @@ export function newMaciPrivateKey(): string {
  * @param argumentName argument name
  * @returns event argument value
  */
-export async function getEventArg(transaction, contract, eventName, argumentName) {
+export async function getEventArg(
+  transaction: any,
+  contract: any,
+  eventName: any,
+  argumentName: any
+) {
   const transactionReceipt = await transaction.wait();
   const contractAddress = await contract.getAddress();
   // eslint-disable-next-line
   for (const log of transactionReceipt?.logs || []) {
-      if (log.address !== contractAddress) {
-          continue;
-      }
-      const event = contract.interface.parseLog({
-          data: log.data,
-          topics: [...log.topics],
-      });
-      // eslint-disable-next-line
-      if (event && event.name === eventName) {
-          return event.args[argumentName];
-      }
+    if (log.address !== contractAddress) {
+      continue;
+    }
+    const event = contract.interface.parseLog({
+      data: log.data,
+      topics: [...log.topics],
+    });
+    // eslint-disable-next-line
+    if (event && event.name === eventName) {
+      return event.args[argumentName];
+    }
   }
-  throw new Error(`Event ${eventName} from contract ${contractAddress} not found in transaction ${transaction.hash}`);
+  throw new Error(
+    `Event ${eventName} from contract ${contractAddress} not found in transaction ${transaction.hash}`
+  );
 }
 
 export { genProofs, proveOnChain, verify, genLocalState };

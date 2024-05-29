@@ -2,7 +2,7 @@
 pragma solidity 0.8.20;
 
 // External Libraries
-import { Constants, Metadata, IRegistry, IAllo, IVerifier } from "./interfaces/Constants.sol";
+import { Constants, Metadata, IRegistry, IAllo } from "./interfaces/Constants.sol";
 import { Multicall } from "@openzeppelin/contracts/utils/Multicall.sol";
 import { BaseStrategy } from "../BaseStrategy.sol";
 
@@ -95,9 +95,6 @@ abstract contract MACIQFBase is BaseStrategy, Multicall, Constants {
 
     /// @notice The address of the coordinator
     address public coordinator;
-
-    /// @notice The verifier contract instance
-    IVerifier public verifier;
 
     /// @notice The hash of the tally
     string public tallyHash;
@@ -233,11 +230,17 @@ abstract contract MACIQFBase is BaseStrategy, Multicall, Constants {
     /// ============ Internal ==============
     /// ====================================
 
-    /// @notice Checks if the provided timestamps are valid
-    /// @param _registrationStartTime The start time for registration
-    /// @param _registrationEndTime The end time for registration
-    /// @param _allocationStartTime The start time for allocation
-    /// @param _allocationEndTime The end time for allocation
+    /// @notice Checks if the timestamps are valid
+    /// @dev This will revert if any of the timestamps are invalid. This is determined by the strategy
+    /// and may vary from strategy to strategy. Checks if '_registrationStartTime' is greater than the '_registrationEndTime'
+    /// or if '_registrationStartTime' is greater than the '_allocationStartTime' or if '_registrationEndTime'
+    /// is greater than the '_allocationEndTime' or if '_allocationStartTime' is greater than the '_allocationEndTime'
+    /// or if '_registrationEndTime' is greater than '_allocationStartTime'.
+    /// If any of these conditions are true, this will revert.
+    /// @param _registrationStartTime The start time for the registration
+    /// @param _registrationEndTime The end time for the registration
+    /// @param _allocationStartTime The start time for the allocation
+    /// @param _allocationEndTime The end time for the allocation
     function _isPoolTimestampValid(
         uint64 _registrationStartTime,
         uint64 _registrationEndTime,
@@ -245,8 +248,15 @@ abstract contract MACIQFBase is BaseStrategy, Multicall, Constants {
         uint64 _allocationEndTime
     ) internal pure {
         if (
-            _registrationStartTime > _registrationEndTime || _registrationStartTime > _allocationStartTime ||
-            _allocationStartTime > _allocationEndTime || _registrationEndTime > _allocationEndTime
+            _registrationStartTime > _registrationEndTime || 
+            _registrationStartTime > _allocationStartTime || 
+            _registrationEndTime > _allocationEndTime || 
+            _allocationStartTime > _allocationEndTime ||
+            // Added condition to ensure registrationEndTime cannot be greater than allocationStartTime
+            // This is to prevent accepting a recipient after the allocation has started
+            // Because in MACI votes are encrypted if a recipient is REJECTED after the allocation has started 
+            // the votes for that recipient will be wasted toghether with the matching funds of the contributors
+            _registrationEndTime > _allocationStartTime 
         ) {
             revert INVALID();
         }

@@ -13,7 +13,7 @@ import {Poll} from "maci-contracts/contracts/Poll.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 // Core Contracts
-import {IAllo, IERC20, IVerifier} from "./interfaces/Constants.sol";
+import {IAllo, IERC20, IZuPassVerifier} from "./interfaces/Constants.sol";
 import {MACIQFBase} from "./MACIQFBase.sol";
 
 /// @title MACIQF
@@ -43,6 +43,9 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
 
     /// @notice Address of the MACI factory
     address public maciFactory;
+
+    /// @notice The verifier contract instance
+    IZuPassVerifier public zupassVerifier;
 
     /// ======================
     /// ======= Structs ======
@@ -108,7 +111,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         address strategy = address(allo.getPool(_poolId).strategy);
 
         coordinator = _params.maciParams.coordinator;
-        verifier = IVerifier(_params.maciParams.verifier);
+        zupassVerifier = IZuPassVerifier(_params.maciParams.verifier);
 
         for (uint i = 0; i < _params.maciParams.validEventIds.length; ) {
             VALID_EVENT_IDS.add(_params.maciParams.validEventIds[i]);
@@ -136,7 +139,8 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
 
         _pollContracts = ClonableMACI(_maci).deployPoll(
             _pollDuration,
-            _params.maciParams.coordinatorPubKey
+            _params.maciParams.coordinatorPubKey,
+            Mode.QV
         );
 
         maciFactory = _params.maciParams.maciFactory;
@@ -453,8 +457,8 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         address verifier = address(tally.verifier());
         address vkRegistry = address(tally.vkRegistry());
 
-        address mp = ClonableMACIFactory(maciFactory).deployMessageProcessor(verifier, vkRegistry, address(poll), coordinator);
-        address newTally = ClonableMACIFactory(maciFactory).deployTally(verifier, vkRegistry, address(poll), mp, coordinator);
+        address mp = ClonableMACIFactory(maciFactory).deployMessageProcessor(verifier, vkRegistry, address(poll), coordinator, Mode.QV);
+        address newTally = ClonableMACIFactory(maciFactory).deployTally(verifier, vkRegistry, address(poll), mp, coordinator, Mode.QV);
 
         _pollContracts.tally = newTally;
         _pollContracts.messageProcessor = mp;
@@ -549,7 +553,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         uint[2] memory _pC,
         uint[38] memory _pubSignals
     ) internal {
-        if (!verifier.verifyProof(_pA, _pB, _pC, _pubSignals)) {
+        if (!zupassVerifier.verifyProof(_pA, _pB, _pC, _pubSignals)) {
             revert InvalidProof();
         }
 

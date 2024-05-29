@@ -123,7 +123,7 @@ contract ClonableMACI is IMACI, Params, Utilities, Initializable, OwnableUpgrade
         address _coordinator
     ) public initializer {
         __Context_init_unchained();
-        __Ownable_init_unchained();
+        __Ownable_init_unchained(msg.sender);
         // because we add a blank leaf we need to count one signup
         // so we don't allow max + 1
         unchecked {
@@ -207,7 +207,8 @@ contract ClonableMACI is IMACI, Params, Utilities, Initializable, OwnableUpgrade
     /// @return pollAddr a new Poll contract address
     function deployPoll(
         uint256 _duration,
-        PubKey memory _coordinatorPubKey
+        PubKey memory _coordinatorPubKey,
+        Mode _mode
     ) public virtual onlyOwner returns (PollContracts memory pollAddr) {
         // cache the poll to a local variable so we can increment it
         uint256 pollId = nextPollId;
@@ -238,9 +239,9 @@ contract ClonableMACI is IMACI, Params, Utilities, Initializable, OwnableUpgrade
             _owner
         );
 
-        address mp = maciFactory.deployMessageProcessor(verifier, vkRegistry, p, _owner);
+        address mp = maciFactory.deployMessageProcessor(verifier, vkRegistry, p, _owner, _mode);
 
-        address tally = maciFactory.deployTally(verifier, vkRegistry, p, mp, _owner);
+        address tally = maciFactory.deployTally(verifier, vkRegistry, p, mp, _owner, _mode);
 
         address subsidy;
 
@@ -253,15 +254,12 @@ contract ClonableMACI is IMACI, Params, Utilities, Initializable, OwnableUpgrade
     }
 
     /// @inheritdoc IMACI
-    function mergeStateAqSubRoots(
-        uint256 _numSrQueueOps,
-        uint256 _pollId
-    ) public onlyPoll(_pollId) {
+    function mergeStateAqSubRoots(uint256 _numSrQueueOps, uint256 _pollId) public onlyPoll(_pollId) {
         stateAq.mergeSubRoots(_numSrQueueOps);
 
         // if we have merged all subtrees then put a block
         if (stateAq.subTreesMerged()) {
-            subtreesMerged = true;
+        subtreesMerged = true;
         }
     }
 

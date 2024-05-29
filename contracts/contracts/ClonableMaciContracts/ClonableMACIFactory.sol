@@ -1,21 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {ClonesUpgradeable} from "../core/libraries/utils/ClonesUpgradeable.sol";
+
 import {ClonableMACI} from "./ClonableMACI.sol";
-import {AccQueueQuinaryMaci} from "maci-contracts/contracts/trees/AccQueueQuinaryMaci.sol";
 import {ClonablePoll} from "./ClonablePoll.sol";
 import {ClonableTally} from "./ClonableTally.sol";
 import {ClonableMessageProcessor} from "./ClonableMessageProcessor.sol";
 
+import {AccQueueQuinaryMaci} from "maci-contracts/contracts/trees/AccQueueQuinaryMaci.sol";
+import {DomainObjs} from "maci-contracts/contracts/utilities/DomainObjs.sol";
+import {TopupCredit} from "maci-contracts/contracts/TopupCredit.sol";
 import {Params} from "maci-contracts/contracts/utilities/Params.sol";
 import {AccQueue} from "maci-contracts/contracts/trees/AccQueue.sol";
 import {IMACI} from "maci-contracts/contracts/interfaces/IMACI.sol";
-import {TopupCredit} from "maci-contracts/contracts/TopupCredit.sol";
-import {DomainObjs} from "maci-contracts/contracts/utilities/DomainObjs.sol";
 
-contract ClonableMACIFactory is OwnableUpgradeable {
+contract ClonableMACIFactory is OwnableUpgradeable,DomainObjs {
+    
+    uint8 internal constant TREE_ARITY = 5;
+
     struct MACI_SETTINGS {
         Params.TreeDepths treeDepths;
         uint8 stateTreeDepth;
@@ -44,7 +48,7 @@ contract ClonableMACIFactory is OwnableUpgradeable {
         address _MessageProcessorImplementation
     ) external initializer {
         __Context_init_unchained();
-        __Ownable_init_unchained();
+        __Ownable_init_unchained(msg.sender);
 
         clonableMaciImplementation = _clonableMaciImplementation;
         PollImplementation = _PollImplementation;
@@ -137,7 +141,8 @@ contract ClonableMACIFactory is OwnableUpgradeable {
         address _vkRegistry,
         address _poll,
         address _messageProcessor,
-        address _owner
+        address _owner,
+        Mode mode
     ) public returns (address tallyAddr) {
         // deploy Tally for this Poll
         address tally = ClonesUpgradeable.cloneDeterministic(
@@ -147,7 +152,7 @@ contract ClonableMACIFactory is OwnableUpgradeable {
 
         ClonableTally _tally = ClonableTally(tally);
 
-        _tally.initialize(_verifier, _vkRegistry, _poll, _messageProcessor);
+        _tally.initialize(_verifier, _vkRegistry, _poll, _messageProcessor, mode);
 
         _tally.transferOwnership(_owner);
 
@@ -158,7 +163,8 @@ contract ClonableMACIFactory is OwnableUpgradeable {
         address _verifier,
         address _vkRegistry,
         address _poll,
-        address _owner
+        address _owner,
+        Mode mode
     ) public returns (address messageProcessorAddr) {
         // deploy MessageProcessor for this Poll
         address messageProcessor = ClonesUpgradeable.cloneDeterministic(
@@ -168,10 +174,14 @@ contract ClonableMACIFactory is OwnableUpgradeable {
 
         ClonableMessageProcessor _messageProcessor = ClonableMessageProcessor(messageProcessor);
 
-        _messageProcessor.initialize(_verifier, _vkRegistry, _poll);
+        _messageProcessor.initialize(_verifier, _vkRegistry, _poll, mode);
 
         _messageProcessor.transferOwnership(_owner);
 
         messageProcessorAddr = address(messageProcessor);
+    }
+
+    function getMaxVoteOptions(uint8 _maciId) public view returns (uint256) {
+        return TREE_ARITY ** maciSettings[_maciId].treeDepths.voteOptionTreeDepth;
     }
 }

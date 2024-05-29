@@ -5,7 +5,7 @@ import { extractVk } from "maci-circuits";
 import { CIRCUITS, getCircuitFiles } from "./circuits";
 import { TREE_ARITY } from "./constants";
 import { Params } from "../../typechain-types/contracts/ClonableMaciContracts/ClonableMACI";
-import fs from "fs";
+import { existsSync, mkdirSync } from "fs";
 type TreeDepths = {
   intStateTreeDepth: number;
   messageTreeSubDepth: number;
@@ -95,11 +95,10 @@ export class MaciParameters {
 
 
   static async mock2(): Promise<MaciParameters> {
-    let circuitDirectory = "./zkeys/zkeys";
-    // fs.access(circuitDirectory, fs.constants.F_OK, (err) => {
-    //   if(err) circuitDirectory = "./zkeys/zkeys";
-    // });
-    console.log(circuitDirectory);
+    let circuitDirectory = "../../zkeys/zkeys";
+    if (!existsSync(circuitDirectory)) {
+      circuitDirectory = "./zkeys/zkeys";
+    }
     const deployParams = await MaciParameters.fromConfig(
       "micro",
       circuitDirectory,

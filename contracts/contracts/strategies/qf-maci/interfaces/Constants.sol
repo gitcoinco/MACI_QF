@@ -60,12 +60,19 @@ contract Constants {
     error RoundNotFinalized();
     error NothingToWithdraw();
     error ContributionWithdrawn();
+    error MAX_RECIPIENTS_REACHED();
 
 
     /// ======================
     /// ======= Events ======
     /// ======================
 
+    /// @notice Emitted when a recipient updates their registration
+    /// @param recipientId Id of the recipient
+    /// @param data The encoded data - (address recipientId, address recipientAddress, Metadata metadata)
+    /// @param sender The sender of the transaction
+    /// @param status The updated status of the recipient
+    event UpdatedRegistration(address indexed recipientId, bytes data, address sender, uint8 status);
 
     /// @notice Emitted when a recipient is registered and the status is updated
     /// @param rowIndex The index of the row in the bitmap
@@ -73,7 +80,11 @@ contract Constants {
     /// @param sender The sender of the transaction
     event RecipientStatusUpdated(uint256 indexed rowIndex, uint256 fullRow, address sender);
 
-
+    /// @notice Emitted when a recipient is registered and the status is updated
+    /// @param recipientId The recipientId 
+    /// @param status The status of the review
+    /// @param sender The sender of the transaction
+    event RecipientStatusUpdated(address indexed recipientId, IStrategy.Status status, address sender);
 
     /// @notice Emitted when funds are distributed to a recipient
     /// @param amount The amount of tokens distributed
@@ -84,10 +95,12 @@ contract Constants {
 
     /// @notice Emitted when a recipient is registered
     /// @param recipientId ID of the recipient
+    /// @param applicationId ID of the recipient"s application
     /// @param status The status of the recipient
     /// @param sender The sender of the transaction
     event RecipientStatusUpdated(
         address indexed recipientId,
+        uint256 applicationId,
         IStrategy.Status status,
         address sender
     );
@@ -102,6 +115,20 @@ contract Constants {
         uint256 applicationId,
         IStrategy.Status status,
         address sender
+    );
+
+    /// @notice Emitted when a recipient updates their registration
+    /// @param recipientId ID of the recipient
+    /// @param applicationId ID of the recipient"s application
+    /// @param data The encoded data - (address recipientId, address recipientAddress, Metadata metadata)
+    /// @param sender The sender of the transaction
+    /// @param status The updated status of the recipient
+    event UpdatedRegistration(
+        address indexed recipientId,
+        uint256 applicationId,
+        bytes data,
+        address sender,
+        IStrategy.Status status
     );
 
     /// @notice Emitted when a recipient updates their registration
@@ -142,7 +169,7 @@ contract Constants {
     );
 }
 
-interface IVerifier {
+interface IZuPassVerifier {
     function verifyProof(
         uint[2] memory _pA,
         uint[2][2] memory _pB,

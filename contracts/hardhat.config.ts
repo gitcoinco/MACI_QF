@@ -1,16 +1,13 @@
+import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
-import "hardhat-artifactor";
-import '@openzeppelin/hardhat-upgrades';
-
-import type { HardhatUserConfig } from "hardhat/config";
+import "@openzeppelin/hardhat-upgrades";
+import dotenv from "dotenv";
+dotenv.config();
 
 import { task, subtask } from "hardhat/config";
 
 import path from "path";
 import fs from "fs";
-
-import dotenv from "dotenv";
-dotenv.config();
 
 /**
  * Allow to copy a directory from source to target

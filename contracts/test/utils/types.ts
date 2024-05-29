@@ -1,5 +1,6 @@
 import type {
     AccQueueQuinaryMaci,
+    ClonablePoll,
     ConstantInitialVoiceCreditProxy,
     FreeForAllGatekeeper,
     MACI,
@@ -14,8 +15,7 @@ import type {
   } from "../../typechain-types";
   import type { BigNumberish, Signer } from "ethers";
   import type { CircuitInputs } from "maci-core";
-  import type { Message, PubKey } from "maci-domainobjs";
-  import type { PublicSignals } from "snarkjs";
+  import type { Message, PrivKey, PubKey } from "maci-domainobjs";
   
   /**
    * The data structure of the verifying key of the SNARK circuit.
@@ -63,14 +63,6 @@ import type {
     curve: string;
   }
   
-  /**
-   * The data structure representing a proof output
-   */
-  export interface Proof {
-    proof: SnarkProof | Groth16Proof;
-    circuitInputs: CircuitInputs;
-    publicInputs: PublicSignals;
-  }
   
   /**
    * An interface holding all of the smart contracts part of MACI.
@@ -179,3 +171,167 @@ import type {
     };
   }
   
+
+  /**
+ * Interface that represents user publish message
+ */
+export interface IPublishMessage {
+  /**
+   * The index of the state leaf
+   */
+  stateIndex: bigint;
+
+  /**
+   * The index of the vote option
+   */
+  voteOptionIndex: bigint;
+
+  /**
+   * The nonce of the message
+   */
+  nonce: bigint;
+
+  /**
+   * The new vote weight
+   */
+  newVoteWeight: bigint;
+}
+
+/**
+ * Interface for the arguments to the batch publish command
+ */
+export interface IPublishBatchArgs {
+  /**
+   * User messages
+   */
+  messages: IPublishMessage[];
+
+  /**
+   * The id of the poll
+   */
+  pollId: bigint;
+
+  /**
+   * The address of the MACI contract
+   */
+  Poll: ClonablePoll;
+
+  /**
+   * The public key of the user
+   */
+  publicKey: PubKey;
+
+  /**
+   * The private key of the user
+   */
+  privateKey: PrivKey;
+
+  /**
+   * A signer object
+   */
+  signer: Signer;
+
+  /**
+   * Whether to log the output
+   */
+  quiet?: boolean;
+}
+
+/**
+ * Interface for the arguments to the batch publish command
+ */
+export interface IAllocateArgs {
+  /**
+   * The public key of the user
+   */
+  publicKey: string;
+
+  amount: BigInt;
+
+  proof: ProofArgs;
+}
+
+  // uint[2] memory _pA,
+  // uint[2][2] memory _pB,
+  // uint[2] memory _pC,
+  // uint[38] memory _pubSignals
+export interface ProofArgs {
+  pA: bigint[];
+  pB: bigint[][];
+  pC: bigint[];
+  pubSignals: bigint[];
+}
+
+
+
+/**
+ * Interface for the arguments to the batch publish command
+ */
+export interface IAllocateBatchArgs {
+  /**
+   * User messages
+   */
+  messages: IPublishMessage[];
+
+  /**
+   * The id of the poll
+   */
+  pollId: bigint;
+
+  /**
+   * The address of the MACI contract
+   */
+  Poll: ClonablePoll;
+
+  /**
+   * The public key of the user
+   */
+  publicKey: string;
+
+  /**
+   * The private key of the user
+   */
+  privateKey: string;
+
+  /**
+   * A signer object
+   */
+  signer: Signer;
+
+  /**
+   * Whether to log the output
+   */
+  quiet?: boolean;
+
+  /**
+   * The amount to allocate
+   */
+  amount: bigint;
+}
+
+/* Input to getGenProofArgs() */
+export type getGenProofArgsInput = {
+  maciAddress: string;
+  pollId: bigint;
+  // coordinator's MACI serialized secret key
+  coordinatorMacisk: string;
+  // the transaction hash of the creation of the MACI contract
+  maciTxHash?: string;
+  // the key get zkeys file mapping, see utils/circuits.ts
+  circuitType: string;
+  circuitDirectory: string;
+  rapidsnark?: string;
+  // where the proof will be produced
+  outputDir: string;
+  // number of blocks of logs to fetch per batch
+  blocksPerBatch: number;
+  // fetch logs from MACI from these start and end blocks
+  startBlock?: number;
+  endBlock?: number;
+  // MACI state file
+  maciStateFile?: string;
+  // transaction signer
+  signer: Signer;
+  // flag to turn on verbose logging in MACI cli
+  quiet?: boolean;
+};
