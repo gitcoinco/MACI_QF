@@ -375,10 +375,6 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
 
   const maci = await MACIQF_STRATEGY._maci();
 
-  const MACI = await ethers.getContractAt("ClonableMACI", maci);
-  const nextPollId = await MACI.nextPollId();
-  console.log("Next Poll Id : ", nextPollId.toString());
-
   const pollContracts = await MACIQF_STRATEGY._pollContracts();
 
   const signer2 = new ethers.Wallet(

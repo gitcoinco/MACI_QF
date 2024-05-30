@@ -111,7 +111,6 @@ export const genMaciStateFromContract = async (
 
       foundPollIds.add(Number(id));
       pollContractAddresses.set(BigInt(id), pollAddr);
-      console.log(`Found pollId ${id} at address ${pollAddr}`);
     });
 
     if (sleepAmount) {

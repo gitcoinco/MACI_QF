@@ -17,6 +17,9 @@ import {AccQueue} from "maci-contracts/contracts/trees/AccQueue.sol";
 import {IMACI} from "maci-contracts/contracts/interfaces/IMACI.sol";
 
 contract ClonableMACIFactory is OwnableUpgradeable, DomainObjs {
+
+    error InvalidMaxValues();
+
     uint8 internal constant TREE_ARITY = 5;
 
     struct MACI_SETTINGS {
@@ -106,7 +109,7 @@ contract ClonableMACIFactory is OwnableUpgradeable, DomainObjs {
         /// it will be packed as a 50-bit value along with other values as one
         /// of the inputs (aka packedVal)
         if (_maxValues.maxVoteOptions >= (2 ** 50)) {
-            revert("InvalidMaxValues");
+            revert InvalidMaxValues();
         }
 
         AccQueue messageAq = AccQueue(address(0));

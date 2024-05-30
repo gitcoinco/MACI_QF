@@ -317,6 +317,8 @@ contract ClonablePoll is Params, Utilities, SnarkCommon, OwnableUpgradeable, IPo
         numMsgs = numMessages;
     }
 
+    // Needed function to set the emptyBallotRoots because we cannot set them in the constructor
+    // due to the fact that the Poll is a Proxy contract
     function _setEmptyBallotRoots() internal {
         emptyBallotRoots[0] = uint256(
             4904028317433377177773123885584230878115556059208431880161186712332781831975
