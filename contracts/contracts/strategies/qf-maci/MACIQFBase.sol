@@ -167,6 +167,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
 
     /// @notice Mapping from recipient address to vote index
     // This is used to get the MACI vote index for a recipient in the front end
+    // Maybe we can use the event logs to get this information TODO 
     mapping(address => uint256) public recipientToVoteIndex;
 
     /// @notice Mapping to track if the recipient has been paid out

@@ -151,8 +151,6 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
     /// @notice The verifier contract instance
     IZuPassVerifier public zupassVerifier;
 
-    mapping(uint256 => bool) public usedPublicSignals;
-
     /// ====================================
     /// ========== Constructor =============
     /// ====================================
@@ -567,7 +565,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
             address contributor = _contributors[i];
             uint256 amount = contributorCredits[contributor] * voiceCreditFactor;
             if (amount > 0) {
-                // Reset the contributor credits to prevent Re-entrancy
+                // Reset before sending funds the contributor credits to prevent Re-entrancy
                 contributorCredits[contributor] = 0;
                 if (allo.getPool(poolId).token != NATIVE) {
                     _transferAmountFrom(
