@@ -11,21 +11,29 @@ contract ZuPassRegistry is Ownable {
 
     using EnumerableSet for EnumerableSet.UintSet;
 
-    error AlreadyUsedZupass();
-    error InvalidProof();
-    error EventIsNotRegistered();
-    error InvalidInput();
-
-    IZuPassVerifier public immutable zupassVerifier;
-
-    constructor(IZuPassVerifier _zupassVerifier) Ownable(msg.sender) {
-        zupassVerifier = _zupassVerifier;
-    }
+    /// ======================
+    /// ======= Structs ======
+    /// ======================
 
     struct ZUPASS_SIGNER {
         uint256 G1;
         uint256 G2;
     }
+
+    /// =====================
+    /// ======= Errors ======
+    /// =====================
+
+    error AlreadyUsedZupass();
+    error InvalidProof();
+    error EventIsNotRegistered();
+    error InvalidInput();
+
+    /// ======================
+    /// ======= Storage ======
+    /// ======================
+
+    IZuPassVerifier public immutable zupassVerifier;
 
     EnumerableSet.UintSet private eventIds;
 
@@ -34,6 +42,18 @@ contract ZuPassRegistry is Ownable {
     mapping(address => mapping(uint256 => bool)) public usedRoundNullifiers;
 
     mapping(uint256 => ZUPASS_SIGNER) public eventToZupassSigner;
+
+    /// ====================================
+    /// ========== Constructor =============
+    /// ====================================
+
+    constructor(IZuPassVerifier _zupassVerifier) Ownable(msg.sender) {
+        zupassVerifier = _zupassVerifier;
+    }
+
+    /// =========================
+    /// ====== External =========
+    /// =========================
 
     function setEvents(
         uint256[] memory _eventIds,
@@ -56,9 +76,22 @@ contract ZuPassRegistry is Ownable {
         }
     }
 
-    /// ====================================
-    /// ==== Zupass Verifier Functions =====
-    /// ====================================
+    /// @notice Get the whitelisted events for a FundingRound (Strategy)
+    /// @return List of whitelisted event IDs
+    function getWhitelistedEvents(address _contract) external view returns (uint256[] memory) {
+        return contractToEventIds[_contract].values();
+    }
+
+    /// @notice Get the Zupass signer for an event
+    /// @param _eventId The event ID
+    /// @return The Zupass signer
+    function getZupassSigner(uint256 _eventId) external view returns (ZUPASS_SIGNER memory) {
+        return eventToZupassSigner[_eventId];
+    }
+
+    /// ===================================
+    /// ==== Zupass Verifier Function =====
+    /// ===================================
 
     /// @notice Validate proof of attendance
     /// @param _pA Proof part A
@@ -105,18 +138,5 @@ contract ZuPassRegistry is Ownable {
         usedRoundNullifiers[msg.sender][ZupassNullifier] = true;
 
         return true;
-    }
-
-    /// @notice Get the whitelisted events for a FundingRound (Strategy)
-    /// @return List of whitelisted event IDs
-    function getWhitelistedEvents(address _contract) external view returns (uint256[] memory) {
-        return contractToEventIds[_contract].values();
-    }
-
-    /// @notice Get the Zupass signer for an event
-    /// @param _eventId The event ID
-    /// @return The Zupass signer
-    function getZupassSigner(uint256 _eventId) external view returns (ZUPASS_SIGNER memory) {
-        return eventToZupassSigner[_eventId];
     }
 }

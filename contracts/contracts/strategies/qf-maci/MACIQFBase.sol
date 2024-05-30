@@ -88,9 +88,9 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         address sender
     );
 
-    /// ======================
+    /// =====================
     /// ======= Errors ======
-    /// ======================
+    /// =====================
     error NotCoordinator();
     error RoundAlreadyFinalized();
     error NoProjectHasMoreThanOneVote();
