@@ -21,6 +21,15 @@
     "maci-cli": "^1.2.3",
     "maci-contracts": "^1.2.3",
     "maci-domainobjs": "^1.2.3",
+    "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
+  },
+  "overrides": {
+    "@openzeppelin/hardhat-upgrades": {
+      "@openzeppelin/defender-sdk-base-client": "1.13.1",
+      "@openzeppelin/defender-sdk-deploy-client": "1.13.1",
+      "@openzeppelin/defender-sdk-monitor-client": "1.13.1",
+      "@openzeppelin/defender-sdk-network-client": "1.13.1"
+    }
   }
 }

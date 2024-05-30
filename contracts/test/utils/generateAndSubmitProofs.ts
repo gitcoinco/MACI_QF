@@ -91,7 +91,6 @@ export const genAndSubmitProofs = async ({
     messageProcessorAddress: mpContractAddress,
     tallyAddress: tallyContractAddress,
     signer: coordinator,
-    subsidyEnabled: false,
     quiet: true,
   });
 
