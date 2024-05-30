@@ -178,33 +178,33 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
     /// @param _params The initialize params for the strategy
     function __MACIQFStrategy_init(uint256 _poolId, InitializeParamsMACI memory _params) internal {
         __MACIQFBaseStrategy_init(_poolId, _params.initializeParams);
-
-        address strategy = address(allo.getPool(_poolId).strategy);
-
-        coordinator = _params.maciParams.coordinator;
-
+        // Initialize the zupassVerifier contract
         zupassVerifier = IZuPassVerifier(_params.maciParams.verifier);
-
+        // Round Whitelisted events registration
         zupassVerifier.roundRegistration(_params.maciParams.validEventIds);
-
+        // Set the maximum contribution amounts for Zupass and non-Zupass users
         maxContributionAmountForZupass = _params.maciParams.maxContributionAmountForZupass;
         maxContributionAmountForNonZupass = _params.maciParams.maxContributionAmountForNonZupass;
 
-        ClonableMACIFactory _factory = ClonableMACIFactory(_params.maciParams.maciFactory);
+        address strategy = address(allo.getPool(_poolId).strategy);
+        // Deploy the MACI contracts
+        coordinator = _params.maciParams.coordinator;
 
-        _maci = _factory.createMACI(strategy, strategy, coordinator, _params.maciParams.maciId);
+        maciFactory = _params.maciParams.maciFactory;
+
+        ClonableMACIFactory _maciFactory = ClonableMACIFactory(maciFactory);
+
+        _maci = _maciFactory.createMACI(strategy, strategy, coordinator, _params.maciParams.maciId);
+
+        maxAcceptedRecipients = _maciFactory.getMaxVoteOptions(_params.maciParams.maciId);
 
         uint256 _pollDuration = _params.initializeParams.allocationEndTime - block.timestamp;
-
-        maxAcceptedRecipients = _factory.getMaxVoteOptions(_params.maciParams.maciId);
 
         _pollContracts = ClonableMACI(_maci).deployPoll(
             _pollDuration,
             _params.maciParams.coordinatorPubKey,
             Mode.QV
         );
-
-        maciFactory = _params.maciParams.maciFactory;
     }
 
     /// =======================================
@@ -599,9 +599,9 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         return (Poll(_pollContracts.poll), Tally(_pollContracts.tally));
     }
 
-    /// =========================
-    /// ==== Util Functions =====
-    /// =========================
+    /// ========================
+    /// ==== Util Function =====
+    /// ========================
 
     /// @notice Check if the given address is zero
     /// @param _address The address to check

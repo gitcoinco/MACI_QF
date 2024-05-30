@@ -8,6 +8,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IZuPassVerifier} from "../interfaces/IZuPassVerifier.sol";
 
 contract ZuPassRegistry is Ownable {
+
     using EnumerableSet for EnumerableSet.UintSet;
 
     error AlreadyUsedZupass();
@@ -73,22 +74,27 @@ contract ZuPassRegistry is Ownable {
         // The eventID used to generate the proof as public input
         uint256 eventID = _pubSignals[1];
 
-        ZUPASS_SIGNER memory signer = ZUPASS_SIGNER({G1: _pubSignals[13], G2: _pubSignals[14]});
-
-        if (!zupassVerifier.verifyProof(_pA, _pB, _pC, _pubSignals)) {
-            return false;
-        }
-
         // Validate that the event ID used in the proof is whitelisted
+        // for the FundingRound (Strategy) that is validating the proof
         if (!contractToEventIds[msg.sender].contains(eventID)) return false;
 
+        // Get the Zupass signer used in the proof publicSignals[13] and publicSignals[14]
+        ZUPASS_SIGNER memory signer = ZUPASS_SIGNER({G1: _pubSignals[13], G2: _pubSignals[14]});
+
         // Validate that the signer of the proof is the same as the one whitelisted for the event
+        // That we are validating the proof for
         if (
             signer.G1 != eventToZupassSigner[eventID].G1 ||
             signer.G2 != eventToZupassSigner[eventID].G2
         ) {
             return false;
         }
+
+        // Validate the proof with the Groth16 verifier
+        if (!zupassVerifier.verifyProof(_pA, _pB, _pC, _pubSignals)) {
+            return false;
+        }
+
         // Get the nullifier used in the proof this is the email hash of the zupass
         uint256 ZupassNullifier = _pubSignals[9];
 
@@ -101,7 +107,7 @@ contract ZuPassRegistry is Ownable {
         return true;
     }
 
-    /// @notice Get the whitelisted events
+    /// @notice Get the whitelisted events for a FundingRound (Strategy)
     /// @return List of whitelisted event IDs
     function getWhitelistedEvents() external view returns (uint256[] memory) {
         return contractToEventIds[msg.sender].values();
