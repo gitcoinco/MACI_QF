@@ -16,8 +16,7 @@ import {Params} from "maci-contracts/contracts/utilities/Params.sol";
 import {AccQueue} from "maci-contracts/contracts/trees/AccQueue.sol";
 import {IMACI} from "maci-contracts/contracts/interfaces/IMACI.sol";
 
-contract ClonableMACIFactory is OwnableUpgradeable,DomainObjs {
-    
+contract ClonableMACIFactory is OwnableUpgradeable, DomainObjs {
     uint8 internal constant TREE_ARITY = 5;
 
     struct MACI_SETTINGS {

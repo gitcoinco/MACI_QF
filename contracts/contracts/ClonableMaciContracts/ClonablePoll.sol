@@ -156,7 +156,7 @@ contract ClonablePoll is Params, Utilities, SnarkCommon, OwnableUpgradeable, IPo
         isInit = true;
 
         unchecked {
-        numMessages++;
+            numMessages++;
         }
 
         // init messageAq here by inserting placeholderLeaf
@@ -164,7 +164,11 @@ contract ClonablePoll is Params, Utilities, SnarkCommon, OwnableUpgradeable, IPo
         dat[0] = NOTHING_UP_MY_SLEEVE;
         dat[1] = 0;
 
-        (Message memory _message, PubKey memory _padKey, uint256 placeholderLeaf) = padAndHashMessage(dat, 1);
+        (
+            Message memory _message,
+            PubKey memory _padKey,
+            uint256 placeholderLeaf
+        ) = padAndHashMessage(dat, 1);
         extContracts.messageAq.enqueue(placeholderLeaf);
 
         emit PublishMessage(_message, _padKey);
@@ -177,7 +181,7 @@ contract ClonablePoll is Params, Utilities, SnarkCommon, OwnableUpgradeable, IPo
 
         // cannot realistically overflow
         unchecked {
-        numMessages++;
+            numMessages++;
         }
 
         /// @notice topupCredit is a trusted token contract which reverts if the transfer fails
@@ -195,18 +199,21 @@ contract ClonablePoll is Params, Utilities, SnarkCommon, OwnableUpgradeable, IPo
     }
 
     /// @inheritdoc IPoll
-    function publishMessage(Message memory _message, PubKey calldata _encPubKey) public virtual isWithinVotingDeadline {
+    function publishMessage(
+        Message memory _message,
+        PubKey calldata _encPubKey
+    ) public virtual isWithinVotingDeadline {
         // we check that we do not exceed the max number of messages
         if (numMessages >= maxValues.maxMessages) revert TooManyMessages();
 
         // validate that the public key is valid
         if (_encPubKey.x >= SNARK_SCALAR_FIELD || _encPubKey.y >= SNARK_SCALAR_FIELD) {
-        revert MaciPubKeyLargerThanSnarkFieldSize();
+            revert MaciPubKeyLargerThanSnarkFieldSize();
         }
 
         // cannot realistically overflow
         unchecked {
-        numMessages++;
+            numMessages++;
         }
 
         // we enforce that msgType here is 1 so we don't need checks
@@ -223,24 +230,30 @@ contract ClonablePoll is Params, Utilities, SnarkCommon, OwnableUpgradeable, IPo
     /// @dev Can only be submitted before the voting deadline
     /// @param _messages the messages
     /// @param _encPubKeys the encrypted public keys
-    function publishMessageBatch(Message[] calldata _messages, PubKey[] calldata _encPubKeys) external {
+    function publishMessageBatch(
+        Message[] calldata _messages,
+        PubKey[] calldata _encPubKeys
+    ) external {
         if (_messages.length != _encPubKeys.length) {
-        revert InvalidBatchLength();
+            revert InvalidBatchLength();
         }
 
         uint256 len = _messages.length;
         for (uint256 i = 0; i < len; ) {
-        // an event will be published by this function already
-        publishMessage(_messages[i], _encPubKeys[i]);
+            // an event will be published by this function already
+            publishMessage(_messages[i], _encPubKeys[i]);
 
-        unchecked {
-            i++;
-        }
+            unchecked {
+                i++;
+            }
         }
     }
 
     /// @inheritdoc IPoll
-    function mergeMaciStateAqSubRoots(uint256 _numSrQueueOps, uint256 _pollId) public onlyOwner isAfterVotingDeadline {
+    function mergeMaciStateAqSubRoots(
+        uint256 _numSrQueueOps,
+        uint256 _pollId
+    ) public onlyOwner isAfterVotingDeadline {
         // This function cannot be called after the stateAq was merged
         if (stateAqMerged) revert StateAqAlreadyMerged();
 
@@ -289,7 +302,11 @@ contract ClonablePoll is Params, Utilities, SnarkCommon, OwnableUpgradeable, IPo
     }
 
     /// @inheritdoc IPoll
-    function getDeployTimeAndDuration() public view returns (uint256 pollDeployTime, uint256 pollDuration) {
+    function getDeployTimeAndDuration()
+        public
+        view
+        returns (uint256 pollDeployTime, uint256 pollDuration)
+    {
         pollDeployTime = deployTime;
         pollDuration = duration;
     }

@@ -254,12 +254,15 @@ contract ClonableMACI is IMACI, Params, Utilities, Initializable, OwnableUpgrade
     }
 
     /// @inheritdoc IMACI
-    function mergeStateAqSubRoots(uint256 _numSrQueueOps, uint256 _pollId) public onlyPoll(_pollId) {
+    function mergeStateAqSubRoots(
+        uint256 _numSrQueueOps,
+        uint256 _pollId
+    ) public onlyPoll(_pollId) {
         stateAq.mergeSubRoots(_numSrQueueOps);
 
         // if we have merged all subtrees then put a block
         if (stateAq.subTreesMerged()) {
-        subtreesMerged = true;
+            subtreesMerged = true;
         }
     }
 

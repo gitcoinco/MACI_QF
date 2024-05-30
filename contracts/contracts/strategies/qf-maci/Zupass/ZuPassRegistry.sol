@@ -8,7 +8,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IZuPassVerifier} from "../interfaces/IZuPassVerifier.sol";
 
 contract ZuPassRegistry is Ownable {
-    
     using EnumerableSet for EnumerableSet.UintSet;
 
     error AlreadyUsedZupass();
@@ -35,12 +34,15 @@ contract ZuPassRegistry is Ownable {
 
     mapping(uint256 => ZUPASS_SIGNER) public eventToZupassSigner;
 
-    function setEvents(uint256[] memory _eventIds, ZUPASS_SIGNER[] memory _ZupassSigners) external {
+    function setEvents(
+        uint256[] memory _eventIds,
+        ZUPASS_SIGNER[] memory _ZupassSigners
+    ) external onlyOwner {
         if (_eventIds.length != _ZupassSigners.length) revert InvalidInput();
         for (uint256 i = 0; i < _eventIds.length; i++) {
             uint256 eventId = _eventIds[i];
             eventToZupassSigner[eventId] = _ZupassSigners[i];
-            eventIds.add(eventId);        
+            eventIds.add(eventId);
         }
     }
 
@@ -62,20 +64,16 @@ contract ZuPassRegistry is Ownable {
     /// @param _pB Proof part B
     /// @param _pC Proof part C
     /// @param _pubSignals The public signals
-    function verifyProof(
+    function validateProofOfAttendance(
         uint[2] memory _pA,
         uint[2][2] memory _pB,
         uint[2] memory _pC,
         uint[38] memory _pubSignals
-    ) external returns (bool){
-
+    ) external returns (bool) {
         // The eventID used to generate the proof as public input
         uint256 eventID = _pubSignals[1];
 
-        ZUPASS_SIGNER memory signer = ZUPASS_SIGNER({
-            G1: _pubSignals[13],
-            G2: _pubSignals[14]
-        });
+        ZUPASS_SIGNER memory signer = ZUPASS_SIGNER({G1: _pubSignals[13], G2: _pubSignals[14]});
 
         if (!zupassVerifier.verifyProof(_pA, _pB, _pC, _pubSignals)) {
             return false;
@@ -85,7 +83,10 @@ contract ZuPassRegistry is Ownable {
         if (!contractToEventIds[msg.sender].contains(eventID)) return false;
 
         // Validate that the signer of the proof is the same as the one whitelisted for the event
-        if (signer.G1 != eventToZupassSigner[eventID].G1 || signer.G2 != eventToZupassSigner[eventID].G2) {
+        if (
+            signer.G1 != eventToZupassSigner[eventID].G1 ||
+            signer.G2 != eventToZupassSigner[eventID].G2
+        ) {
             return false;
         }
         // Get the nullifier used in the proof this is the email hash of the zupass

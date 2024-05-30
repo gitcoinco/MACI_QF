@@ -17,7 +17,7 @@ import {DomainObjs} from "maci-contracts/contracts/utilities/DomainObjs.sol";
 /// @title Tally
 /// @notice The Tally contract is used during votes tallying
 /// and by users to verify the tally results.
-contract ClonableTally is OwnableUpgradeable, SnarkCommon, CommonUtilities, Hasher,DomainObjs {
+contract ClonableTally is OwnableUpgradeable, SnarkCommon, CommonUtilities, Hasher, DomainObjs {
     uint256 internal constant TREE_ARITY = 5;
 
     /// @notice The commitment to the tally results. Its initial value is 0, but after
@@ -115,7 +115,11 @@ contract ClonableTally is OwnableUpgradeable, SnarkCommon, CommonUtilities, Hash
         uint256 _tallyBatchSize,
         uint256 _newTallyCommitment
     ) public view returns (uint256 inputHash) {
-        uint256 packedVals = genTallyVotesPackedVals(_numSignUps, _batchStartIndex, _tallyBatchSize);
+        uint256 packedVals = genTallyVotesPackedVals(
+            _numSignUps,
+            _batchStartIndex,
+            _tallyBatchSize
+        );
         uint256[] memory input = new uint256[](4);
         input[0] = packedVals;
         input[1] = sbCommitment;
@@ -128,11 +132,11 @@ contract ClonableTally is OwnableUpgradeable, SnarkCommon, CommonUtilities, Hash
     function updateSbCommitment() public onlyOwner {
         // Require that all messages have been processed
         if (!messageProcessor.processingComplete()) {
-        revert ProcessingNotComplete();
+            revert ProcessingNotComplete();
         }
 
         if (sbCommitment == 0) {
-        sbCommitment = messageProcessor.sbCommitment();
+            sbCommitment = messageProcessor.sbCommitment();
         }
     }
 
@@ -150,20 +154,26 @@ contract ClonableTally is OwnableUpgradeable, SnarkCommon, CommonUtilities, Hash
 
         // save some gas because we won't overflow uint256
         unchecked {
-        tallyBatchNum++;
+            tallyBatchNum++;
         }
 
         (uint256 numSignUps, ) = poll.numSignUpsAndMessages();
 
         // Require that there are untallied ballots left
         if (batchStartIndex >= numSignUps) {
-        revert AllBallotsTallied();
+            revert AllBallotsTallied();
         }
 
-        bool isValid = verifyTallyProof(_proof, numSignUps, batchStartIndex, tallyBatchSize, _newTallyCommitment);
+        bool isValid = verifyTallyProof(
+            _proof,
+            numSignUps,
+            batchStartIndex,
+            tallyBatchSize,
+            _newTallyCommitment
+        );
 
         if (!isValid) {
-        revert InvalidTallyVotesProof();
+            revert InvalidTallyVotesProof();
         }
 
         // Update the tally commitment and the tally batch num
@@ -189,14 +199,19 @@ contract ClonableTally is OwnableUpgradeable, SnarkCommon, CommonUtilities, Hash
         (IMACI maci, , ) = poll.extContracts();
 
         // Get the verifying key
-        VerifyingKey memory vk = vkRegistry.getTallyVk(maci.stateTreeDepth(), intStateTreeDepth, voteOptionTreeDepth, mode);
+        VerifyingKey memory vk = vkRegistry.getTallyVk(
+            maci.stateTreeDepth(),
+            intStateTreeDepth,
+            voteOptionTreeDepth,
+            mode
+        );
 
         // Get the public inputs
         uint256 publicInputHash = genTallyVotesPublicInputHash(
-        _numSignUps,
-        _batchStartIndex,
-        _tallyBatchSize,
-        _newTallyCommitment
+            _numSignUps,
+            _batchStartIndex,
+            _tallyBatchSize,
+            _newTallyCommitment
         );
 
         // Verify the proof
@@ -223,22 +238,22 @@ contract ClonableTally is OwnableUpgradeable, SnarkCommon, CommonUtilities, Hash
         uint256[TREE_ARITY] memory level;
 
         for (uint8 i = 0; i < _depth; ++i) {
-        for (uint8 j = 0; j < TREE_ARITY; ++j) {
-            if (j == pos) {
-            level[j] = current;
-            } else {
-            if (j > pos) {
-                k = j - 1;
-            } else {
-                k = j;
+            for (uint8 j = 0; j < TREE_ARITY; ++j) {
+                if (j == pos) {
+                    level[j] = current;
+                } else {
+                    if (j > pos) {
+                        k = j - 1;
+                    } else {
+                        k = j;
+                    }
+                    level[j] = _pathElements[i][k];
+                }
             }
-            level[j] = _pathElements[i][k];
-            }
-        }
 
-        _index /= TREE_ARITY;
-        pos = _index % TREE_ARITY;
-        current = hash5(level);
+            _index /= TREE_ARITY;
+            pos = _index % TREE_ARITY;
+            current = hash5(level);
         }
     }
 
@@ -260,9 +275,14 @@ contract ClonableTally is OwnableUpgradeable, SnarkCommon, CommonUtilities, Hash
         tally[2] = _perVOSpentVoiceCreditsHash;
 
         if (mode == Mode.QV) {
-        isValid = verifyQvSpentVoiceCredits(_totalSpent, _totalSpentSalt, _resultCommitment, _perVOSpentVoiceCreditsHash);
+            isValid = verifyQvSpentVoiceCredits(
+                _totalSpent,
+                _totalSpentSalt,
+                _resultCommitment,
+                _perVOSpentVoiceCreditsHash
+            );
         } else if (mode == Mode.NON_QV) {
-        isValid = verifyNonQvSpentVoiceCredits(_totalSpent, _totalSpentSalt, _resultCommitment);
+            isValid = verifyNonQvSpentVoiceCredits(_totalSpent, _totalSpentSalt, _resultCommitment);
         }
     }
 
@@ -323,10 +343,15 @@ contract ClonableTally is OwnableUpgradeable, SnarkCommon, CommonUtilities, Hash
         uint256 _resultCommitment
     ) public view returns (bool isValid) {
         if (mode != Mode.QV) {
-        revert NotSupported();
+            revert NotSupported();
         }
 
-        uint256 computedRoot = computeMerkleRootFromPath(_voteOptionTreeDepth, _voteOptionIndex, _spent, _spentProof);
+        uint256 computedRoot = computeMerkleRootFromPath(
+            _voteOptionTreeDepth,
+            _voteOptionIndex,
+            _spent,
+            _spentProof
+        );
 
         uint256[3] memory tally;
         tally[0] = _resultCommitment;
@@ -356,25 +381,25 @@ contract ClonableTally is OwnableUpgradeable, SnarkCommon, CommonUtilities, Hash
         uint256 _perVOSpentVoiceCreditsHash
     ) public view returns (bool isValid) {
         uint256 computedRoot = computeMerkleRootFromPath(
-        _voteOptionTreeDepth,
-        _voteOptionIndex,
-        _tallyResult,
-        _tallyResultProof
+            _voteOptionTreeDepth,
+            _voteOptionIndex,
+            _tallyResult,
+            _tallyResultProof
         );
 
         if (mode == Mode.QV) {
-        uint256[3] memory tally;
-        tally[0] = hashLeftRight(computedRoot, _tallyResultSalt);
-        tally[1] = _spentVoiceCreditsHash;
-        tally[2] = _perVOSpentVoiceCreditsHash;
+            uint256[3] memory tally;
+            tally[0] = hashLeftRight(computedRoot, _tallyResultSalt);
+            tally[1] = _spentVoiceCreditsHash;
+            tally[2] = _perVOSpentVoiceCreditsHash;
 
-        isValid = hash3(tally) == tallyCommitment;
+            isValid = hash3(tally) == tallyCommitment;
         } else if (mode == Mode.NON_QV) {
-        uint256[2] memory tally;
-        tally[0] = hashLeftRight(computedRoot, _tallyResultSalt);
-        tally[1] = _spentVoiceCreditsHash;
+            uint256[2] memory tally;
+            tally[0] = hashLeftRight(computedRoot, _tallyResultSalt);
+            tally[1] = _spentVoiceCreditsHash;
 
-        isValid = hash2(tally) == tallyCommitment;
+            isValid = hash2(tally) == tallyCommitment;
         }
     }
 }

@@ -7,7 +7,7 @@ import {
   deployVerifier,
 } from "maci-contracts";
 import { ethers, upgrades } from "hardhat";
-import { Signer } from "ethers";
+import { BigNumberish, Signer } from "ethers";
 import {
   Allo,
   Registry,
@@ -63,7 +63,7 @@ export const deployAlloContracts = async () => {
   // address _owner
   const Registry = await upgrades.deployProxy(RegistryFactory, [
     signer.address,
-  ])
+  ]);
   const registryAddress = await Registry.getAddress();
 
   const REGISTRY = await ethers.getContractAt("Registry", registryAddress);
@@ -77,7 +77,7 @@ export const deployAlloContracts = async () => {
     signer.address,
     0,
     0,
-  ])
+  ]);
 
   const alloAddress = await Allo.getAddress();
 
@@ -85,13 +85,41 @@ export const deployAlloContracts = async () => {
 
   const DaiFactory = await ethers.getContractFactory("dai");
   const Dai = await DaiFactory.deploy();
-  
+
   const daiAddress = await Dai.getAddress();
 
+  const VerifierFactory = await ethers.getContractFactory("Groth16Verifier").then( (factory) => factory.deploy());
 
-  const VerifierFactory = await ethers.getContractFactory("Groth16Verifier");
-  const verifier = await upgrades.deployProxy(VerifierFactory, []);
-  const verifierAddress = await verifier.getAddress();
+  const verifierAddress = await VerifierFactory.getAddress();
+
+  const ZuPassRegistryFactory = await ethers
+    .getContractFactory("ZuPassRegistry")
+    .then((factory) => factory.deploy(verifierAddress));
+
+  const ZuPassRegistryAddress = await ZuPassRegistryFactory.getAddress();
+
+  const ZuPassFactory = await ethers.getContractAt(
+    "ZuPassRegistry",
+    ZuPassRegistryAddress
+  );
+  
+  type ZUPASS_SIGNERStruct = {
+    G1: BigNumberish;
+    G2: BigNumberish;
+  };
+
+  const setEvents = await ZuPassFactory.setEvents(
+    ["192993346581360151154216832563903227660"] as BigNumberish[],
+    [
+      {
+        G1: "2658696990997679927259430495938453033612384821046330804164935913637421782846",
+        G2: "18852953264765021758165045442761617487242246681540213362114332008455443692095",
+      },
+    ] as ZUPASS_SIGNERStruct[]
+  );
+
+  await setEvents.wait();
+
   return {
     AlloAddress: alloAddress,
     RegistryAddress: registryAddress,
@@ -99,7 +127,7 @@ export const deployAlloContracts = async () => {
     Allo: ALLO as Allo,
     Registry: REGISTRY as Registry,
     Dai: Dai as Dai,
-    verifierAddress: verifierAddress,
+    ZuPassRegistryAddress: ZuPassRegistryAddress,
   };
 };
 
@@ -297,24 +325,21 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
       CoordinatorKeypair.pubKey.asContractParam().y,
     ],
     ClonableMACIFactoryAddress,
-    AlloContracts.verifierAddress,
+    AlloContracts.ZuPassRegistryAddress,
     // maci_id
     0,
     // VALID_EVENT_IDS
     [192993346581360151154216832563903227660n],
-    // requiredValidEventIds
-    1n,
     // maxContributionAmountForZupass
     10n ** 18n *  100n,
     // maxContributionAmountForNonZupass
     10n ** 18n *  100n,
-
   ];
 
   let initStruct = [initializeParams, MaciParams];
 
   let types = [
-    "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,uint8,uint256[],uint256,uint256,uint256))",
+    "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,uint8,uint256[],uint256,uint256))",
   ];
 
   let AbiCoder = new ethers.AbiCoder();

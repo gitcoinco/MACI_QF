@@ -59,12 +59,16 @@ contract ClonableMessageProcessor is
     IVkRegistry public vkRegistry;
     Mode public mode;
 
-
     /// @notice Create a new instance
     /// @param _verifier The Verifier contract address
     /// @param _vkRegistry The VkRegistry contract address
     /// @param _poll The Poll contract address
-    function initialize(address _verifier, address _vkRegistry, address _poll, Mode _mode) public initializer {
+    function initialize(
+        address _verifier,
+        address _vkRegistry,
+        address _poll,
+        Mode _mode
+    ) public initializer {
         __Context_init_unchained();
         __Ownable_init_unchained(msg.sender);
         verifier = IVerifier(_verifier);
@@ -77,22 +81,26 @@ contract ClonableMessageProcessor is
     /// @param _newSbCommitment The new state root and ballot root commitment
     ///                         after all messages are processed
     /// @param _proof The zk-SNARK proof
-    function processMessages(uint256 _newSbCommitment, uint256[8] memory _proof) external onlyOwner {
+    function processMessages(
+        uint256 _newSbCommitment,
+        uint256[8] memory _proof
+    ) external onlyOwner {
         // ensure the voting period is over
         _votingPeriodOver(poll);
 
         // There must be unprocessed messages
         if (processingComplete) {
-        revert NoMoreMessages();
+            revert NoMoreMessages();
         }
 
         // The state AccQueue must be merged
         if (!poll.stateAqMerged()) {
-        revert StateAqNotMerged();
+            revert StateAqNotMerged();
         }
 
         // Retrieve stored vals
-        (, uint8 messageTreeSubDepth, uint8 messageTreeDepth, uint8 voteOptionTreeDepth) = poll.treeDepths();
+        (, uint8 messageTreeSubDepth, uint8 messageTreeDepth, uint8 voteOptionTreeDepth) = poll
+            .treeDepths();
         // calculate the message batch size from the message tree subdepth
         uint256 messageBatchSize = TREE_ARITY ** messageTreeSubDepth;
 
@@ -101,56 +109,56 @@ contract ClonableMessageProcessor is
         // Require that the message queue has been merged
         uint256 messageRoot = messageAq.getMainRoot(messageTreeDepth);
         if (messageRoot == 0) {
-        revert MessageAqNotMerged();
+            revert MessageAqNotMerged();
         }
 
         // Copy the state and ballot commitment and set the batch index if this
         // is the first batch to process
         if (numBatchesProcessed == 0) {
-        uint256 currentSbCommitment = poll.currentSbCommitment();
-        sbCommitment = currentSbCommitment;
-        (, uint256 numMessages) = poll.numSignUpsAndMessages();
-        uint256 r = numMessages % messageBatchSize;
+            uint256 currentSbCommitment = poll.currentSbCommitment();
+            sbCommitment = currentSbCommitment;
+            (, uint256 numMessages) = poll.numSignUpsAndMessages();
+            uint256 r = numMessages % messageBatchSize;
 
-        currentMessageBatchIndex = numMessages;
+            currentMessageBatchIndex = numMessages;
 
-        if (currentMessageBatchIndex > 0) {
-            if (r == 0) {
-            currentMessageBatchIndex -= messageBatchSize;
-            } else {
-            currentMessageBatchIndex -= r;
+            if (currentMessageBatchIndex > 0) {
+                if (r == 0) {
+                    currentMessageBatchIndex -= messageBatchSize;
+                } else {
+                    currentMessageBatchIndex -= r;
+                }
             }
-        }
         }
 
         if (
-        !verifyProcessProof(
-            currentMessageBatchIndex,
-            messageRoot,
-            sbCommitment,
-            _newSbCommitment,
-            messageTreeSubDepth,
-            messageTreeDepth,
-            voteOptionTreeDepth,
-            _proof
-        )
+            !verifyProcessProof(
+                currentMessageBatchIndex,
+                messageRoot,
+                sbCommitment,
+                _newSbCommitment,
+                messageTreeSubDepth,
+                messageTreeDepth,
+                voteOptionTreeDepth,
+                _proof
+            )
         ) {
-        revert InvalidProcessMessageProof();
+            revert InvalidProcessMessageProof();
         }
 
         {
-        (, uint256 numMessages) = poll.numSignUpsAndMessages();
-        // Decrease the message batch start index to ensure that each
-        // message batch is processed in order
-        if (currentMessageBatchIndex > 0) {
-            currentMessageBatchIndex -= messageBatchSize;
-        }
+            (, uint256 numMessages) = poll.numSignUpsAndMessages();
+            // Decrease the message batch start index to ensure that each
+            // message batch is processed in order
+            if (currentMessageBatchIndex > 0) {
+                currentMessageBatchIndex -= messageBatchSize;
+            }
 
-        updateMessageProcessingData(
-            _newSbCommitment,
-            currentMessageBatchIndex,
-            numMessages <= messageBatchSize * (numBatchesProcessed + 1)
-        );
+            updateMessageProcessingData(
+                _newSbCommitment,
+                currentMessageBatchIndex,
+                numMessages <= messageBatchSize * (numBatchesProcessed + 1)
+            );
         }
     }
 
@@ -183,23 +191,23 @@ contract ClonableMessageProcessor is
 
         // Calculate the public input hash (a SHA256 hash of several values)
         uint256 publicInputHash = genProcessMessagesPublicInputHash(
-        _currentMessageBatchIndex,
-        _messageRoot,
-        numSignUps,
-        numMessages,
-        _currentSbCommitment,
-        _newSbCommitment,
-        _messageTreeSubDepth,
-        _voteOptionTreeDepth
+            _currentMessageBatchIndex,
+            _messageRoot,
+            numSignUps,
+            numMessages,
+            _currentSbCommitment,
+            _newSbCommitment,
+            _messageTreeSubDepth,
+            _voteOptionTreeDepth
         );
 
         // Get the verifying key from the VkRegistry
         VerifyingKey memory vk = vkRegistry.getProcessVk(
-        maci.stateTreeDepth(),
-        _messageTreeDepth,
-        _voteOptionTreeDepth,
-        TREE_ARITY ** _messageTreeSubDepth,
-        mode
+            maci.stateTreeDepth(),
+            _messageTreeDepth,
+            _voteOptionTreeDepth,
+            TREE_ARITY ** _messageTreeSubDepth,
+            mode
         );
 
         isValid = verifier.verify(_proof, vk, publicInputHash);
@@ -233,11 +241,11 @@ contract ClonableMessageProcessor is
 
         // pack the values
         uint256 packedVals = genProcessMessagesPackedVals(
-        _currentMessageBatchIndex,
-        _numSignUps,
-        _numMessages,
-        _messageTreeSubDepth,
-        _voteOptionTreeDepth
+            _currentMessageBatchIndex,
+            _numSignUps,
+            _numMessages,
+            _messageTreeSubDepth,
+            _voteOptionTreeDepth
         );
 
         (uint256 deployTime, uint256 duration) = poll.getDeployTimeAndDuration();
@@ -277,7 +285,7 @@ contract ClonableMessageProcessor is
         uint256 messageBatchSize = TREE_ARITY ** _messageTreeSubDepth;
         uint256 batchEndIndex = _currentMessageBatchIndex + messageBatchSize;
         if (batchEndIndex > _numMessages) {
-        batchEndIndex = _numMessages;
+            batchEndIndex = _numMessages;
         }
 
         if (maxVoteOptions >= 2 ** 50) revert MaxVoteOptionsTooLarge();
@@ -285,7 +293,11 @@ contract ClonableMessageProcessor is
         if (_currentMessageBatchIndex >= 2 ** 50) revert CurrentMessageBatchIndexTooLarge();
         if (batchEndIndex >= 2 ** 50) revert BatchEndIndexTooLarge();
 
-        result = maxVoteOptions + (_numSignUps << 50) + (_currentMessageBatchIndex << 100) + (batchEndIndex << 150);
+        result =
+            maxVoteOptions +
+            (_numSignUps << 50) +
+            (_currentMessageBatchIndex << 100) +
+            (batchEndIndex << 150);
     }
 
     /// @notice update message processing state variables
