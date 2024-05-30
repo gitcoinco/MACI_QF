@@ -109,8 +109,8 @@ contract ZuPassRegistry is Ownable {
 
     /// @notice Get the whitelisted events for a FundingRound (Strategy)
     /// @return List of whitelisted event IDs
-    function getWhitelistedEvents() external view returns (uint256[] memory) {
-        return contractToEventIds[msg.sender].values();
+    function getWhitelistedEvents(address _contract) external view returns (uint256[] memory) {
+        return contractToEventIds[_contract].values();
     }
 
     /// @notice Get the Zupass signer for an event
