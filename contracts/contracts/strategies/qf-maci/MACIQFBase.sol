@@ -16,6 +16,7 @@ import {Metadata} from "../../core/libraries/Metadata.sol";
 // External Libraries
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
+// TODO - Do we really need this?
 import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 
 import {BaseStrategy} from "../BaseStrategy.sol";
@@ -122,6 +123,9 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @notice The total number of accepted recipients
     uint256 public acceptedRecipientsCounter;
 
+    /// @notice The maximum number of accepted recipients
+    uint256 public maxAcceptedRecipients;
+
     /// @notice The voice credit factor for scaling
     uint256 public voiceCreditFactor;
 
@@ -154,8 +158,6 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
 
     /// @notice The MACI contract address
     address public _maci;
-
-    uint256 public maxAcceptedRecipients;
 
     // Constants
     uint256 public constant MAX_VOICE_CREDITS = 10 ** 9; // MACI allows 2 ** 32 voice credits max
@@ -227,9 +229,6 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @param _params The initialization parameters for the strategy
     function __MACIQFBaseStrategy_init(uint256 _poolId, InitializeParams memory _params) internal {
         __BaseStrategy_init(_poolId);
-        useRegistryAnchor = _params.useRegistryAnchor;
-        metadataRequired = _params.metadataRequired;
-        _registry = allo.getRegistry();
 
         IAllo.Pool memory pool = allo.getPool(_poolId);
         uint256 tokenDecimals;
@@ -247,6 +246,10 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         registrationEndTime = _params.registrationEndTime;
         allocationStartTime = _params.allocationStartTime;
         allocationEndTime = _params.allocationEndTime;
+
+        useRegistryAnchor = _params.useRegistryAnchor;
+        metadataRequired = _params.metadataRequired;
+        _registry = allo.getRegistry();
 
         // Validate the timestamps
         _isPoolTimestampValid(
