@@ -156,6 +156,9 @@ sequenceDiagram
 ### Deployment and Testing
 1. **Download ZKeys**:
   ```sh
+  chmod +x downloadArtifacts.sh  
+  ```
+  ```sh
   ./downloadArtifacts.sh
   ```
 2. **Install Dependencies**:

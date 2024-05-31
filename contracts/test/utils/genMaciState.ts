@@ -10,7 +10,7 @@ import type { Action } from "./types";
 import {
   ClonableMACI__factory as MACIFactory,
   ClonablePoll__factory as PollFactory,
-} from "../../typechain-types2";
+} from "../../typechain-types-maciqf";
 
 import { sleep, sortActions } from "./utils";
 
