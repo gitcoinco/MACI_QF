@@ -273,13 +273,16 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// ====== External/Public =========
     /// ================================
 
-    /// @notice Sets the status of recipients
+    /// @notice Sets the status of recipients. Only allow the pool manager and only during the registration period
+    /// This because the recipients are not allowed to change their status during the allocation period as this will
+    /// affect the votes and the matching pool amount.
+    /// @dev This function is used to set the status of recipients to either Accepted, Rejected or InReview
     /// @param recipients An array of recipient addresses
     /// @param _statuses An array of statuses corresponding to the recipients
     function reviewRecipients(
         address[] memory recipients,
         Status[] memory _statuses
-    ) external onlyBeforeAllocationEnds onlyPoolManager(msg.sender) {
+    ) external onlyActiveRegistration onlyPoolManager(msg.sender) {
         uint256 length = recipients.length;
 
         if (length != _statuses.length) {
