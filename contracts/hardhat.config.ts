@@ -84,10 +84,10 @@ const config: HardhatUserConfig = {
   },
   defaultNetwork: "sepolia",
   networks: {
-    arbsepolia: {
-      chainId: 421614,
-      url: `https://sepolia-rollup.arbitrum.io/rpc`,
-      accounts: [process.env.PRIVATE_KEY!],
+    scrollsepolia: {
+      chainId: 534351,
+      url: `https://scroll-sepolia.drpc.org	`,
+      accounts: [process.env.SEPOLIA_KEY!],
     },
     sepolia: {
       chainId: 11155111,

@@ -92,7 +92,18 @@ export class MaciParameters {
       voteOptionTreeDepth,
     });
   }
+  static async getMACIParameters(): Promise<MaciParameters> {
+    let circuitDirectory = "../../zkeys/zkeys";
+    if (!existsSync(circuitDirectory)) {
+      circuitDirectory = "./zkeys/zkeys";
+    }
+    const deployParams = await MaciParameters.fromConfig(
+      "micro",
+      circuitDirectory,
+    );
 
+    return deployParams;
+  }
 
   static async mock2(): Promise<MaciParameters> {
     let circuitDirectory = "../../zkeys/zkeys";
