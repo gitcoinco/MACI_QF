@@ -6,7 +6,7 @@ import {
 } from "maci-contracts";
 import { ethers, upgrades } from "hardhat";
 import { MaciParameters } from "../test/utils/maciParameters";
-import { Deployments } from "./utils/scripts";
+import { Deployments, verifyContract } from "./utils/scripts";
 import { BigNumberish } from "ethers";
 
 async function main() {
@@ -105,6 +105,11 @@ async function main() {
     }));
 
     console.log("Poseidon Contracts deployed at:", poseidonAddrs);
+
+    verifyContract(poseidonAddrs.poseidonT3, []);
+    verifyContract(poseidonAddrs.poseidonT4, []);
+    verifyContract(poseidonAddrs.poseidonT5, []);
+    verifyContract(poseidonAddrs.poseidonT6, []);
 
     DeployedContracts.PosseidonAddresses = [
       {

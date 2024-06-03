@@ -12,9 +12,7 @@ import { getCircuitFiles } from "../test/utils/circuits";
 import { JSONFile } from "../test/utils/JSONFile";
 import { getIpfsHash } from "../test/utils/ipfs";
 import { genProofs, proveOnChain, GenProofsArgs } from "maci-cli";
-import {
-  QFMACI,
-} from "../typechain-types";
+import { MACIQF } from "../typechain-types";
 import { getTalyFilePath } from "../test/utils/misc";
 
 import dotenv from "dotenv";
@@ -35,14 +33,14 @@ async function finalizeRound() {
 
   const MACIQFStrategyAddress = "0x";
 
-  const QFMACIStrategy = (await ethers.getContractAt(
-    "QFMACI",
+  const MACIQFStrategy = (await ethers.getContractAt(
+    "MACIQF",
     MACIQFStrategyAddress,
     Coordinator
-  )) as QFMACI;
+  )) as MACIQF;
 
-  const pollContracts = await QFMACIStrategy._pollContracts();
-  const maciContractAddress = await QFMACIStrategy._maci();
+  const pollContracts = await MACIQFStrategy._pollContracts();
+  const maciContractAddress = await MACIQFStrategy._maci();
   const tallyContractAddress = pollContracts[2];
   const mpContractAddress = pollContracts[1];
 
@@ -114,7 +112,6 @@ async function finalizeRound() {
       messageProcessorAddress: mpContractAddress,
       tallyAddress: tallyContractAddress,
       signer: Coordinator,
-      subsidyEnabled: false,
       quiet: true,
     });
   }
@@ -125,7 +122,7 @@ async function finalizeRound() {
     const tally = JSONFile.read(tallyFile) as any;
     const tallyHash = await getIpfsHash(tally);
 
-    const publishTallyHashReceipt = await QFMACIStrategy.connect(
+    const publishTallyHashReceipt = await MACIQFStrategy.connect(
       Coordinator
     ).publishTallyHash(tallyHash);
     await publishTallyHashReceipt.wait();
@@ -138,7 +135,7 @@ async function finalizeRound() {
     const recipientTreeDepth = voteOptionTreeDepth;
 
     await addTallyResultsBatch(
-      QFMACIStrategy.connect(Coordinator) as QFMACI,
+      MACIQFStrategy.connect(Coordinator) as MACIQF,
       recipientTreeDepth,
       tally,
       tallyBatchSize
@@ -163,7 +160,7 @@ async function finalizeRound() {
       recipientTreeDepth
     );
 
-    const finalize = await QFMACIStrategy.connect(Coordinator).finalize(
+    const finalize = await MACIQFStrategy.connect(Coordinator).finalize(
       tally.totalSpentVoiceCredits.spent,
       tally.totalSpentVoiceCredits.salt,
       newResultCommitment.toString(),

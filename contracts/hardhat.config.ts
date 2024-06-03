@@ -100,7 +100,7 @@ const config: HardhatUserConfig = {
     },
   },
   etherscan: {
-    apiKey: "KNVT7KRT9B15Z5UTXZT8TG8HNMIJXWXRMY",
+    apiKey: "WQ2UF3QNHNRXEX9JYY2EYU5PI4UJKNCRA5",
   },
 
 };
