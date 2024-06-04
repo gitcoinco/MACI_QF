@@ -55,7 +55,9 @@ async function main() {
       name: "VkRegistry",
       vkRegistryContractAddress: vkRegistryContractAddress,
     };
+
     deployments.write(DeployedContracts);
+    await verifyContract(vkRegistryContractAddress, []);
   } else {
     console.log(
       "Reusing VkRegistry at :",
@@ -76,6 +78,7 @@ async function main() {
       verifierContractAddress: verifierContractAddress,
     };
     deployments.write(DeployedContracts);
+    await verifyContract(verifierContractAddress, []);
   } else {
     console.log(
       "Reusing Verifier at :",
@@ -106,11 +109,6 @@ async function main() {
 
     console.log("Poseidon Contracts deployed at:", poseidonAddrs);
 
-    verifyContract(poseidonAddrs.poseidonT3, []);
-    verifyContract(poseidonAddrs.poseidonT4, []);
-    verifyContract(poseidonAddrs.poseidonT5, []);
-    verifyContract(poseidonAddrs.poseidonT6, []);
-
     DeployedContracts.PosseidonAddresses = [
       {
         name: "PoseidonT3",
@@ -130,6 +128,14 @@ async function main() {
       },
     ];
     deployments.write(DeployedContracts);
+    try {
+      await verifyContract(poseidonAddrs.poseidonT3, []);
+      await verifyContract(poseidonAddrs.poseidonT4, []);
+      await verifyContract(poseidonAddrs.poseidonT5, []);
+      await verifyContract(poseidonAddrs.poseidonT6, []);
+    } catch (e) {
+      console.log("Error verifying Poseidon contracts", e);
+    }
   } else {
     const poseidonAddrs = MACIDeployments.PosseidonAddresses.map(
       (poseidon: any) => {
@@ -157,6 +163,9 @@ async function main() {
       name: "Groth16Verifier",
       Groth16VerifierAddress: Groth16VerifierAddress,
     };
+
+    deployments.write(DeployedContracts);
+    await verifyContract(Groth16VerifierAddress, []);
     if (!MACIDeployments?.ZuPassRegistry?.ZuPassRegistryAddress) {
       const ZuPassRegistryFactory = await ethers
         .getContractFactory("ZuPassRegistry")
@@ -172,6 +181,8 @@ async function main() {
       };
 
       deployments.write(DeployedContracts);
+
+      await verifyContract(ZuPassRegistryAddress, [Groth16VerifierAddress]);
 
       const ZuPassFactory = await ethers.getContractAt(
         "ZuPassRegistry",
@@ -237,6 +248,8 @@ async function main() {
       pollAddress: pollAddress,
     };
     deployments.write(DeployedContracts);
+
+    await verifyContract(pollAddress, []);
   } else {
     console.log(
       "Reusing PollFactory:",
@@ -261,6 +274,8 @@ async function main() {
       mpAddr: mpAddr,
     };
     deployments.write(DeployedContracts);
+
+    await verifyContract(mpAddr, []);
   } else {
     console.log(
       "Reusing MessageProcessorFactory:",
@@ -287,6 +302,8 @@ async function main() {
     };
 
     deployments.write(DeployedContracts);
+
+    await verifyContract(tallyAddr, []);
   } else {
     console.log(
       "Reusing TallyFactory:",
@@ -313,6 +330,8 @@ async function main() {
       ClonableMACIAddress: ClonableMACIAddress,
     };
     deployments.write(DeployedContracts);
+
+    await verifyContract(ClonableMACIAddress, []);
   } else {
     console.log(
       "Reusing ClonableMACI:",
@@ -344,6 +363,13 @@ async function main() {
       ClonableMACIFactoryAddress: ClonableMACIFactoryAddress,
     };
     deployments.write(DeployedContracts);
+
+    await verifyContract(ClonableMACIFactoryAddress, [
+      DeployedContracts.ClonableMACI.ClonableMACIAddress,
+      DeployedContracts.PollFactory.pollAddress,
+      DeployedContracts.TallyFactory.tallyAddr,
+      DeployedContracts.MessageProcessorFactory.mpAddr,
+    ]);
 
     const setMaciParameters = await ClonableMACIFactory.setMaciSettings(
       0,
@@ -432,6 +458,9 @@ async function main() {
       name: "MACIQFStrategy",
       MACIQFStrategyAddress: MACIQFStrategyAddress,
     };
+    deployments.write(DeployedContracts);
+
+    await verifyContract(MACIQFStrategyAddress, [Allo, "MACIQF"]);
   } else {
     console.log(
       "Reusing MACIQFStrategy:",

@@ -41,15 +41,43 @@ function copyDirectory(source: string, target: string): void {
 subtask("copy-maci-artifacts", async (_, { config }) => {
   const sourceDir = path.resolve(
     __dirname,
-    "node_modules/maci-contracts/build/artifacts/contracts/",
+    "node_modules/maci-contracts/build/artifacts/contracts/"
   );
   const destDir = path.resolve(
     config.paths.artifacts,
     "maci-contracts",
-    "contracts",
+    "contracts"
   );
 
   copyDirectory(sourceDir, destDir);
+
+});
+
+subtask("copy-maci-build-info", async (_, { config }) => {
+
+  const sourceDir2 = path.resolve(
+    __dirname,
+    "node_modules/maci-contracts/build/artifacts/@openzeppelin/"
+  );
+  const destDir2 = path.resolve(
+    config.paths.artifacts,
+    "maci-contracts",
+    "@openzeppelin"
+  );
+
+  copyDirectory(sourceDir2, destDir2);
+
+  const sourceDir3 = path.resolve(
+    __dirname,
+    "node_modules/maci-contracts/build/artifacts/build-info/"
+  );
+  const destDir3 = path.resolve(
+    config.paths.artifacts,
+    "maci-contracts",
+    "build-info"
+  );
+
+  copyDirectory(sourceDir3, destDir3);
 });
 
 // Override the existing compile task
@@ -62,6 +90,9 @@ task("compile", async (args, hre, runSuper) => {
 
   // After compilation, run the subtask to copy MACI artifacts
   await hre.run("copy-maci-artifacts");
+
+  // After compilation, run the subtask to copy MACI build info
+  await hre.run("copy-maci-build-info");
 });
 
 const config: HardhatUserConfig = {
@@ -82,7 +113,10 @@ const config: HardhatUserConfig = {
     tests: "./test",
     artifacts: "./artifacts",
   },
-  defaultNetwork: "sepolia",
+  sourcify: {
+    enabled: true,
+  },
+  defaultNetwork: "scrollsepolia",
   networks: {
     scrollsepolia: {
       chainId: 534351,
@@ -100,9 +134,23 @@ const config: HardhatUserConfig = {
     },
   },
   etherscan: {
-    apiKey: "WQ2UF3QNHNRXEX9JYY2EYU5PI4UJKNCRA5",
+    apiKey: "KNVT7KRT9B15Z5UTXZT8TG8HNMIJXWXRMY",
+    // {
+    //   scrollsepolia: "QXKSFDZATD75NKPN6VJ7K9EK1FR3ZYB7WN",
+    //   sepolia: "KNVT7KRT9B15Z5UTXZT8TG8HNMIJXWXRMY",
+    // },
+    customChains: [
+      {
+        network: "scrollsepolia",
+        chainId: 534351,
+        urls: {
+          apiURL: "https://api-sepolia.scrollscan.com/api",
+          browserURL: "https://sepolia.scrollscan.com",
+        },
+      },
+    ],
+    enabled: true,
   },
-
 };
 
 export default config;

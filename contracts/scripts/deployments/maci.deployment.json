@@ -2,57 +2,65 @@
   "534351": {
     "VkRegistry": {
       "name": "VkRegistry",
-      "vkRegistryContractAddress": "0x07B48774924b08081aA7b674ba793d11aAB211dc"
+      "vkRegistryContractAddress": "0x62F5613bE0F459C4B86BAf3f91b648482Adb085a"
     },
     "Verifier": {
       "name": "Verifier",
-      "verifierContractAddress": "0x521e6331d9b0DE6dCC1Db97BFB5C3eaE52fC97AB"
+      "verifierContractAddress": "0x1c510a3439d01E066b5C30A3A882A5DC1A1B98F7"
     },
     "PosseidonAddresses": [
       {
         "name": "PoseidonT3",
-        "address": "0x3b28FeE8eaE73BcE8263F853eCA410ea44Bd52C1"
+        "address": "0x120948A3Df0eAE291AC71c5d7297C3C710075c0f"
       },
       {
         "name": "PoseidonT4",
-        "address": "0x58B8ac04d67e22373168FF9b0590dDf2931651A5"
+        "address": "0x70fBC3A5923851b45ba83B5Eb0a597D989599E8f"
       },
       {
         "name": "PoseidonT5",
-        "address": "0x6bA6A4084c86e8E571F6a3Cf995fcCAd19a2Bc64"
+        "address": "0xCEe0625a373BA897a54E2971f7aE627E32308c13"
       },
       {
         "name": "PoseidonT6",
-        "address": "0x7b9d3B1392D4199e48A0EaC2AdF9214578394F85"
+        "address": "0xE55dEcffE2657Cdb988a5AC67A4C67C5b38bF25a"
       }
     ],
     "Groth16Verifier": {
       "name": "Groth16Verifier",
-      "Groth16VerifierAddress": "0x7Ab0edb54486C106e5fBa340a055EC5715Cb789b"
+      "Groth16VerifierAddress": "0xe51557A62D8aCE038a9d2CE63ea460a4cc0377fC"
     },
     "PollFactory": {
       "name": "PollFactory",
-      "pollAddress": "0x4bea21125b6e37D1af39E339e2Bd9F43CF246656"
+      "pollAddress": "0xD1f37B37b2cCF6c557Ba75509Ce152F1546cE02d"
     },
     "MessageProcessorFactory": {
       "name": "MessageProcessorFactory",
-      "mpAddr": "0x21430F5bEadE9524622b5E2BBCB21a126b8C1676"
+      "mpAddr": "0x6F280458CdD019733CAb6E5cdcC3482aB1f0DFB4"
     },
     "TallyFactory": {
       "name": "TallyFactory",
-      "tallyAddr": "0x97b80743B2F02eee067087e5c41454e99708Ce1d"
+      "tallyAddr": "0xc461adF748E9eD8FB38E6DE7933c8fE6EBf13FC8"
     },
     "ClonableMACI": {
       "name": "ClonableMACI",
-      "ClonableMACIAddress": "0x5971395BD611DD5369E7508aA00575fB5C7eAd01"
+      "ClonableMACIAddress": "0xC9A868d5996CdF5e7bA5EDf084D2A4C9A37D068d"
     },
     "ClonableMACIFactory": {
       "name": "ClonableMACIFactory",
-      "ClonableMACIFactoryAddress": "0x9F0Cb63e8D87740CC776210E03467D0A03CdcAaD"
+      "ClonableMACIFactoryAddress": "0xd0658340519440D910639eE120e5B2855458A493"
+    },
+    "Allo": {
+      "name": "Allo",
+      "AlloAddress": "0x237D58D6bd99aB20142abe5632E9a2c084C1EFDd"
+    },
+    "Registry": {
+      "name": "Registry",
+      "RegistryAddress": "0xCE465677d05035329Eb7a1b7212c240222395a0f"
     },
     "MACIQFStrategy": {
       "name": "MACIQFStrategy",
-      "MACIQFStrategyAddress": "0xE3cC7Fa84b96798bAb4ca203ff2Bf06218BAb905"
+      "MACIQFStrategyAddress": "0x86c51f94C363158ea7155c8E3c394409768CD55e"
     }
   },
   "11155111": {
