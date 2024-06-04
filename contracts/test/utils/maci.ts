@@ -26,7 +26,7 @@ import {
 
 import { getTalyFilePath, isPathExist } from "./misc";
 import { getCircuitFiles } from "./circuits";
-import { MACIQF, QFMACI } from "../../typechain-types";
+import { MACIQF } from "../../typechain-types";
 
 import {
   IPublishBatchArgs,
@@ -418,7 +418,7 @@ export function getTallyResultProofBatch(
 }
 
 export async function addTallyResultsBatch(
-  QFMACI: QFMACI | MACIQF,
+  MACIQF: MACIQF,
   recipientTreeDepth: number,
   tallyData: any,
   batchSize: number,
@@ -459,7 +459,7 @@ export async function addTallyResultsBatch(
     );
   }
 
-  let totalRecipients = await QFMACI.getRecipientCount();
+  let totalRecipients = await MACIQF.getRecipientCount();
 
   for (let i = startIndex; i < totalRecipients; i = i + batchSize) {
     const proofs = getTallyResultProofBatch(
@@ -469,7 +469,7 @@ export async function addTallyResultsBatch(
       batchSize
     );
     proofs.map((i: any) => console.log(i.result));
-    const tx = await QFMACI.addTallyResultsBatch(
+    const tx = await MACIQF.addTallyResultsBatch(
       proofs.map((i: any) => i.recipientIndex),
       proofs.map((i: any) => i.result),
       proofs.map((i: any) => i.proof),

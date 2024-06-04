@@ -117,6 +117,10 @@
     "MACIQFStrategy": {
       "name": "MACIQFStrategy",
       "MACIQFStrategyAddress": "0xAD93f0AAf57E40531e14d65bb62D3006480121D4"
+    },
+    "ZuPassRegistry": {
+      "name": "ZuPassRegistry",
+      "ZuPassRegistryAddress": "0x068d780E21b439214B89C990D7DBEE7Bde1B6CB6"
     }
   }
 }

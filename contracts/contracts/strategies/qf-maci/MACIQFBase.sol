@@ -1,25 +1,23 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.20;
 
-// External Libraries
 // Interfaces
-import {IAllo} from "../../core/interfaces/IAllo.sol";
+import {IStrategy} from "../../core/interfaces/IStrategy.sol";
 
 import {IRegistry} from "../../core/interfaces/IRegistry.sol";
 
-// Interfaces
-import {IStrategy} from "../../core/interfaces/IStrategy.sol";
+import {IAllo} from "../../core/interfaces/IAllo.sol";
 
 // Internal Libraries
 import {Metadata} from "../../core/libraries/Metadata.sol";
 
-// External Libraries
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {BaseStrategy} from "../BaseStrategy.sol";
 
+// External Libraries
 // TODO - Do we really need this?
 import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 
-import {BaseStrategy} from "../BaseStrategy.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /// @title MACIQFBase
 /// @notice This contract serves as the base for quadratic funding strategies that involve MACI.
@@ -292,9 +290,17 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         for (uint256 i; i < length; ) {
             address recipientId = recipients[i];
             Recipient storage recipient = _recipients[recipientId];
-            recipient.status = _statuses[i];
 
-            if (_statuses[i] == Status.Accepted) {
+            // If the recipient is not in review, skip the recipient
+            // This is to prevent updating the status of a recipient that is not registered
+            if (recipient.status == Status.None) {
+                continue;
+            }   
+
+            // If the recipient is accepted, add them to the accepted recipients list
+            // If the recipient is already accepted, do not add them again
+            // This is to prevent adding the same recipient multiple times as a vote option
+            if (_statuses[i] == Status.Accepted && recipient.status != Status.Accepted) {
                 recipientVoteIndexToAddress[acceptedRecipientsCounter] = recipientId;
 
                 recipientToVoteIndex[recipientId] = acceptedRecipientsCounter;
@@ -303,6 +309,8 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
                     acceptedRecipientsCounter++;
                 }
             }
+            // Update the status of the recipient
+            recipient.status = _statuses[i];
 
             emit RecipientStatusUpdated(recipientId, _statuses[i], msg.sender);
 
@@ -443,9 +451,9 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
             recipient.status = Status.InReview;
             emit Registered(recipientId, _data, _sender);
         } else {
-            if (recipientStatus == Status.Accepted) {
-                recipient.status = Status.Pending;
-            } else if (recipientStatus == Status.Rejected) {
+            // If the recipient is in review, the recipient can update their registration
+            // If the recipient is rejected, the recipient can appeal
+            if (recipientStatus == Status.Rejected) {
                 recipient.status = Status.Appealed;
             }
             emit UpdatedRegistration(recipientId, _data, _sender, recipient.status);

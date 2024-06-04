@@ -171,50 +171,81 @@ async function _bulkUpdateGrantApplication({
   signer,
   context,
   roundId,
+  roundStrategy,
   roundStrategyAddress,
   applications,
   selectedApplications,
   allo,
 }: BulkUpdateGrantApplicationParams) {
   resetToInitialState(context);
+  let result;
   try {
     const containsInReview = selectedApplications.some((a) => a.inReview);
 
     if (!containsInReview) {
       context.setContractUpdatingStatus(ProgressStatus.IN_PROGRESS);
+      if (roundStrategy === "QuadraticFunding") {
+        result = await allo
+          .bulkUpdateApplicationStatus({
+            roundId,
+            applicationsToUpdate: selectedApplications.map((a) => ({
+              index: a.applicationIndex,
+              status: a.status,
+            })),
+            currentApplications: applications.map((a) => ({
+              index: a.applicationIndex,
+              status: a.status,
+            })),
+            // FIXME: use getAddress when tests stop failing because of it
+            strategyAddress: roundStrategyAddress as Address,
+          })
+          .on("transactionStatus", (tx) => {
+            if (tx.type === "success") {
+              context.setContractUpdatingStatus(ProgressStatus.IS_SUCCESS);
+              context.setIndexingStatus(ProgressStatus.IN_PROGRESS);
+            } else {
+              context.setContractUpdatingStatus(ProgressStatus.IS_ERROR);
+            }
+          })
+          .on("indexingStatus", (tx) => {
+            if (tx.type === "success") {
+              context.setIndexingStatus(ProgressStatus.IS_SUCCESS);
+            } else {
+              context.setIndexingStatus(ProgressStatus.IS_ERROR);
+            }
+          })
+          .execute();
+      } else if (roundStrategy === "MACIQF") {
+        console.log("bulkMACIUpdateApplicationStatus", selectedApplications);
+        result = await allo
+          .bulkMACIUpdateApplicationStatus({
+            roundId,
+            applicationsToUpdate: selectedApplications.map((a) => ({
+              address: a.id as string,
+              status: a.status,
+            })),
+            // FIXME: use getAddress when tests stop failing because of it
+            strategyAddress: roundStrategyAddress as Address,
+          })
+          .on("transactionStatus", (tx) => {
+            if (tx.type === "success") {
+              context.setContractUpdatingStatus(ProgressStatus.IS_SUCCESS);
+              context.setIndexingStatus(ProgressStatus.IN_PROGRESS);
+            } else {
+              context.setContractUpdatingStatus(ProgressStatus.IS_ERROR);
+            }
+          })
+          .on("indexingStatus", (tx) => {
+            if (tx.type === "success") {
+              context.setIndexingStatus(ProgressStatus.IS_SUCCESS);
+            } else {
+              context.setIndexingStatus(ProgressStatus.IS_ERROR);
+            }
+          })
+          .execute();
+      }
 
-      const result = await allo
-        .bulkUpdateApplicationStatus({
-          roundId,
-          applicationsToUpdate: selectedApplications.map((a) => ({
-            index: a.applicationIndex,
-            status: a.status,
-          })),
-          currentApplications: applications.map((a) => ({
-            index: a.applicationIndex,
-            status: a.status,
-          })),
-          // FIXME: use getAddress when tests stop failing because of it
-          strategyAddress: roundStrategyAddress as Address,
-        })
-        .on("transactionStatus", (tx) => {
-          if (tx.type === "success") {
-            context.setContractUpdatingStatus(ProgressStatus.IS_SUCCESS);
-            context.setIndexingStatus(ProgressStatus.IN_PROGRESS);
-          } else {
-            context.setContractUpdatingStatus(ProgressStatus.IS_ERROR);
-          }
-        })
-        .on("indexingStatus", (tx) => {
-          if (tx.type === "success") {
-            context.setIndexingStatus(ProgressStatus.IS_SUCCESS);
-          } else {
-            context.setIndexingStatus(ProgressStatus.IS_ERROR);
-          }
-        })
-        .execute();
-
-      if (result.type === "error") {
+      if (result?.type === "error") {
         console.error("failed to update application status", result.error);
       }
 

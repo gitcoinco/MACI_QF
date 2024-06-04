@@ -51,13 +51,19 @@ export default [
     "type": "error"
   },
   {
-    "inputs": [],
-    "name": "AlreadyContributed",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
+    ],
+    "name": "AddressEmptyCode",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "AlreadyUsedZupass",
+    "name": "AlreadyContributed",
     "type": "error"
   },
   {
@@ -73,6 +79,11 @@ export default [
   {
     "inputs": [],
     "name": "EmptyTallyHash",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FailedInnerCall",
     "type": "error"
   },
   {
@@ -103,22 +114,6 @@ export default [
   {
     "inputs": [],
     "name": "IS_APPROVED_STRATEGY",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "total",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "actual",
-        "type": "uint256"
-      }
-    ],
-    "name": "IncompleteTallyResults",
     "type": "error"
   },
   {
@@ -153,7 +148,7 @@ export default [
   },
   {
     "inputs": [],
-    "name": "InvalidSigner",
+    "name": "MAX_RECIPIENTS_REACHED",
     "type": "error"
   },
   {
@@ -214,11 +209,6 @@ export default [
   {
     "inputs": [],
     "name": "NotCoordinator",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NotEnoughValidEventIDs",
     "type": "error"
   },
   {
@@ -305,11 +295,6 @@ export default [
   {
     "inputs": [],
     "name": "UserNotVerified",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "VoteResultsAlreadyVerified",
     "type": "error"
   },
   {
@@ -452,31 +437,6 @@ export default [
     "inputs": [
       {
         "indexed": true,
-        "internalType": "uint256",
-        "name": "rowIndex",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "fullRow",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "sender",
-        "type": "address"
-      }
-    ],
-    "name": "RecipientStatusUpdated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
         "internalType": "address",
         "name": "recipientId",
         "type": "address"
@@ -539,37 +499,6 @@ export default [
       }
     ],
     "name": "Registered",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "recipientId",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "applicationId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "enum IStrategy.Status",
-        "name": "status",
-        "type": "uint8"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "sender",
-        "type": "address"
-      }
-    ],
-    "name": "Reviewed",
     "type": "event"
   },
   {
@@ -732,32 +661,6 @@ export default [
         "internalType": "address",
         "name": "",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "ZUPASS_SIGNER_G1",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "ZUPASS_SIGNER_G2",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -988,6 +891,35 @@ export default [
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_budget",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_totalVotesSquares",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_totalSpent",
+        "type": "uint256"
+      }
+    ],
+    "name": "calcAlpha",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "_alpha",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "cancel",
     "outputs": [],
@@ -1207,8 +1139,8 @@ export default [
             "type": "uint8"
           }
         ],
-        "internalType": "struct QFMACIBase.Recipient",
-        "name": "recipient",
+        "internalType": "struct MACIQFBase.Recipient",
+        "name": "",
         "type": "tuple"
       }
     ],
@@ -1279,19 +1211,6 @@ export default [
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getWhitelistedEvents",
-    "outputs": [
-      {
-        "internalType": "uint256[]",
-        "name": "",
-        "type": "uint256[]"
       }
     ],
     "stateMutability": "view",
@@ -1402,6 +1321,19 @@ export default [
   {
     "inputs": [],
     "name": "matchingPoolSize",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "maxAcceptedRecipients",
     "outputs": [
       {
         "internalType": "uint256",
@@ -1610,19 +1542,6 @@ export default [
   },
   {
     "inputs": [],
-    "name": "requiredValidEventIds",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "resetTally",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -1725,38 +1644,6 @@ export default [
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "usedPublicSignals",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "verifier",
-    "outputs": [
-      {
-        "internalType": "contract IVerifier",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "voiceCreditFactor",
     "outputs": [
@@ -1806,6 +1693,19 @@ export default [
       }
     ],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "zupassVerifier",
+    "outputs": [
+      {
+        "internalType": "contract IZuPassVerifier",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

@@ -92,15 +92,6 @@ export const loadRound =
         roundEndTime = Date.parse(v2Round.applicationsEndTime) / 1000;
         break;
 
-      // case "allov2.QFMACI":
-      //   roundPayoutStrategy = RoundCategory.Maci;
-      //   applicationsStartTime =
-      //     Date.parse(v2Round.applicationsStartTime) / 1000;
-      //   applicationsEndTime = Date.parse(v2Round.applicationsEndTime) / 1000;
-      //   roundStartTime = Date.parse(v2Round.donationsStartTime) / 1000;
-      //   roundEndTime = Date.parse(v2Round.donationsEndTime) / 1000;
-      //   break;
-
       case "allov1.QF":
       case "allov2.DonationVotingMerkleDistributionDirectTransferStrategy":
       default:

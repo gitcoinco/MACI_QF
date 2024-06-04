@@ -41,7 +41,7 @@ export const strategyNameToCategory = (
     case "allov2.DirectGrantsSimpleStrategy":
       return RoundCategory.Direct;
 
-    case "allov2.QFMACI":
+    case "allov2.MACIQF":
       return RoundCategory.Maci;
 
     case "allov1.QF":

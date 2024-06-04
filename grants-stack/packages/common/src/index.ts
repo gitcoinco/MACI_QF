@@ -292,11 +292,11 @@ export const ROUND_PAYOUT_MERKLE_OLD = "MERKLE";
 export const ROUND_PAYOUT_MERKLE = "allov1.QF";
 export const ROUND_PAYOUT_DIRECT = "allov1.Direct";
 export const ROUND_PAYOUT_DIRECT_OLD = "DIRECT";
-export const ROUND_PAYOUT_QFMACI = "allov2.QFMACI";
+export const ROUND_PAYOUT_MACIQF = "allov2.MACIQF";
 export type RoundPayoutType =
   | typeof ROUND_PAYOUT_DIRECT_OLD
   | typeof ROUND_PAYOUT_MERKLE_OLD
-  | typeof ROUND_PAYOUT_QFMACI;
+  | typeof ROUND_PAYOUT_MACIQF;
 export type RoundPayoutTypeNew =
   | "allov1.Direct"
   | "allov1.QF"
@@ -306,10 +306,10 @@ export type RoundPayoutTypeNew =
   | "allov2.SQFSuperFluidStrategy"
   | "allov2.MicroGrantsGovStrategy"
   | "allov2.DirectGrantsSimpleStrategy"
-  | "allov2.QFMACI"
+  | "allov2.MACIQF"
   | ""; // This is to handle the cases where the strategyName is not set in a round, mostly spam rounds
 
-export type RoundStrategyType = "QuadraticFunding" | "DirectGrants" | "QFMACI";
+export type RoundStrategyType = "QuadraticFunding" | "DirectGrants" | "MACIQF";
 
 export function getRoundStrategyTitle(name: string) {
   switch (getRoundStrategyType(name)) {
@@ -318,7 +318,7 @@ export function getRoundStrategyTitle(name: string) {
 
     case "QuadraticFunding":
       return "Quadratic Funding";
-    case "QFMACI":
+    case "MACIQF":
       return "MACI QF";
   }
 }
@@ -334,10 +334,9 @@ export function getRoundStrategyType(name: string): RoundStrategyType {
     case "MERKLE":
     case "allov2.DonationVotingMerkleDistributionDirectTransferStrategy":
       return "QuadraticFunding";
-    case "allov2.QFMACI":
-    case "QFMACI":
+    case "allov2.MACIQF":
     case "MACIQF":
-      return "QFMACI";
+      return "MACIQF";
 
     default:
       throw new Error(`Unknown round strategy type: ${name}`);

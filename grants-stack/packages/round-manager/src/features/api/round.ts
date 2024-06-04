@@ -90,8 +90,8 @@ function indexerV2RoundToRound(round: RoundForManager): Round {
     round.strategyName === "allov1.Direct" ||
     round.strategyName === "allov2.DirectGrantsSimpleStrategy"
       ? "DIRECT"
-      : round.strategyName === "allov2.QFMACI"
-      ? "QFMACI"
+      : round.strategyName === "allov2.MACIQF"
+      ? "MACIQF"
       : "MERKLE";
 
   const applicationsStartTime = round.applicationsStartTime;
@@ -99,11 +99,11 @@ function indexerV2RoundToRound(round: RoundForManager): Round {
 
   // Direct grants strategy uses the application start and end time for donations
   const donationsStartTime =
-    strategyName == ("MERKLE" || "QFMACI")
+    strategyName == ("MERKLE" || "MACIQF")
       ? round.donationsStartTime
       : applicationsStartTime;
   const donationsEndTime =
-    strategyName == ("MERKLE" || "QFMACI")
+    strategyName == ("MERKLE" || "MACIQF")
       ? round.donationsEndTime
       : applicationsEndTime;
 

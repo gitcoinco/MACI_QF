@@ -12,6 +12,7 @@ import {
   TransactionData,
 } from "@allo-team/allo-v2-sdk";
 import MRC_ABI from "../abis/allo-v1/multiRoundCheckout";
+import MACIQF from "../abis/allo-v2/MACIQF";
 import { MRC_CONTRACTS } from "../addresses/mrc";
 import { CreatePoolArgs, NATIVE } from "@allo-team/allo-v2-sdk/dist/types";
 import { encodeAbiParameters, parseAbiParameters } from "viem";
@@ -58,7 +59,7 @@ function getStrategyAddress(strategy: RoundCategory, chainId: ChainId): string {
         [RoundCategory.QuadraticFunding]:
           "0x029dFAf686DfA0efdace5132ba422e9279D50b5b",
         [RoundCategory.Direct]: "0x45181C4fD52d4d350380B3D42091b80065c702Ef",
-        [RoundCategory.Maci]: "0x59f93D2bF077d1Ca9d6d8667346Ae4665614F7D0",
+        [RoundCategory.Maci]: "0xAD93f0AAf57E40531e14d65bb62D3006480121D4",
       };
       break;
 
@@ -67,7 +68,7 @@ function getStrategyAddress(strategy: RoundCategory, chainId: ChainId): string {
         [RoundCategory.QuadraticFunding]:
           "0x787eC93Dd71a90563979417879F5a3298389227f",
         [RoundCategory.Direct]: "0x8564d522b19836b7F5B4324E7Ee8Cb41810E9F9e",
-        [RoundCategory.Maci]: "0x59f93D2bF077d1Ca9d6d8667346Ae4665614F7D0",
+        [RoundCategory.Maci]: "0xAD93f0AAf57E40531e14d65bb62D3006480121D4",
       };
       break;
   }
@@ -508,14 +509,12 @@ export class AlloV2 implements Allo {
           address,
           // coordinatorPubKey:
           [BigInt(pubk.asContractParam().x), BigInt(pubk.asContractParam().y)],
-          "0x8EcF5b580Eb4C4A1F1AA1D67162365DBFe277161",
-          "0x944eD5E8e4CB2E7F005436beFc49Bf70441DDc81",
+          "0x2e7c021Ed995960E6eB31C5675a5e5119f4787d9",
+          "0x068d780E21b439214B89C990D7DBEE7Bde1B6CB6",
           // maci_id
           0n,
           // VALID_EVENT_IDS
           [192993346581360151154216832563903227660n],
-          // requiredValidEventIds
-          1n,
           // maxContributionAmountForZupass
           10n ** 18n * 100n,
           // maxContributionAmountForNonZupass
@@ -527,7 +526,7 @@ export class AlloV2 implements Allo {
         console.log("initStruct", initStruct);
 
         let types = parseAbiParameters(
-          "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,uint8,uint256[],uint256,uint256,uint256))"
+          "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,uint8,uint256[],uint256,uint256))"
         );
 
         console.log("types", types);
@@ -778,6 +777,74 @@ export class AlloV2 implements Allo {
         abi: DonationVotingMerkleDistributionDirectTransferStrategyAbi as Abi,
         functionName: "reviewRecipients",
         args: [rows, totalApplications],
+      });
+
+      emit("transaction", txResult);
+
+      if (txResult.type === "error") {
+        return txResult;
+      }
+
+      let receipt: TransactionReceipt;
+      try {
+        receipt = await this.transactionSender.wait(txResult.value);
+        emit("transactionStatus", success(receipt));
+      } catch (err) {
+        const result = new AlloError("Failed to update application status");
+        emit("transactionStatus", error(result));
+        return error(result);
+      }
+
+      await this.waitUntilIndexerSynced({
+        chainId: this.chainId,
+        blockNumber: receipt.blockNumber,
+      });
+
+      emit("indexingStatus", success(undefined));
+
+      return success(undefined);
+    });
+  }
+
+  // NEW CODE
+  bulkMACIUpdateApplicationStatus(args: {
+    roundId: string;
+    strategyAddress: Address;
+    applicationsToUpdate: {
+      address: string;
+      status: ApplicationStatus;
+    }[];
+  }): AlloOperation<
+    Result<void>,
+    {
+      transaction: Result<Hex>;
+      transactionStatus: Result<TransactionReceipt>;
+      indexingStatus: Result<void>;
+    }
+  > {
+    return new AlloOperation(async ({ emit }) => {
+      if (args.applicationsToUpdate.some((app) => app.status === "IN_REVIEW")) {
+        throw new AlloError("DirectGrants is not supported yet!");
+      }
+
+      let recipients: string[] = [];
+      let statuses: bigint[] = [];
+
+      // Process the applicationsToUpdate array
+      args.applicationsToUpdate.reduce(
+        (acc, app) => {
+          acc.recipients.push(app.address);
+          acc.statuses.push(applicationStatusToNumber(app.status));
+          return acc;
+        },
+        { recipients: recipients, statuses: statuses }
+      );
+
+      const txResult = await sendTransaction(this.transactionSender, {
+        address: args.strategyAddress,
+        abi: MACIQF as Abi,
+        functionName: "reviewRecipients",
+        args: [recipients, statuses],
       });
 
       emit("transaction", txResult);

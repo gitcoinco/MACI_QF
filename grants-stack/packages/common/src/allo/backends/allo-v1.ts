@@ -721,6 +721,50 @@ export class AlloV1 implements Allo {
     });
   }
 
+  // NEW CODE FOR INTERFACE REASONS ONLY Dummy implementation
+
+  bulkMACIUpdateApplicationStatus(args: {
+    roundId: string;
+    strategyAddress: Address;
+    applicationsToUpdate: {
+      address: string;
+      status: ApplicationStatus;
+    }[];
+  }): AlloOperation<
+    Result<void>,
+    {
+      transaction: Result<Hex>;
+      transactionStatus: Result<TransactionReceipt>;
+      indexingStatus: Result<void>;
+    }
+  > {
+    return new AlloOperation(async ({ emit }) => {
+      let txResult = await sendRawTransaction(this.transactionSender, {
+        to: args.strategyAddress,
+        data: "0x0",
+        value: 0n,
+      });
+
+      try {
+        const receipt = await this.transactionSender.wait("0x00");
+        emit("transactionStatus", success(receipt));
+      } catch (err) {
+        const result = new AlloError("Failed to update application status");
+        emit("transactionStatus", error(result));
+        return error(result);
+      }
+
+      await this.waitUntilIndexerSynced({
+        chainId: this.chainId,
+        blockNumber: 0n,
+      });
+
+      emit("indexingStatus", success(undefined));
+
+      return success(undefined);
+    });
+  }
+
   fundRound(args: {
     tokenAddress: Address;
     roundId: string;

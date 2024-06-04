@@ -23,7 +23,7 @@ export type StrategyName =
   | "allov2.MicroGrantsGovStrategy"
   | "allov2.SQFSuperFluidStrategy"
   | "allov2.DirectGrantsSimpleStrategy"
-  | "allov2.QFMACI";
+  | "allov2.MACIQF";
 
 export type RoundFilterParams = {
   type: string;

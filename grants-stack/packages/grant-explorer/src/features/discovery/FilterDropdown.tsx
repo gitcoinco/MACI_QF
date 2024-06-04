@@ -15,7 +15,7 @@ import { getEnabledChains } from "../../app/chainConfig";
 import {
   ROUND_PAYOUT_DIRECT,
   ROUND_PAYOUT_MERKLE,
-  ROUND_PAYOUT_QFMACI,
+  ROUND_PAYOUT_MACIQF,
 } from "common";
 import { getConfig } from "common/src/config";
 
@@ -45,7 +45,7 @@ export const FILTER_OPTIONS: RoundFilterUiOption[] = [
       },
       {
         label: "MACI QF",
-        value: isAlloV2 ? "allov2.QFMACI" : ROUND_PAYOUT_QFMACI,
+        value: isAlloV2 ? "allov2.MACIQF" : ROUND_PAYOUT_MACIQF,
       },
     ],
   },

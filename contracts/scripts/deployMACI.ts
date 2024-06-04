@@ -20,7 +20,7 @@ async function main() {
 
   const MACIDeployments = deployments.get(chainId);
 
-  const DeployedContracts = {} as any;
+  const DeployedContracts = MACIDeployments as any;
 
   console.log("Deploying contracts with the account:", deployer.address);
 
@@ -165,64 +165,67 @@ async function main() {
     };
 
     deployments.write(DeployedContracts);
-    await verifyContract(Groth16VerifierAddress, []);
-    if (!MACIDeployments?.ZuPassRegistry?.ZuPassRegistryAddress) {
-      const ZuPassRegistryFactory = await ethers
-        .getContractFactory("ZuPassRegistry")
-        .then((factory) => factory.deploy(Groth16VerifierAddress));
-
-      const ZuPassRegistryAddress = await ZuPassRegistryFactory.getAddress();
-
-      console.log("ZuPassRegistry deployed at:", ZuPassRegistryAddress);
-
-      DeployedContracts.ZuPassRegistry = {
-        name: "ZuPassRegistry",
-        ZuPassRegistryAddress: ZuPassRegistryAddress,
-      };
-
-      deployments.write(DeployedContracts);
-
-      await verifyContract(ZuPassRegistryAddress, [Groth16VerifierAddress]);
-
-      const ZuPassFactory = await ethers.getContractAt(
-        "ZuPassRegistry",
-        ZuPassRegistryAddress
-      );
-
-      type ZUPASS_SIGNERStruct = {
-        G1: BigNumberish;
-        G2: BigNumberish;
-      };
-
-      const setEvents = await ZuPassFactory.setEvents(
-        ["192993346581360151154216832563903227660"] as BigNumberish[],
-        [
-          {
-            G1: "2658696990997679927259430495938453033612384821046330804164935913637421782846",
-            G2: "18852953264765021758165045442761617487242246681540213362114332008455443692095",
-          },
-        ] as ZUPASS_SIGNERStruct[],
-        {
-          gasLimit: 1000000,
-        }
-      );
-
-      await setEvents.wait();
-
-      console.log("ZuPass Signer&events set");
-    } else {
-      console.log(
-        "Reusing ZuPassRegistry:",
-        MACIDeployments.ZuPassRegistry.ZuPassRegistryAddress
-      );
-      DeployedContracts.ZuPassRegistry = MACIDeployments.ZuPassRegistry;
-    }
+    // await verifyContract(Groth16VerifierAddress, []);
   } else {
     console.log(
       "Reusing Groth16Verifier:",
       MACIDeployments.Groth16Verifier.Groth16VerifierAddress
     );
     DeployedContracts.Groth16Verifier = MACIDeployments.Groth16Verifier;
+  }
+
+  if (!MACIDeployments?.ZuPassRegistry?.ZuPassRegistryAddress) {
+    const ZuPassRegistryFactory = await ethers
+      .getContractFactory("ZuPassRegistry")
+      .then((factory) =>
+        factory.deploy(MACIDeployments?.Groth16Verifier?.Groth16VerifierAddress)
+      );
+
+    const ZuPassRegistryAddress = await ZuPassRegistryFactory.getAddress();
+
+    console.log("ZuPassRegistry deployed at:", ZuPassRegistryAddress);
+
+    DeployedContracts.ZuPassRegistry = {
+      name: "ZuPassRegistry",
+      ZuPassRegistryAddress: ZuPassRegistryAddress,
+    };
+
+    deployments.write(DeployedContracts);
+
+    // await verifyContract(ZuPassRegistryAddress, [Groth16VerifierAddress]);
+
+    const ZuPassFactory = await ethers.getContractAt(
+      "ZuPassRegistry",
+      ZuPassRegistryAddress
+    );
+
+    type ZUPASS_SIGNERStruct = {
+      G1: BigNumberish;
+      G2: BigNumberish;
+    };
+
+    const setEvents = await ZuPassFactory.setEvents(
+      ["192993346581360151154216832563903227660"] as BigNumberish[],
+      [
+        {
+          G1: "2658696990997679927259430495938453033612384821046330804164935913637421782846",
+          G2: "18852953264765021758165045442761617487242246681540213362114332008455443692095",
+        },
+      ] as ZUPASS_SIGNERStruct[],
+      {
+        gasLimit: 1000000,
+      }
+    );
+
+    await setEvents.wait();
+
+    console.log("ZuPass Signer&events set");
+  } else {
+    console.log(
+      "Reusing ZuPassRegistry:",
+      MACIDeployments.ZuPassRegistry.ZuPassRegistryAddress
+    );
+    DeployedContracts.ZuPassRegistry = MACIDeployments.ZuPassRegistry;
   }
 
   const libraries = {

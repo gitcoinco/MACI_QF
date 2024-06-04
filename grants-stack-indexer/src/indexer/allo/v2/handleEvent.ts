@@ -323,9 +323,9 @@ export async function handleEvent(
             address: strategyAddress,
           });
           break;
-        case "allov2.QFMACI":
+        case "allov2.MACIQF":
           subscribeToContract({
-            contract: "AlloV2/QFMACI/V1",
+            contract: "AlloV2/MACIQF/V1",
             address: strategyAddress,
           });
           break;
@@ -414,8 +414,8 @@ export async function handleEvent(
           registrationStartTimeResolved
         );
         applicationsEndTime = getDateFromTimestamp(registrationEndTimeResolved);
-      } else if (strategy !== null && strategy.name === "allov2.QFMACI") {
-        const contract = "AlloV2/QFMACI/V1";
+      } else if (strategy !== null && strategy.name === "allov2.MACIQF") {
+        const contract = "AlloV2/MACIQF/V1";
         const [
           registrationStartTimeResolved,
           registrationEndTimeResolved,
@@ -737,7 +737,7 @@ export async function handleEvent(
       }
 
       switch (round.strategyName) {
-        case "allov2.QFMACI": {
+        case "allov2.MACIQF": {
           // @ts-ignore
           const recipient = event.params.recipientId;
           // @ts-ignore
@@ -755,6 +755,11 @@ export async function handleEvent(
           );
 
           if (application === null) {
+            logger.warn({
+              msg: `applicationStatusUpdated: application not found for this round`,
+              event,
+              strategyAddress,
+            });
             return [];
           }
 
@@ -773,7 +778,7 @@ export async function handleEvent(
             } satisfies Changeset,
           ];
         }
-        
+
         case "allov2.DonationVotingMerkleDistributionDirectTransferStrategy": {
           const bitmap = new StatusesBitmap(256n, 4n);
           // @ts-ignore
@@ -929,9 +934,9 @@ export async function handleEvent(
           values = decodeDVMDApplicationData(encodedData);
           id = (Number(values.recipientsCounter) - 1).toString();
           break;
-        case "allov2.QFMACI":
+        case "allov2.MACIQF":
           values = decodeMACIApplicationData(encodedData);
-          id = event.params.recipientId;
+          id = event.params.recipientId?.toString()?.toLowerCase();
           break;
 
         default:
@@ -1008,7 +1013,7 @@ export async function handleEvent(
 
           break;
 
-        case "allov2.QFMACI":
+        case "allov2.MACIQF":
         case "allov2.DonationVotingMerkleDistributionDirectTransferStrategy":
           params = event.params as DVMDTimeStampUpdatedData;
 
@@ -1243,7 +1248,7 @@ export async function handleEvent(
             },
           ];
         }
-        case "allov2.QFMACI": {
+        case "allov2.MACIQF": {
           if (!("origin" in event.params)) {
             return [];
           }

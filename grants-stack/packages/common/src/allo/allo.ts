@@ -145,6 +145,22 @@ export interface Allo {
     }
   >;
 
+  bulkMACIUpdateApplicationStatus(args: {
+    roundId: string;
+    strategyAddress: Address;
+    applicationsToUpdate: {
+      address: string;
+      status: ApplicationStatus;
+    }[];
+  }): AlloOperation<
+    Result<void>,
+    {
+      transaction: Result<Hex>;
+      transactionStatus: Result<TransactionReceipt>;
+      indexingStatus: Result<void>;
+    }
+  >;
+
   fundRound: (args: {
     tokenAddress: Address;
     roundId: string;

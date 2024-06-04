@@ -1,11 +1,9 @@
 {
-  "name": "hardhat-project",
+  "name": "allo_maci_qf",
   "scripts": {
     "compile": "hardhat compile",
-    "compileSol": "TS_NODE_TRANSPILE_ONLY=1 ts-node ./scripts/compileSol.ts",
     "test:solidity": "hardhat test --network sepolia",
-    "test:live": "hardhat test --network localhost",
-    "prettier:write": "prettier --write . --write **/*"
+    "test:live": "hardhat test --network localhost"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.6",
@@ -25,7 +23,7 @@
     "@types/node": "^20.12.12",
     "chai": "^4.4.1",
     "ethers": "^6.12.1",
-    "hardhat": "^2.22.4",
+    "hardhat": "^2.22.5",
     "hardhat-artifactor": "^0.2.0",
     "hardhat-gas-reporter": "^1.0.10",
     "ipfs-only-hash": "^4.0.0",

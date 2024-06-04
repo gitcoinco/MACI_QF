@@ -1,13 +1,6 @@
-import { AbiCoder, Signer, ZeroAddress } from "ethers";
+import { Signer } from "ethers";
 import {
-  Allo,
-  Registry,
-  QFMACI,
-  ClonableMACI,
-  ClonablePoll,
-  ClonableMessageProcessor,
-  ClonableTally,
-  Dai,
+  Allo
 } from "../../typechain-types";
 
 import { Keypair } from "maci-domainobjs";

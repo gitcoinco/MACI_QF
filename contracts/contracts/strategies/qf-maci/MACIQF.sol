@@ -9,13 +9,13 @@ import {Params} from "maci-contracts/contracts/utilities/Params.sol";
 import {Tally} from "maci-contracts/contracts/Tally.sol";
 import {Poll} from "maci-contracts/contracts/Poll.sol";
 
-// Core Contracts
-import {IAllo} from "../../core/interfaces/IAllo.sol";
-
-import {MACIQFBase} from "./MACIQFBase.sol";
-
 // Interfaces
 import {IZuPassVerifier} from "./interfaces/IZuPassVerifier.sol";
+
+import {IAllo} from "../interfaces/IAllo.sol";
+
+// Core Contracts
+import {MACIQFBase} from "./MACIQFBase.sol";
 
 /// @notice This contract handles the quadratic funding mechanism using MACI (Minimal Anti-Collusion Infrastructure).
 /// Allo x MACI Capital Constrained Quadratic Funding Strategy (MACIQF)

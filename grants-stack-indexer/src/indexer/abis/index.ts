@@ -25,7 +25,7 @@ import AlloV2IStrategy from "./allo-v2/v1/IStrategy.js";
 import AlloV2DonationVotingMerkleDistributionDirectTransferStrategy from "./allo-v2/v1/DonationVotingMerkleDistributionDirectTransferStrategy.js";
 import AlloV2DirectGrantsSimpleStrategy from "./allo-v2/v1/DirectGrantsSimpleStrategy.js";
 import AlloV1ToV2ProfileMigration from "./allo-v2/AlloV1ToV2ProfileMigration.js";
-import QFMACI from "./allo-v2/v1/QFMACI.js";
+import MACIQF from "./allo-v2/v1/MACIQF.js";
 import MACI from "./allo-v2/v1/MACI.js";
 import MACIPoll from "./allo-v2/v1/MACIPoll.js";
 
@@ -61,7 +61,7 @@ const abis = {
   "AlloV2/DonationVotingMerkleDistributionDirectTransferStrategy/V1":
     AlloV2DonationVotingMerkleDistributionDirectTransferStrategy,
   "AlloV2/DirectGrantsSimpleStrategy/V1": AlloV2DirectGrantsSimpleStrategy,
-  "AlloV2/QFMACI/V1": QFMACI,
+  "AlloV2/MACIQF/V1": MACIQF,
   "AlloV2/MACI/V1": MACI,
   "AlloV2/MACIPoll/V1": MACIPoll,
 } as const;
