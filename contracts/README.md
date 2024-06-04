@@ -1,40 +1,58 @@
-## README for MACIQF Strategy on Allo
-A QF implementation using MACI v1.2.0 integrated into the Allo protocol.
+# MACIQF Strategy on Allo
+
+A QF implementation using MACI v1.2.3 integrated into the Allo protocol.
+
 > WIP - this is a Work in Progress project. Not yet Audited.
+
 ## Credits
+
 ### This project takes inspiration from:
+- [Allo-v2](https://github.com/allo-protocol/allo-v2/)
 - clr.fund code (https://github.com/clrfund/monorepo)
 - [ctrlc03](https://github.com/ctrlc03) minimalQF code (https://github.com/ctrlc03/minimalQF)
+
 ### Overview
+
 The MACIQF (Quadratic Funding MACI) strategy is a component of a larger decentralized application designed to facilitate quadratic funding rounds. Quadratic funding is a democratic allocation mechanism where the amount of funds a project receives is proportional to the square of the sum of the square roots of the contributions it receives. This strategy leverages MACI (Minimal Anti-Collusion Infrastructure) to ensure vote privacy and resistance to bribery.
+
 ### Key Components
-1. **MACIQFBase**: Defines the core logic for the MACIQF strategy, including recipient management, vote tallying, and fund distribution.
+
+1. **MACIQFBase**: Defines the core logic for the MACIQF strategy, including recipient management, and the core Allo Interfaces.
 2. **MACIQF**: Extends MACIQFBase and integrates with MACI contracts for secure and private voting.
-3. **ClonableMACIFactory**: Factory contract to deploy new MACI instances.
+3. **ClonableMACIFactory**: Factory contract to deploy new MACI - MACIPoll - MACITally - MACIMessageProcessor instances.
 4. **ClonableMACI**: MACI contract for managing voting sessions.
 5. **Constants and Interfaces**: Shared constants and interface definitions used across the contracts.
+
 ### Contracts
+
 #### MACIQFBase
+
 - **Structs**
-  - `ApplicationStatus`: Represents the status of an application.
   - `InitializeParams`: Parameters for initializing the strategy.
   - `Recipient`: Details of a recipient.
+
 - **Storage Variables**
   - `totalRecipientVotes`: Total number of votes cast for all recipients.
-  - `reviewThreshold`: Number of votes required to review a recipient.
   - `registrationStartTime`, `registrationEndTime`, `allocationStartTime`, `allocationEndTime`: Timestamps for different phases.
   - `useRegistryAnchor`, `metadataRequired`: Flags for registry and metadata requirements.
-  - `statusesBitMap`: Bitmap for storing recipient statuses.
-  - `recipientToStatusIndexes`, `recipientIndexToAddress`: Mappings for recipient management.
-  - `distributedBitMap`: Bitmap for tracking fund distributions.
-  - `voiceCreditFactor`, `totalVotesSquares`, `matchingPoolSize`, `totalContributed`, `totalSpent`: Financial variables.
+  - `acceptedRecipientsCounter`: Counter for accepted recipients. Each accepted recipient gets a uniqueID that is used in the private votes
+  - `maxAcceptedRecipients`: Maximum number of accepted recipients. Capped based on MACI Ciruits(variations) restrictions.
+  - `voiceCreditFactor`: Factor for scaling voice credits.
+  - `totalVotesSquares`: Total squares of votes received.
+  - `matchingPoolSize`: Size of the matching pool.
+  - `totalContributed`: Total amount contributed to the pool.
+  - `totalSpent`: Total amount spent from the pool.
   - `isFinalized`, `isCancelled`: Flags for round status.
-  - `alpha`, `coordinator`, `verifier`, `tallyHash`, `_maci`: Various addresses and parameters.
-- **Modifiers**
-  - `onlyCoordinator`: Ensures only the coordinator can call certain functions.
-  - `onlyActiveRegistration`: Ensures registration is active.
-  - `onlyAfterAllocation`: Ensures allocation phase has ended.
-  - `onlyBeforeAllocationEnds`: Ensures allocation phase is ongoing.
+  - `alpha`: Alpha value used in the capital constrained quadratic funding formula.
+  - `coordinator`: Address of the coordinator.
+  - `tallyHash`: Hash of the tally.
+  - `_maci`: MACI contract address.
+
+- **Events**
+  - `RecipientStatusUpdated`: Emitted when a recipient's status is updated.
+  - `UpdatedRegistration`: Emitted when a recipient updates their registration.
+  - `TimestampsUpdated`: Emitted when pool timestamps are updated.
+
 - **Functions**
   - `__MACIQFBaseStrategy_init`: Internal initialization function.
   - `reviewRecipients`: Sets recipient statuses.
@@ -43,11 +61,20 @@ The MACIQF (Quadratic Funding MACI) strategy is a component of a larger decentra
   - `cancel`: Cancels the funding round.
   - `finalize`: Finalizes the round after tallying votes.
   - `distributeFunds`: Distributes funds to recipients based on votes.
+
 #### MACIQF
+
 - **Structs**
   - `MaciParams`: Parameters for initializing MACI.
   - `InitializeParamsMACI`: Combined parameters for initializing the strategy and MACI.
   - `claimFunds`: Data structure for claiming funds.
+
+- **Events**
+  - `RecipientVotingOptionAdded`: Emitted when a recipient is added.
+  - `TallyPublished`: Emitted when the tally hash is published.
+  - `TallyResultsAdded`: Emitted when the tally results are added.
+  - `FundsDistributed`: Emitted when funds are distributed to a recipient.
+
 - **Functions**
   - `initialize`: Initializes the strategy.
   - `register`: Registers a user for voting.
@@ -61,8 +88,11 @@ The MACIQF (Quadratic Funding MACI) strategy is a component of a larger decentra
   - `allocate`: Allocates votes to a recipient.
   - `verifyClaim`: Verifies the claim of allocated tokens.
   - `validateProofOfAttendance`: Validates the proof of attendance for Zupass-specific events.
+
 ### Diagram
+
 Below is the sequence diagram for the MACIQF Strategy flow:
+
 ```mermaid
 sequenceDiagram
   actor Coordinator
@@ -92,7 +122,7 @@ sequenceDiagram
   Alice->>Allo: Allocate to Pool (allocate())
   Allo-->>MACIQFStrategy: Forward Allocation _allocate()
   MACIQFStrategy-->>MACI: Sign Up Alice
-  MACI-->>Alice: FundsTransfered 
+  MACI-->>Alice: FundsTransferred 
    %% Voting Phase
   Alice->>Poll: Submit (Encrypted MACI messages) Vote for Recipients
   %% Tally Phase
@@ -104,14 +134,15 @@ sequenceDiagram
   %% Finalization Phase
   Coordinator->>MACIQFStrategy: Finalize Round
   %% Distribution Phase
-  Coordinator->>Allo: Distribute Funds to Projects distribute()
+  Coordinator->>Allo: Distribute Funds to Projects via distribute() anyone can call.
   Allo-->>MACIQFStrategy: _distribute()
   MACIQFStrategy-->>Tally: Verify Distributions
-  Tally-->>MACIQFStrategy: Distributions Verified ? 
+  Tally-->>MACIQFStrategy: Distributions Verified? 
   MACIQFStrategy-->>MACIQFStrategy: Handle Distribution
 ```
-#Here's the revised description to fit the new diagram:
-## Description
+
+### Description
+
 1. **Initialization and Deployment**:
     - The coordinator creates a pool with the MACIQFStrategy.
     - The MACIQFStrategy initializes with MACI parameters and deploys the MACI instance, poll, and tally contracts.
@@ -133,7 +164,9 @@ sequenceDiagram
 8. **Distribution Phase**:
     - The coordinator initiates fund distribution to projects via Allo.
     - The MACIQFStrategy verifies distributions in the Tally contract and then handles the distribution to the projects (e.g., to Bob).
+
 ### Interactive Diagram Elements
+
 1. **Initialize MACIQF Strategy**: Initializes the strategy with parameters.
 2. **Register Project**: Bob registers his project to receive contributions.
 3. **Allocate to Pool**: Alice allocates funds to the pool.
@@ -143,33 +176,24 @@ sequenceDiagram
 7. **Publish Tally Hash**: The tally hash is published to IPFS.
 8. **Finalize Round**: Finalizes the round after verifying all tallies.
 9. **Distribute Funds**: Distributes funds to the projects based on the vote tally.
-### Buttons and Interactive Elements
-- **Initialize**: Start the MACIQF strategy.
-- **Register Project**: Bob registers his project.
-- **Allocate**: Alice allocates funds to the pool.
-- **Review**: Pool manager reviews and approves projects.
-- **Vote**: Alice casts votes for the projects.
-- **Tally**: Tally the votes cast.
-- **Publish**: Publish the tally hash.
-- **Finalize**: Finalize the funding round.
-- **Distribute**: Distribute funds to projects.
+
+
 ### Deployment and Testing
+
 1. **Download ZKeys**:
   ```sh
   chmod +x downloadArtifacts.sh  
-  ```
-  ```sh
   ./downloadArtifacts.sh
   ```
 2. **Install Dependencies**:
+
+
   ```sh
   yarn install
   ```
 3. **Start Local Node**:
    ```sh
    npx hardhat node
-   ```
-   ```sh
    copy .env.example .env
    ```
    **Copy 5 private keys from hardhat node and paste them into .env**
@@ -178,7 +202,9 @@ sequenceDiagram
    ```sh
    yarn test:live
    ```
+
 ### Testing Script
+
 The provided script tests the end-to-end functionality of the MACIQF strategy. It includes:
 - Setting up test accounts and contracts.
 - Funding the pool and making contributions.
@@ -186,10 +212,13 @@ The provided script tests the end-to-end functionality of the MACIQF strategy. I
 - Voting and tallying votes.
 - Publishing the tally hash and finalizing the round.
 - Distributing funds to recipients.
+
 ### License
+
 This project is licensed under the AGPL-3.0-only License.
+
 ### Improvements and Further Reading
+
 For more detailed information about quadratic funding and MACI, refer to the following resources:
 - [Quadratic Funding](https://wtfisqf.com/)
 - [MACI (Minimal Anti-Collusion Infrastructure)](https://github.com/appliedzkp/maci)
-This README provides an overview of the MACIQF strategy, its components, deployment instructions, and a detailed diagram to help users understand the workflow. The interactive elements in the diagram and buttons make it easier to navigate through the different stages of the strategy.
