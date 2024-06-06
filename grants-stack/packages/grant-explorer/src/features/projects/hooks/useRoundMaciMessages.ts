@@ -1,40 +1,68 @@
 import useSWR from "swr";
-import { DataLayer } from "data-layer";
-import { getPublicClient, signMessage } from "@wagmi/core";
-import {
-  encodeAbiParameters,
-  getAddress,
-  parseAbi,
-  parseAbiParameters,
-} from "viem";
-import { generatePubKeyWithSeed } from "../../../checkoutStore";
+import { DataLayer, MACIContribution } from "data-layer";
+import { getPublicClient } from "@wagmi/core";
+import { encodeAbiParameters, parseAbi, parseAbiParameters } from "viem";
 import { ethers } from "ethers";
-import { getContributorMessages } from "../../api/voting";
 import { PubKey } from "maci-domainobjs";
 type Params = {
   chainId?: number;
   roundId?: string;
   address: string;
-};
+}[];
 
 export function useRoundMaciMessages(params: Params, dataLayer: DataLayer) {
   const shouldFetch = Object.values(params).every(Boolean);
   return useSWR(
     shouldFetch ? ["allApprovedApplications", params] : null,
     async () => {
-      if (params.chainId === undefined || params.roundId === undefined) {
-        return null;
-      }
+      const response = [];
 
-      return await getContributed(
-        params.chainId,
-        params.roundId,
-        params.address,
-        dataLayer
-      );
+      for (const param of params) {
+        if (param.chainId === undefined || param.roundId === undefined) {
+          return null;
+        }
+
+        response.push(
+          await getContributed(
+            param.chainId,
+            param.roundId,
+            param.address,
+            dataLayer
+          )
+        );
+      }
+      return response;
     }
   );
 }
+
+export function useRoundsMaciMessages(params: Params, dataLayer: DataLayer) {
+  const shouldFetch = Object.values(params).every(Boolean);
+  return useSWR(
+    shouldFetch ? ["allApprovedApplications", params] : null,
+    async () => {
+      // const response = [];
+      const response: {
+        [chainId: number]: { [roundId: string]: MACIContributions };
+      } = {};
+      for (const param of params) {
+        if (param.chainId === undefined || param.roundId === undefined) {
+          return null;
+        }
+
+        response[param.chainId][param.roundId] = await getContributed(
+          param.chainId,
+          param.roundId,
+          param.address,
+          dataLayer
+        );
+      }
+      return response;
+    }
+  );
+}
+
+// Create the return type based on the return values of the function
 
 async function getMaciAddress(chainID: number, roundID: string) {
   const publicClient = getPublicClient({
@@ -91,8 +119,6 @@ async function getMaciAddress(chainID: number, roundID: string) {
     BigInt(_coordinatorPubKey[1]),
   ]);
 
-  console.log("pool", pool.strategy);
-
   return {
     maci: maci,
     pollContracts: pollContracts,
@@ -102,17 +128,31 @@ async function getMaciAddress(chainID: number, roundID: string) {
   };
 }
 
+// Expected return type
+type MACIContributions = {
+  encrypted: MACIContribution;
+  maciInfo: {
+    maci: `0x${string}`;
+    pollContracts: readonly [
+      `0x${string}`,
+      `0x${string}`,
+      `0x${string}`,
+      `0x${string}`,
+    ];
+    strategy: string;
+    coordinatorPubKey: PubKey;
+    roundId: string;
+  };
+};
 const getContributed = async (
   chainID: number,
   roundID: string,
   walletAddress: string,
   dataLayer: DataLayer
-) => {
+): Promise<MACIContributions> => {
   const maciContracts = await getMaciAddress(chainID, roundID);
 
   const maciAddress = maciContracts.maci as `0x${string}`;
-
-  console.log("maciAddress", maciAddress);
 
   const types = "uint256,address,address";
   const bytes = encodeAbiParameters(parseAbiParameters(types), [
@@ -127,5 +167,5 @@ const getContributed = async (
     contributionId: id.toLowerCase() as `0x${string}`,
   });
 
-  return { encrypted: resp, maciInfo: maciContracts };
+  return { encrypted: resp[0], maciInfo: maciContracts };
 };

@@ -8,7 +8,7 @@ import { ChainConfirmationModalBody } from "./ChainConfirmationModalBody";
 import { ProgressStatus } from "../../api/types";
 import { modalDelayMs } from "../../../constants";
 import { useNavigate } from "react-router-dom";
-import { useAccount, usePublicClient, useWalletClient } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import { Button } from "common/src/styles";
 import { InformationCircleIcon } from "@heroicons/react/24/solid";
 import { BoltIcon } from "@heroicons/react/24/outline";
@@ -30,8 +30,8 @@ import {
 import { Skeleton } from "@chakra-ui/react";
 import { MatchingEstimateTooltip } from "../../common/MatchingEstimateTooltip";
 import { parseChainId } from "common/src/chains";
-import { Message, useDataLayer } from "data-layer";
-import { fetchBalance, signMessage } from "@wagmi/core";
+import { MACIContribution, Message, useDataLayer } from "data-layer";
+import { fetchBalance, getPublicClient, signMessage } from "@wagmi/core";
 import { isPresent } from "ts-is-present";
 import { useAllo } from "../../api/AlloWrapper";
 import { getFormattedRoundId } from "../../common/utils/utils";
@@ -43,9 +43,27 @@ import { useRoundMaciMessages } from "../../projects/hooks/useRoundMaciMessages"
 import { PipelineEdDSATicketZuAuthConfig } from "@pcd/passport-interface";
 import { zuAuthPopup } from "@pcd/zuauth";
 
+
+type MACIContributions = {
+  encrypted: MACIContribution;
+  maciInfo: {
+    maci: `0x${string}`;
+    pollContracts: readonly [
+      `0x${string}`,
+      `0x${string}`,
+      `0x${string}`,
+      `0x${string}`,
+    ];
+    strategy: string;
+    coordinatorPubKey: PubKey;
+    roundId: string;
+  };
+};
 export function SummaryContainer(props?: {
   alreadyContributed: boolean;
+  maciMessages: MACIContributions | null;
   decryptedMessages: PCommand[] | null;
+  stateIndex: bigint;
 }) {
   const { data: walletClient } = useWalletClient();
   const navigate = useNavigate();
@@ -69,10 +87,10 @@ export function SummaryContainer(props?: {
   );
   const chainID = 11155111;
   const roundID = "187";
-  const { data: maciMessages } = useRoundMaciMessages(
-    { chainId: chainID, roundId: roundID, address: walletAddress as string },
-    dataLayer
-  );
+  // const { data: maciMessages } = useRoundMaciMessages(
+  //   { chainId: chainID, roundId: roundID, address: walletAddress as string },
+  //   dataLayer
+  // );
 
   /*  This needs to be a useMemo to prevent an infinite loop in the below useEffect */
   /* TODO: can we remove the useMemo without causing an infinite loop? */
@@ -307,7 +325,7 @@ export function SummaryContainer(props?: {
     const emptyDonations = checkEmptyDonations();
     setClickedSubmit(true);
 
-    if (emptyDonations) {
+    if (emptyDonations && !(props?.alreadyContributed ?? false)) {
       return;
     }
 
@@ -457,17 +475,69 @@ export function SummaryContainer(props?: {
   }
 
   const getContributed = async () => {
-    const signature = await signMessage({
-      message: `Sign this message to get your public key for MACI voting on Allo for the round with address ${maciMessages?.maciInfo.roundId} on chain ${chainID}`,
-    });
+    const MACIKeys = localStorage.getItem("MACIKeys");
+    console.log("MACIKeys", MACIKeys);
+    const roundID = props?.maciMessages?.maciInfo.roundId ?? "";
+    const address = walletAddress as string;
+
+    let signatureSeeds;
+
+    try {
+      signatureSeeds = JSON.parse(MACIKeys ? MACIKeys : "{}");
+    } catch (e) {
+      console.error("Failed to parse MACIKeys from localStorage:", e);
+      signatureSeeds = {};
+    }
+
+    // Ensure the structure exists
+    if (
+      typeof signatureSeeds.rounds !== "object" ||
+      signatureSeeds.rounds === null
+    ) {
+      signatureSeeds.rounds = {};
+    }
+
+    if (
+      typeof signatureSeeds.rounds[chainID] !== "object" ||
+      signatureSeeds.rounds[chainID] === null
+    ) {
+      signatureSeeds.rounds[chainID] = {};
+    }
+
+    if (
+      typeof signatureSeeds.rounds[chainID][roundID] !== "object" ||
+      signatureSeeds.rounds[chainID][roundID] === null
+    ) {
+      signatureSeeds.rounds[chainID][roundID] = {};
+    }
+
+    console.log("signatureSeeds after ensuring structure:", signatureSeeds);
+
+    let signature = signatureSeeds.rounds[chainID][roundID][address];
+    console.log("signature", signature);
+    console.log("signatureSeeds", signatureSeeds);
+
+    if (!signature) {
+      signature = await signMessage({
+        message: `Sign this message to get your public key for MACI voting on Allo for the round with address ${roundID} on chain ${chainID}`,
+      });
+
+      // Ensure the nested structure exists before assigning the new signature
+      if (!signatureSeeds.rounds[chainID][roundID]) {
+        signatureSeeds.rounds[chainID][roundID] = {};
+      }
+
+      signatureSeeds.rounds[chainID][roundID][address] = signature;
+      localStorage.setItem("MACIKeys", JSON.stringify(signatureSeeds));
+    }
     const pk = await generatePubKeyWithSeed(signature);
 
-    const messages = maciMessages?.encrypted[0].messages as Message[];
+    const messages = props?.maciMessages?.encrypted.messages as Message[];
 
     const decryptedMessages = await getContributorMessages({
       // Poll contract address
       contributorKey: pk,
-      coordinatorPubKey: maciMessages?.maciInfo.coordinatorPubKey as PubKey,
+      coordinatorPubKey: props?.maciMessages?.maciInfo.coordinatorPubKey as PubKey,
       maciMessages: {
         messages: messages.map((m) => {
           return {
@@ -500,7 +570,8 @@ export function SummaryContainer(props?: {
           walletClient,
           props.decryptedMessages
             ? props.decryptedMessages
-            : await getContributed()
+            : await getContributed(),
+          props.stateIndex
         );
       } else {
         await checkoutMaci(
@@ -509,6 +580,7 @@ export function SummaryContainer(props?: {
             permitDeadline: currentPermitDeadline,
           })),
           walletClient,
+          getPublicClient(),
           pcdFetched ? pcd : undefined
         );
       }
@@ -654,7 +726,7 @@ export function SummaryContainer(props?: {
               </div>
             </div>
           ) : null}
-          {emptyInput && (
+          {emptyInput && !(props?.alreadyContributed ?? false) && (
             <p
               data-testid="emptyInput"
               className="rounded-md bg-red-50 py-2 text-pink-500 flex justify-center my-4 text-sm"

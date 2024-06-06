@@ -11,6 +11,7 @@ import {IPoll} from "maci-contracts/contracts/interfaces/IPoll.sol";
 import {Utilities} from "maci-contracts/contracts/utilities/Utilities.sol";
 import {AccQueueQuinaryMaci} from "maci-contracts/contracts/trees/AccQueueQuinaryMaci.sol";
 import {AccQueue} from "maci-contracts/contracts/trees/AccQueue.sol";
+import { CurveBabyJubJub } from "maci-contracts/contracts/crypto/BabyJubJub.sol";
 
 /// @title Poll
 /// @notice A Poll contract allows voters to submit encrypted messages
@@ -104,10 +105,8 @@ contract ClonablePoll is Params, Utilities, SnarkCommon, OwnableUpgradeable, IPo
         // set the emptyBallotRoots
         _setEmptyBallotRoots();
         // check that the coordinator public key is valid
-        if (
-            _coordinatorPubKey.x >= SNARK_SCALAR_FIELD || _coordinatorPubKey.y >= SNARK_SCALAR_FIELD
-        ) {
-            revert MaciPubKeyLargerThanSnarkFieldSize();
+        if (!CurveBabyJubJub.isOnCurve(_coordinatorPubKey.x, _coordinatorPubKey.y)) {
+        revert InvalidPubKey();
         }
 
         /// @notice deploy a new AccQueue contract to store messages
@@ -206,9 +205,9 @@ contract ClonablePoll is Params, Utilities, SnarkCommon, OwnableUpgradeable, IPo
         // we check that we do not exceed the max number of messages
         if (numMessages >= maxValues.maxMessages) revert TooManyMessages();
 
-        // validate that the public key is valid
-        if (_encPubKey.x >= SNARK_SCALAR_FIELD || _encPubKey.y >= SNARK_SCALAR_FIELD) {
-            revert MaciPubKeyLargerThanSnarkFieldSize();
+        // check if the public key is on the curve
+        if (!CurveBabyJubJub.isOnCurve(_encPubKey.x, _encPubKey.y)) {
+        revert InvalidPubKey();
         }
 
         // cannot realistically overflow
