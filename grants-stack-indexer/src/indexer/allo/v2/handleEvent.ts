@@ -46,7 +46,6 @@ import { ethers } from "ethers";
 import { UnknownTokenError } from "../../../prices/common.js";
 import { ApplicationMetadataSchema } from "../../applicationMetadata.js";
 import { randomUUID } from "crypto";
-import e from "express";
 
 const ALLO_NATIVE_TOKEN = parseAddress(
   "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
@@ -1351,6 +1350,25 @@ export async function handleEvent(
         hash: event.transactionHash,
       });
 
+      const maciStrategies = await db.getRoundsByStrategyNameAndChainId(
+        chainId,
+        "allov2.MACIQF"
+      );
+
+      let roundID;
+
+      for (const strategy of maciStrategies) {
+        const maciId = await readContract({
+          contract: "AlloV2/MACIQF/V1",
+          address: strategy.strategyAddress,
+          functionName: "_maci",
+        });
+        if (maciId.toLowerCase() === maciAddress.toLowerCase()) {
+          roundID = strategy.id;
+          break;
+        }
+      }
+
       const createdBy = parseAddress(TxInfo.from);
 
       const types = "uint256, address, address";
@@ -1365,11 +1383,16 @@ export async function handleEvent(
 
       const { timestamp } = await getBlock();
 
+      if (roundID === undefined) {
+        return [];
+      }
+
       return [
         {
           type: "InsertContribution",
           contribution: {
             id: id,
+            roundId: roundID,
             chainId: chainId,
             voiceCreditBalance: voiceCreditBalance,
             maciId: maciAddress,
@@ -1411,7 +1434,7 @@ export async function handleEvent(
 
       const message = {
         msgType: BigInt(event.params._message.msgType).toString(),
-        data: event.params._message.data.map((x:any) => BigInt(x).toString()),
+        data: event.params._message.data.map((x: any) => BigInt(x).toString()),
       };
 
       const id = ethers.utils.solidityKeccak256(["bytes"], [bytes]);

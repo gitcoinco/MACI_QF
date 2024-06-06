@@ -260,6 +260,7 @@ export type NewContribution = Insertable<ContributionTable>;
 
 export type ContributionTable = {
   id: string;
+  roundId: string;
   chainId: ChainId;
   maciId: Address | string;
   stateIndex: bigint;

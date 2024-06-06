@@ -506,7 +506,10 @@ export class Database {
       // NEW CODE
 
       case "InsertContribution": {
-        await this.#db.insertInto("contributions").values(change.contribution).execute();
+        await this.#db
+          .insertInto("contributions")
+          .values(change.contribution)
+          .execute();
         break;
       }
 
@@ -632,6 +635,20 @@ export class Database {
     const rounds = await this.#db
       .selectFrom("rounds")
       .where("chainId", "=", chainId)
+      .selectAll()
+      .execute();
+
+    return rounds;
+  }
+
+  async getRoundsByStrategyNameAndChainId(
+    chainId: ChainId,
+    strategyName: string
+  ) {
+    const rounds = await this.#db
+      .selectFrom("rounds")
+      .where("chainId", "=", chainId)
+      .where("strategyName", "=", strategyName)
       .selectAll()
       .execute();
 
