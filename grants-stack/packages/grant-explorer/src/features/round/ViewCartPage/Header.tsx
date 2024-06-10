@@ -18,12 +18,12 @@ export function Header(props: { projects: CartProject[] }) {
     <div>
       <div className="flex mt-5 border-b-2 pb-2">
         <h1 className="grow text-3xl">Cart</h1>
-        <div>
+        {/* <div>
           <CollectionShareButtonContainer
             showOnlyInAlloVersion="allo-v2"
             applications={applications}
           />
-        </div>
+        </div> */}
       </div>
 
       <p className="mt-6 leading-6">Cross-Round, Cross-Network Giving 🌐 🛒</p>

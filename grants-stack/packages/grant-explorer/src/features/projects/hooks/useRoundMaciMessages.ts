@@ -8,6 +8,7 @@ import { generatePubKeyWithSeed } from "../../../checkoutStore";
 import { getMACIKey, getMACIKeys } from "../../api/keys";
 import { getContributorMessages } from "../../api/voting";
 import { formatAmount } from "../../api/formatAmount";
+import { GroupedMaciContributions, MACIContributions } from "../../api/types";
 
 type Params = {
   chainId?: number;
@@ -70,18 +71,12 @@ export function useRoundsMaciMessages(params: Params, dataLayer: DataLayer) {
   );
 }
 
-type GroupedMaciContributions = {
-  [chainId: number]: { [roundId: string]: MACIContributions };
-};
-
-type GroupedApplications = {
-  [chainId: number]: { [roundId: string]: Application[] };
-};
-
 export function useMACIContributions(address: string, dataLayer: DataLayer) {
   return useSWR(["allContributions", address], async () => {
     const response: GroupedMaciContributions = {};
     const contributions = await getContributions(address, dataLayer);
+
+    console.log("contributions", contributions);
 
     for (const contribution of contributions) {
       const chainId = Number(contribution.encrypted.chainId);
@@ -113,6 +108,8 @@ export function useMACIContributions(address: string, dataLayer: DataLayer) {
       ).values()
     );
 
+    console.log("uniqueDetails", uniqueDetails);
+
     return { groupedMaciContributions: response, groupedRounds: uniqueDetails };
   });
 }
@@ -122,10 +119,6 @@ export const useDecryptMessages = (
   walletAddress: string
 ) => {
   const fetcher = async () => {
-    console.log("Starting decryptMessages...");
-    console.log("MACI Messages: ", maciMessages);
-    console.log("Wallet Address: ", walletAddress);
-
     if (!maciMessages) {
       return {};
     }
@@ -143,15 +136,9 @@ export const useDecryptMessages = (
           walletAddress: walletAddress,
         });
         if (!signature) {
-          console.log(
-            `No signature found for chainID ${chainID} and roundID ${roundID}`
-          );
           continue; // Skip to the next round
         }
         const pk = generatePubKeyWithSeed(signature);
-
-        console.log("Public Key: ", pk);
-
         const MACIMessages = maciMessages[chainID][roundID];
         const messages = MACIMessages.encrypted.messages as Message[];
 
@@ -165,8 +152,6 @@ export const useDecryptMessages = (
             })),
           },
         });
-
-        console.log("Decrypted Messages: ", decryptedMessages);
 
         decryptedMessagesByRound[chainID][roundID] = decryptedMessages;
       }
@@ -186,98 +171,6 @@ export const useDecryptMessages = (
   };
 };
 
-interface Result {
-  applicationId: string;
-  newVoteWeight: string | undefined;
-}
-
-async function getApplicationsByVoteOptionIndex(
-  applications: Application[],
-  votes: PCommand[]
-): Promise<(Application & Result)[]> {
-  const client = getPublicClient();
-
-  // Define a map from application id to vote ID string to int
-  const voteIdMap: {
-    [key: string]: {
-      id: bigint;
-      maxNonce: bigint | undefined;
-      newVoteWeight: string | undefined;
-    };
-  } = {};
-
-  for (const app of applications) {
-    const strategyAddress = await client
-      .readContract({
-        address: "0x1133eA7Af70876e64665ecD07C0A0476d09465a1" as `0x${string}`,
-        abi: parseAbi([
-          "function getPool(uint256) public view returns ((bytes32, address, address, (uint256,string), bytes32, bytes32))",
-        ]),
-        functionName: "getPool",
-        args: [BigInt(app.roundId)],
-      })
-      .then((res) => res[1]);
-
-    const ID = await client.readContract({
-      address: strategyAddress as `0x${string}`,
-      abi: parseAbi([
-        "function recipientToVoteIndex(address) public view returns (uint256)",
-      ]),
-      functionName: "recipientToVoteIndex",
-      args: [app.id as `0x${string}`],
-    });
-
-    // Store the ID with the maximum nonce found
-    voteIdMap[app.id] = {
-      id: ID,
-      maxNonce: undefined,
-      newVoteWeight: undefined,
-    };
-  }
-
-  return applications
-    .filter((app) => {
-      // Filter the votes to find the ones matching the application ID
-      const matchingVotes = votes.filter(
-        (vote) =>
-          voteIdMap[app.id].id.toString() === vote.voteOptionIndex.toString()
-      );
-
-      if (matchingVotes.length > 0) {
-        // Find the vote with the maximum nonce
-        const maxNonceVote = matchingVotes.reduce((maxVote, currentVote) =>
-          maxVote === undefined || currentVote.nonce > maxVote.nonce
-            ? currentVote
-            : maxVote
-        );
-
-        // Update the maxNonce in the voteIdMap
-        voteIdMap[app.id].maxNonce = maxNonceVote.nonce;
-        return true;
-      }
-      return false;
-    })
-    .map((app) => {
-      const matchedVote = votes.find(
-        (vote) =>
-          voteIdMap[app.id].id.toString() === vote.voteOptionIndex.toString() &&
-          vote.nonce === voteIdMap[app.id].maxNonce
-      );
-
-      const voteWeight = matchedVote
-        ? formatAmount(
-            matchedVote.newVoteWeight * matchedVote.newVoteWeight * 10n ** 13n
-          ).toString()
-        : undefined;
-
-      return {
-        ...app,
-        applicationId: voteIdMap[app.id].id.toString(),
-        newVoteWeight: voteWeight,
-      };
-    })
-    .filter((app) => app.newVoteWeight !== "0");
-}
 
 async function getMaciAddress(chainID: number, roundID: string) {
   const publicClient = getPublicClient({ chainId: chainID });
@@ -342,21 +235,6 @@ async function getMaciAddress(chainID: number, roundID: string) {
   };
 }
 
-type MACIContributions = {
-  encrypted: MACIContribution;
-  maciInfo: {
-    maci: `0x${string}`;
-    pollContracts: readonly [
-      `0x${string}`,
-      `0x${string}`,
-      `0x${string}`,
-      `0x${string}`,
-    ];
-    strategy: string;
-    coordinatorPubKey: PubKey;
-    roundId: string;
-  };
-};
 
 const getContributed = async (
   chainID: number,

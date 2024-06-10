@@ -10,15 +10,28 @@ import { RoundInCart } from "./RoundInCart";
 import { ChainId, useTokenPrice, VotingToken } from "common";
 import { Button, Input } from "common/src/styles";
 import { useCartStorage } from "../../../store";
+import {
+  MACIContributionsByRoundId,
+  MACIDecryptedContributionsByRoundId,
+} from "../../api/types";
 
 type Props = {
   cart: GroupedCartProjectsByRoundId;
+  maciContributions: MACIContributionsByRoundId | null;
+  decryptedContributions: MACIDecryptedContributionsByRoundId | null;
   chainId: ChainId;
 };
 
-export function CartWithProjects({ cart, chainId }: Props) {
+export function CartWithProjects({
+  cart,
+  chainId,
+  maciContributions,
+  decryptedContributions,
+}: Props) {
   const chain = CHAINS[chainId];
   const cartByRound = Object.values(cart);
+
+  console.log("cartByRound", cartByRound);
 
   const store = useCartStorage();
 
@@ -107,6 +120,17 @@ export function CartWithProjects({ cart, chainId }: Props) {
           <RoundInCart
             key={key}
             roundCart={roundcart}
+            maciContributions={
+              maciContributions && maciContributions[roundcart[0].roundId]
+                ? maciContributions[roundcart[0].roundId]
+                : null
+            }
+            decryptedContributions={
+              decryptedContributions &&
+              decryptedContributions[roundcart[0].roundId]
+                ? decryptedContributions[roundcart[0].roundId]
+                : null
+            }
             handleRemoveProjectFromCart={store.remove}
             selectedPayoutToken={selectedPayoutToken}
             payoutTokenPrice={payoutTokenPrice ?? 0}

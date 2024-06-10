@@ -8,7 +8,6 @@ import { EmptyCart } from "./EmptyCart";
 import { Header } from "./Header";
 import { useCartStorage } from "../../../store";
 import { CartWithProjects } from "./CartWithProjects";
-import { SummaryContainer } from "./SummaryContainer";
 import { Application, useDataLayer } from "data-layer";
 import { createCartProjectFromApplication } from "../../discovery/ExploreProjectsPage";
 import { useRoundsApprovedApplications } from "../../projects/hooks/useRoundApplications";
@@ -23,7 +22,14 @@ import { formatAmount } from "../../api/formatAmount";
 
 import { PCommand } from "maci-domainobjs";
 import { Button } from "@chakra-ui/react";
+import {
+  CartProject,
+  MACIContributionsByRoundId,
+  MACIDecryptedContributionsByRoundId,
+} from "../../api/types";
 export default function ViewCart() {
+  const [fetchedContributed, setFetchedContributed] = useState(false);
+
   const { projects, setCart } = useCartStorage();
 
   const { address: walletAddress } = useAccount();
@@ -37,35 +43,6 @@ export default function ViewCart() {
     dataLayer
   );
 
-  console.log(maciContributions);
-
-  const alreadyContributedRounds = maciContributions?.groupedRounds || [];
-
-  const selectedCartRounds = Array.from(
-    new Map(
-      projects
-        .map((project) => {
-          return {
-            chainId: project.chainId,
-            roundId: project.roundId,
-            address: walletAddress as string,
-          };
-        })
-        .map((item) => [
-          `${item.chainId}-${item.roundId}`,
-          { chainId: item.chainId, roundId: item.roundId },
-        ])
-    ).values()
-  );
-  const combinedUniqueDetails = Array.from(
-    new Map(
-      [...selectedCartRounds, ...alreadyContributedRounds].map((item) => [
-        `${item.chainId}-${item.roundId}`,
-        { chainId: item.chainId, roundId: item.roundId },
-      ])
-    ).values()
-  );
-
   const { data: groupedDecryptedContributions } = useDecryptMessages(
     maciContributions?.groupedMaciContributions,
     walletAddress?.toLowerCase() as string
@@ -75,19 +52,6 @@ export default function ViewCart() {
     maciContributions?.groupedRounds ?? [],
     dataLayer
   );
-  const chainID = 11155111;
-  const roundID = "220";
-  const maciMessages = maciContributions?.groupedMaciContributions[chainID][
-    roundID
-  ]
-    ? maciContributions.groupedMaciContributions[chainID][roundID]
-    : null;
-
-  const alreadyContributed = maciContributions?.groupedMaciContributions[
-    chainID
-  ][roundID].encrypted
-    ? true
-    : false;
 
   interface Result {
     applicationId: string;
@@ -96,57 +60,74 @@ export default function ViewCart() {
 
   async function getApplicationsByVoteOptionIndex(
     applications: Application[],
-    votes: PCommand[]
+    votes: PCommand[],
+    voteIdMap: {
+      [chainId: number]: {
+        [roundId: string]: {
+          [appId: string]: {
+            id: bigint;
+            maxNonce: bigint | undefined;
+            newVoteWeight: string | undefined;
+          };
+        };
+      };
+    }
   ): Promise<(Application & Result)[]> {
-    // Define a map from application id to vote ID string to int
-    const voteIdMap = await getVoteIdMap(applications);
-
     return applications
-      .filter((app) => {
-        // Filter the votes to find the ones matching the application ID
+      .map((app) => {
+        const voteInfo = voteIdMap[Number(app.chainId)][app.roundId][app.id];
         const matchingVotes = votes.filter(
-          (vote) =>
-            voteIdMap[app.id].id.toString() === vote.voteOptionIndex.toString()
+          (vote) => voteInfo.id.toString() === vote.voteOptionIndex.toString()
         );
-
-        if (matchingVotes.length > 0) {
-          // Find the vote with the maximum nonce
-          const maxNonceVote = matchingVotes.reduce((maxVote, currentVote) =>
+        let maxNonceVote;
+        // Find the vote with the maximum nonce
+        if (matchingVotes.length === 0) {
+          return {
+            ...app,
+            applicationId: voteInfo.id.toString(),
+            newVoteWeight: "0",
+          };
+        } else if (matchingVotes.length === 1) {
+          maxNonceVote = matchingVotes[0];
+        } else {
+          maxNonceVote = matchingVotes.reduce((maxVote, currentVote) =>
             maxVote === undefined || currentVote.nonce > maxVote.nonce
               ? currentVote
               : maxVote
           );
-
-          // Update the maxNonce in the voteIdMap
-          voteIdMap[app.id].maxNonce = maxNonceVote.nonce;
-          return true;
         }
-        return false;
-      })
-      .map((app) => {
+        // Update the maxNonce in the voteIdMap
+        voteInfo.maxNonce = maxNonceVote.nonce;
+
         const matchedVote = votes.find(
           (vote) =>
-            voteIdMap[app.id].id.toString() ===
-              vote.voteOptionIndex.toString() &&
-            vote.nonce === voteIdMap[app.id].maxNonce
+            voteInfo.id.toString() === vote.voteOptionIndex.toString() &&
+            vote.nonce === voteInfo.maxNonce
         );
 
-        const voteWeight = matchedVote
-          ? formatAmount(
-              matchedVote.newVoteWeight * matchedVote.newVoteWeight * 10n ** 13n
-            ).toString()
-          : undefined;
+        const voteWeight =
+          matchedVote && matchedVote.newVoteWeight !== 0n
+            ? formatAmount(
+                matchedVote.newVoteWeight *
+                  matchedVote.newVoteWeight *
+                  10n ** 13n
+              ).toString()
+            : matchedVote && matchedVote.newVoteWeight === 0n
+            ? undefined
+            : "0";
 
         return {
           ...app,
-          applicationId: voteIdMap[app.id].id.toString(),
+          applicationId: voteInfo.id.toString(),
           newVoteWeight: voteWeight,
         };
       })
-      .filter((app) => app.newVoteWeight !== "0");
+      .filter((app) => {
+        // Exclude contributed projects with newVoteWeight === "0"
+        return app.newVoteWeight !== undefined && app.newVoteWeight !== "0";
+      });
   }
 
-  // NEW CODE
   const getContributed = async () => {
     const contributedApplications = [];
 
@@ -164,9 +145,12 @@ export default function ViewCart() {
         const applicationsForChainRound = applications
           ? applications[chainId]?.[roundID] || []
           : [];
+
+        const voteIdMap = await getVoteIdMap(applicationsForChainRound);
         const contributed = await getApplicationsByVoteOptionIndex(
           applicationsForChainRound,
-          decryptedMessages
+          decryptedMessages,
+          voteIdMap
         );
         contributedApplications.push(...contributed);
       }
@@ -178,22 +162,46 @@ export default function ViewCart() {
   async function setContributed() {
     const contributedTo = await getContributed();
     const applicationRefs = getApplicationRefs();
-    console.log("applicationRefs", applicationRefs);
+    console.log("applicationRefs", contributedTo);
 
     dataLayer
       .getApprovedApplicationsByExpandedRefs(applicationRefs)
       .then((applications) => {
-        const updatedProjects = applications.flatMap((application) => {
-          const newProject = createCartProjectFromApplication(application);
-          return {
-            ...newProject,
-            amount:
-              contributedTo.find(
-                (app) => application.roundApplicationId === app.id
-              )?.newVoteWeight ?? "",
-          };
-        });
-        setCart(updatedProjects);
+        const updatedProjects: CartProject[] = applications.flatMap(
+          (application) => {
+            const contribution = contributedTo.find((app) => {
+              return (
+                application.roundApplicationId.toLowerCase() ===
+                  app.id.toLowerCase() &&
+                application.chainId === Number(app.chainId) &&
+                application.roundId === app.roundId
+              );
+            });
+
+            const newProject = createCartProjectFromApplication(application);
+            return {
+              ...newProject,
+              amount: contribution?.newVoteWeight?.toString() ?? "0",
+            };
+          }
+        );
+
+        // Retain new projects that haven't been contributed to
+        const newProjects = projects.filter(
+          (project) =>
+            !contributedTo.some(
+              (contrib) =>
+                project.anchorAddress?.toString() === contrib.id &&
+                project.chainId === Number(contrib.chainId) &&
+                project.roundId === contrib.roundId
+            )
+        );
+
+        // Combine new projects with updated ones, excluding contributed projects with newVoteWeight === "0"
+        setCart([
+          ...updatedProjects.filter((p) => p.amount !== "0"),
+          ...newProjects,
+        ]);
       })
       .catch((error) => {
         console.error("Error fetching applications in cart", error);
@@ -233,43 +241,16 @@ export default function ViewCart() {
     return applicationRefs;
   }
 
-  // ensure cart data is up to date on mount
   useEffect(() => {
-    const applicationRefs = getApplicationRefs();
+    setFetchedContributed(false);
+  }, [projects]);
 
-    // only update cart if fetching applications is successful
-    dataLayer
-      .getApprovedApplicationsByExpandedRefs(applicationRefs)
-      .then((applications) => {
-        const updatedProjects = applications.flatMap((application) => {
-          const existingProject = projects.find((project) => {
-            return applications.some(
-              (application) =>
-                application.chainId === project.chainId &&
-                application.roundId === project.roundId &&
-                application.roundApplicationId ===
-                  project.anchorAddress?.toString()
-            );
-          });
-
-          const newProject = createCartProjectFromApplication(application);
-
-          // update all application data, but preserve the selected amount
-          return { ...newProject, amount: existingProject?.amount ?? "" };
-        });
-
-        // replace whole cart
-        setCart(updatedProjects);
-      })
-      .catch((error) => {
-        console.error("error fetching applications in cart", error);
-      });
-
-    // we only want to run this once on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {}, [projects]);
+  useEffect(() => {
+    if (!fetchedContributed) {
+      setContributed();
+      setFetchedContributed(true);
+    }
+  }, [fetchedContributed]);
 
   const breadCrumbs: BreadcrumbItem[] = [
     {
@@ -292,48 +273,40 @@ export default function ViewCart() {
         <main>
           <Header projects={projects} />
           <div className="flex flex-col md:flex-row gap-5">
-            {alreadyContributed && (
-              <Button onClick={async () => await setContributed()}>
-                Set contributed
-              </Button>
-            )}
+            {/* <Button onClick={async () => await setContributed()}>
+              Set contributed
+            </Button> */}
             {projects.length === 0 ? (
               <>
                 <EmptyCart />
-                <SummaryContainer
-                  alreadyContributed={(alreadyContributed as boolean) || false}
-                  // TODO: MAKE Summary Container handle more than one round
-                  decryptedMessages={null}
-                  stateIndex={BigInt(
-                    maciMessages?.encrypted?.stateIndex ?? "0"
-                  )}
-                  maciMessages={maciMessages}
-                />
               </>
             ) : (
-              <div className={"grid sm:grid-cols-3 gap-5 w-full"}>
+              <div className={"grid sm:grid-cols-2 gap-5 w-full mx-[5%]"}>
                 <div className="flex flex-col gap-5 sm:col-span-2 order-2 sm:order-1">
                   {Object.keys(groupedCartProjects).map((chainId) => (
                     <div key={Number(chainId)}>
                       <CartWithProjects
                         cart={groupedCartProjects[Number(chainId)]}
+                        maciContributions={
+                          maciContributions?.groupedMaciContributions[
+                            Number(chainId)
+                          ]
+                            ? (maciContributions?.groupedMaciContributions[
+                                Number(chainId)
+                              ] as MACIContributionsByRoundId)
+                            : null
+                        }
+                        decryptedContributions={
+                          groupedDecryptedContributions?.[Number(chainId)]
+                            ? (groupedDecryptedContributions?.[
+                                Number(chainId)
+                              ] as MACIDecryptedContributionsByRoundId)
+                            : null
+                        }
                         chainId={Number(chainId) as ChainId}
                       />
                     </div>
                   ))}
-                </div>
-                <div className="sm:col-span-1 order-1 sm:order-2">
-                  <SummaryContainer
-                    alreadyContributed={
-                      (alreadyContributed as boolean) || false
-                    }
-                    // TODO: MAKE Summary Container handle more than one round
-                    decryptedMessages={null}
-                    stateIndex={BigInt(
-                      maciMessages?.encrypted?.stateIndex ?? "0"
-                    )}
-                    maciMessages={maciMessages}
-                  />
                 </div>
               </div>
             )}

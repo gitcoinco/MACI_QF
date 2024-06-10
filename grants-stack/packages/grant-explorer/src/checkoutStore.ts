@@ -76,14 +76,16 @@ interface CheckoutState {
    * this has the side effect of adding the chains to the wallet if they are not yet present
    * We get the data necessary to construct the votes from the cart store */
   checkoutMaci: (
-    chainsToCheckout: { chainId: ChainId; permitDeadline: number }[],
+    chainId: ChainId,
+    roundId: string,
     walletClient: WalletClient,
     publicClient: PublicClient,
     pcd?: string
   ) => Promise<void>;
 
   changeDonations: (
-    chainsToCheckout: { chainId: ChainId; permitDeadline: number }[],
+    chainId: ChainId,
+    roundId: string,
     walletClient: WalletClient,
     previousMessages: PCommand[],
     stateIndex: bigint
@@ -151,15 +153,12 @@ export const useCheckoutStore = create<CheckoutState>()(
      * this has the side effect of adding the chains to the wallet if they are not yet present
      * We get the data necessary to construct the votes from the cart store */
     checkoutMaci: async (
-      chainsToCheckout: { chainId: ChainId; permitDeadline: number }[],
+      chainId: ChainId,
+      roundId: string,
       walletClient: WalletClient,
       publicClient: PublicClient,
       pcd?: string
     ) => {
-      const firstChainToCheckout = chainsToCheckout[0];
-      const chainId = firstChainToCheckout.chainId;
-      const deadline = firstChainToCheckout.permitDeadline;
-
       const chainIdsToCheckOut = [chainId];
       get().setChainsToCheckout(
         uniq([...get().chainsToCheckout, ...chainIdsToCheckOut])
@@ -167,32 +166,24 @@ export const useCheckoutStore = create<CheckoutState>()(
 
       const projectsToCheckOut = useCartStorage
         .getState()
-        .projects.filter((project) =>
-          chainIdsToCheckOut.includes(project.chainId)
+        .projects.filter(
+          (project) =>
+            project.chainId === chainId && project.roundId === roundId
         );
 
-      const projectsByChain = groupBy(projectsToCheckOut, "chainId") as {
-        [chain: number]: CartProject[];
-      };
+      const projectsByChain = { [chainId]: projectsToCheckOut };
 
       const getVotingTokenForChain =
         useCartStorage.getState().getVotingTokenForChain;
 
-      const totalDonationPerChain = Object.fromEntries(
-        Object.entries(projectsByChain).map(([key, value]) => [
-          Number(key) as ChainId,
-          value
-            .map((project) => project.amount)
-            .reduce(
-              (acc, amount) =>
-                acc +
-                parseUnits(
-                  amount ? amount : "0",
-                  getVotingTokenForChain(Number(key) as ChainId).decimal
-                ),
-              0n
-            ),
-        ])
+      const totalDonationPerChain = projectsToCheckOut.reduce(
+        (acc, project) =>
+          acc +
+          parseUnits(
+            project.amount ? project.amount : "0",
+            getVotingTokenForChain(chainId).decimal
+          ),
+        0n
       );
 
       const donations = projectsByChain[chainId];
@@ -205,46 +196,6 @@ export const useCheckoutStore = create<CheckoutState>()(
 
       const token = getVotingTokenForChain(chainId);
 
-      if (token.address !== zeroAddress) {
-        try {
-          get().setPermitStatusForChain(chainId, ProgressStatus.IN_PROGRESS);
-
-          const owner = walletClient.account.address;
-          const erc20Contract = getContract({
-            address: token.address as Hex,
-            abi: parseAbi([
-              "function nonces(address) public view returns (uint256)",
-              "function name() public view returns (string)",
-              "function approve(address, uint256) public",
-            ]),
-            walletClient,
-            chainId,
-          });
-
-          // TODO Make this dynamic
-          const approve = await walletClient.writeContract({
-            address: token.address as Hex,
-            abi: parseAbi(["function approve(address, uint256) public"]),
-            functionName: "approve",
-            args: [MRC_CONTRACTS[chainId], totalDonationPerChain[chainId]],
-          });
-
-          get().setPermitStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
-        } catch (e) {
-          if (!(e instanceof UserRejectedRequestError)) {
-            console.error("approve error", e, {
-              donations,
-              chainId,
-              tokenAddress: token.address,
-            });
-          }
-          get().setPermitStatusForChain(chainId, ProgressStatus.IS_ERROR);
-          return;
-        }
-      } else {
-        get().setPermitStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
-      }
-
       try {
         const groupedDonations = groupBy(
           donations.map((d) => ({
@@ -254,25 +205,23 @@ export const useCheckoutStore = create<CheckoutState>()(
           "roundId"
         );
 
-        const firstRoundId = Object.keys(groupedDonations)[0];
-
         get().setMaciKeyStatusForChain(chainId, ProgressStatus.IN_PROGRESS);
 
         const groupedKeyPairs: Record<string, GenKeyPair> = {};
-        groupedKeyPairs[firstRoundId] = await generatePubKey(
+        groupedKeyPairs[roundId] = await generatePubKey(
           walletClient,
-          groupedDonations[firstRoundId][0].roundId,
+          roundId,
           chainId.toString()
         );
 
         get().setMaciKeyStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
 
-        const groupedEncodedVotes: Record<string, Hex> = {};
+        const groupedEncodedVotes: Record<string, string> = {};
 
         const groupedAmounts: Record<string, bigint> = {};
-        groupedDonations[firstRoundId].forEach((donation) => {
-          groupedAmounts[firstRoundId] =
-            (groupedAmounts[firstRoundId] || 0n) +
+        groupedDonations[roundId].forEach((donation) => {
+          groupedAmounts[roundId] =
+            (groupedAmounts[roundId] || 0n) +
             parseUnits(donation.amount, token.decimal);
         });
 
@@ -284,12 +233,6 @@ export const useCheckoutStore = create<CheckoutState>()(
 
         const voteIdMap: { [key: string]: bigint } = {};
 
-        // bytes32 profileId;
-        // IStrategy strategy;
-        // address token;
-        // Metadata metadata;
-        // bytes32 managerRole;
-        // bytes32 adminRole;
         const strategyAddress = await publicClient.readContract({
           address:
             "0x1133eA7Af70876e64665ecD07C0A0476d09465a1" as `0x${string}`,
@@ -297,9 +240,9 @@ export const useCheckoutStore = create<CheckoutState>()(
             "function getPool(uint256) public view returns ((bytes32, address, address, (uint256,string), bytes32, bytes32))",
           ]),
           functionName: "getPool",
-          args: [BigInt(firstRoundId)],
+          args: [BigInt(roundId)],
         });
-        for (const app of groupedDonations[firstRoundId]) {
+        for (const app of groupedDonations[roundId]) {
           const ID = await publicClient.readContract({
             address: strategyAddress[1] as `0x${string}`,
             abi: parseAbi([
@@ -313,7 +256,7 @@ export const useCheckoutStore = create<CheckoutState>()(
         }
 
         // Process each donation
-        groupedDonations[firstRoundId].forEach((donation) => {
+        groupedDonations[roundId].forEach((donation) => {
           const donationAmount = parseUnits(donation.amount, token.decimal);
 
           // Calculate the vote weight
@@ -332,28 +275,28 @@ export const useCheckoutStore = create<CheckoutState>()(
         const messagesPerRound: Record<string, IPublishMessage[]> = {};
         let nonceValue = 0;
 
-        groupedEncodedVotes[firstRoundId] = prepareAllocationData({
-          publicKey: groupedKeyPairs[firstRoundId].pubKey,
-          amount: groupedAmounts[firstRoundId],
+        groupedEncodedVotes[roundId] = prepareAllocationData({
+          publicKey: groupedKeyPairs[roundId].pubKey,
+          amount: groupedAmounts[roundId],
           proof: pcd,
         });
 
         const messages: IPublishMessage[] = [];
 
-        groupedDonations[firstRoundId].forEach((donation) => {
+        groupedDonations[roundId].forEach((donation) => {
           messages.push({
             stateIndex: 1n,
             voteOptionIndex: BigInt(voteIdMap[donation.anchorAddress ?? ""]),
             nonce: BigInt(nonceValue++),
             newVoteWeight: bnSqrt(
-              DonationVotesEachRound[firstRoundId][
+              DonationVotesEachRound[roundId][
                 voteIdMap[donation.anchorAddress ?? ""].toString()
               ] as bigint
             ),
           });
         });
 
-        messagesPerRound[firstRoundId] = messages;
+        messagesPerRound[roundId] = messages;
 
         get().setContributionStatusForChain(
           chainId,
@@ -363,12 +306,12 @@ export const useCheckoutStore = create<CheckoutState>()(
         const PublishBatchArgs = await allocate({
           messages,
           walletClient,
-          roundId: firstRoundId,
+          roundId,
           chainId,
-          amount: groupedAmounts[firstRoundId],
-          bytes: groupedEncodedVotes[firstRoundId],
-          pubKey: groupedKeyPairs[firstRoundId].pubKey,
-          privateKey: groupedKeyPairs[firstRoundId].privKey,
+          amount: groupedAmounts[roundId],
+          bytes: groupedEncodedVotes[roundId] as Hex,
+          pubKey: groupedKeyPairs[roundId].pubKey,
+          privateKey: groupedKeyPairs[roundId].privKey,
         });
 
         get().setContributionStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
@@ -416,45 +359,41 @@ export const useCheckoutStore = create<CheckoutState>()(
      * this has the side effect of adding the chains to the wallet if they are not yet present
      * We get the data necessary to construct the votes from the cart store */
     changeDonations: async (
-      chainsToCheckout: { chainId: ChainId; permitDeadline: number }[],
+      chainId: ChainId,
+      roundId: string,
       walletClient: WalletClient,
       previousMessages: PCommand[],
       stateIndex: bigint
     ) => {
-      const firstChainToCheckout = chainsToCheckout[0];
-      const chainId = firstChainToCheckout.chainId;
-
       const chainIdsToCheckOut = [chainId];
       get().setChainsToCheckout(
         uniq([...get().chainsToCheckout, ...chainIdsToCheckOut])
       );
-
+    
       const projectsToCheckOut = useCartStorage
         .getState()
-        .projects.filter((project) =>
-          chainIdsToCheckOut.includes(project.chainId)
+        .projects.filter(
+          (project) => project.chainId === chainId && project.roundId === roundId
         );
-
-      const projectsByChain = groupBy(projectsToCheckOut, "chainId") as {
-        [chain: number]: CartProject[];
-      };
-
+    
+      const projectsByChain = { [chainId]: projectsToCheckOut };
+    
       const getVotingTokenForChain =
         useCartStorage.getState().getVotingTokenForChain;
-
+    
       const donations = projectsByChain[chainId];
-
+    
       set({
         currentChainBeingCheckedOut: chainId,
       });
-
+    
       await switchToChain(chainId, walletClient, get);
-
+    
       const token = getVotingTokenForChain(chainId);
-
+    
       try {
         get().setVoteStatusForChain(chainId, ProgressStatus.IN_PROGRESS);
-
+    
         const groupedDonations = groupBy(
           donations.map((d) => ({
             ...d,
@@ -462,20 +401,13 @@ export const useCheckoutStore = create<CheckoutState>()(
           })),
           "roundId"
         );
-
-        const firstRoundId = Object.keys(groupedDonations)[0];
-
+    
         const voteIdMap: { [key: string]: bigint } = {};
-
+    
         const publicClient = getPublicClient({
           chainId,
         });
-        // bytes32 profileId;
-        // IStrategy strategy;
-        // address token;
-        // Metadata metadata;
-        // bytes32 managerRole;
-        // bytes32 adminRole;
+    
         const strategyAddress = await publicClient.readContract({
           address:
             "0x1133eA7Af70876e64665ecD07C0A0476d09465a1" as `0x${string}`,
@@ -483,9 +415,9 @@ export const useCheckoutStore = create<CheckoutState>()(
             "function getPool(uint256) public view returns ((bytes32, address, address, (uint256,string), bytes32, bytes32))",
           ]),
           functionName: "getPool",
-          args: [BigInt(firstRoundId)],
+          args: [BigInt(roundId)],
         });
-        for (const app of groupedDonations[firstRoundId]) {
+        for (const app of groupedDonations[roundId]) {
           const ID = await publicClient.readContract({
             address: strategyAddress[1] as `0x${string}`,
             abi: parseAbi([
@@ -494,69 +426,66 @@ export const useCheckoutStore = create<CheckoutState>()(
             functionName: "recipientToVoteIndex",
             args: [app.anchorAddress as `0x${string}`],
           });
-
+    
           voteIdMap[app.anchorAddress ?? ""] = ID;
         }
-
+    
         get().setMaciKeyStatusForChain(chainId, ProgressStatus.IN_PROGRESS);
-
+    
         const groupedKeyPairs: Record<string, GenKeyPair> = {};
-        groupedKeyPairs[firstRoundId] = await generatePubKey(
+        groupedKeyPairs[roundId] = await generatePubKey(
           walletClient,
-          groupedDonations[firstRoundId][0].roundId,
+          roundId,
           chainId.toString()
         );
-
+    
         get().setMaciKeyStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
-
+    
         const groupedAmounts: Record<string, bigint> = {};
-        groupedDonations[firstRoundId].forEach((donation) => {
-          groupedAmounts[firstRoundId] =
-            (groupedAmounts[firstRoundId] || 0n) +
+        groupedDonations[roundId].forEach((donation) => {
+          groupedAmounts[roundId] =
+            (groupedAmounts[roundId] || 0n) +
             parseUnits(donation.amount, token.decimal);
         });
-
-        const DonationVotesEachRound: Record<
-          string,
-          Record<string, bigint>
-        > = {};
+    
+        const DonationVotesEachRound: Record<string, Record<string, bigint>> = {};
         const SINGLEVOTE = 10n ** 5n;
-
+    
         // Process each donation
-        groupedDonations[firstRoundId].forEach((donation) => {
+        groupedDonations[roundId].forEach((donation) => {
           const donationAmount = parseUnits(donation.amount, token.decimal);
-
+    
           // Calculate the vote weight
           const voteWeight = (SINGLEVOTE * donationAmount) / 10n ** 18n;
-
+    
           // Ensure DonationVotesEachRound is correctly updated
           if (!DonationVotesEachRound[donation.roundId]) {
             DonationVotesEachRound[donation.roundId] = {};
           }
-
+    
           DonationVotesEachRound[donation.roundId][
             voteIdMap[donation.anchorAddress ?? ""].toString()
           ] = voteWeight;
         });
-
+    
         const messagesPerRound: Record<string, IPublishMessage[]> = {};
-
+    
         let maxNonce = 0n;
         for (const message of previousMessages) {
           if (message.nonce > maxNonce) {
             maxNonce = message.nonce;
           }
         }
-
+    
         // Increment maxNonce to start from the next nonce
         if (previousMessages.length > 0) {
           maxNonce++;
         }
-
+    
         const messages: IPublishMessage[] = [];
-
-        groupedDonations[firstRoundId].forEach((donation) => {
-          const amount = DonationVotesEachRound[firstRoundId][
+    
+        groupedDonations[roundId].forEach((donation) => {
+          const amount = DonationVotesEachRound[roundId][
             voteIdMap[donation.anchorAddress ?? ""].toString()
           ] as bigint;
           messages.push({
@@ -567,42 +496,38 @@ export const useCheckoutStore = create<CheckoutState>()(
           });
           maxNonce++;
         });
-
-        console.log("next nonce: ", maxNonce);
-        console.log("messages", messages);
-        console.log("previousMessages", previousMessages);
-
-        messagesPerRound[firstRoundId] = messages;
-
+    
+        messagesPerRound[roundId] = messages;
+    
         const abi = parseAbi([
           "function getPool(uint256) view returns ((bytes32 profileId, address strategy, address token, (uint256,string) metadata, bytes32 managerRole, bytes32 adminRole))",
           "function _pollContracts() view returns ((address poll, address messageProcessor,address tally,address subsidy))",
           "function coordinatorPubKey() view returns (uint256 x, uint256 y)",
           "function allocate(uint256, bytes) external payable",
         ]);
-
+    
         const alloContractAddress =
           "0x1133ea7af70876e64665ecd07c0a0476d09465a1";
-
+    
         const [Pool] = await Promise.all([
           publicClient.readContract({
             abi: abi,
             address: alloContractAddress as Hex,
             functionName: "getPool",
-            args: [BigInt(firstRoundId)],
+            args: [BigInt(roundId)],
           }),
         ]);
-
+    
         const pool = Pool as PoolInfo;
-
+    
         const pollContracts = await publicClient.readContract({
           abi: abi,
           address: pool.strategy as Hex,
           functionName: "_pollContracts",
         });
-
+    
         const poll = pollContracts as MACIPollContracts;
-
+    
         const Messages = messages.map((message) => {
           return {
             stateIndex: stateIndex,
@@ -611,16 +536,16 @@ export const useCheckoutStore = create<CheckoutState>()(
             newVoteWeight: message.newVoteWeight,
           };
         });
-
+    
         await publishBatch({
           messages: Messages,
           Poll: poll.poll,
-          publicKey: groupedKeyPairs[firstRoundId].pubKey,
-          privateKey: groupedKeyPairs[firstRoundId].privKey,
+          publicKey: groupedKeyPairs[roundId].pubKey,
+          privateKey: groupedKeyPairs[roundId].privKey,
           walletClient,
           chainId,
         });
-
+    
         donations.forEach((donation) => {
           useCartStorage.getState().remove(donation);
         });
@@ -639,7 +564,7 @@ export const useCheckoutStore = create<CheckoutState>()(
           donations,
           token,
         };
-
+    
         if (error instanceof Error) {
           context = {
             ...context,
@@ -647,11 +572,11 @@ export const useCheckoutStore = create<CheckoutState>()(
             cause: error.cause,
           };
         }
-
+    
         if (!(error instanceof UserRejectedRequestError)) {
           console.error("donation error", error, context);
         }
-
+    
         get().setVoteStatusForChain(chainId, ProgressStatus.IS_ERROR);
         throw error;
       }

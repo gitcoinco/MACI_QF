@@ -5,20 +5,32 @@ import { Application } from "data-layer";
 export const getVoteIdMap = async (
   applications: Application[]
 ): Promise<{
-  [key: string]: {
-    id: bigint;
-    maxNonce: bigint | undefined;
-    newVoteWeight: string | undefined;
-    isNew?: boolean;
+  [chainId: number]: {
+    [roundId: string]: {
+      [appId: string]: {
+        id: bigint;
+        maxNonce: bigint | undefined;
+        newVoteWeight: string | undefined;
+        isNew?: boolean;
+        chainId: number;
+        roundId: string;
+      };
+    };
   };
 }> => {
   const client = getPublicClient();
   const voteIdMap: {
-    [key: string]: {
-      id: bigint;
-      maxNonce: bigint | undefined;
-      newVoteWeight: string | undefined;
-      isNew?: boolean;
+    [chainId: number]: {
+      [roundId: string]: {
+        [appId: string]: {
+          id: bigint;
+          maxNonce: bigint | undefined;
+          newVoteWeight: string | undefined;
+          isNew?: boolean;
+          chainId: number;
+          roundId: string;
+        };
+      };
     };
   } = {};
 
@@ -43,12 +55,24 @@ export const getVoteIdMap = async (
       args: [app.id as `0x${string}`],
     });
 
+    const chainId = Number(app.chainId);
+
+    // Initialize nested objects if they don't exist
+    if (!voteIdMap[chainId]) {
+      voteIdMap[chainId] = {};
+    }
+    if (!voteIdMap[chainId][app.roundId]) {
+      voteIdMap[chainId][app.roundId] = {};
+    }
+
     // Store the ID with the maximum nonce found
-    voteIdMap[app.id] = {
+    voteIdMap[chainId][app.roundId][app.id] = {
       id: ID,
       maxNonce: undefined,
       newVoteWeight: undefined,
       isNew: false,
+      chainId: chainId,
+      roundId: app.roundId,
     };
   }
   return voteIdMap;
