@@ -77,6 +77,7 @@ contract ClonablePoll is Params, Utilities, SnarkCommon, OwnableUpgradeable, IPo
     error StateAqAlreadyMerged();
     error StateAqSubtreesNeedMerge();
     error InvalidBatchLength();
+    error InvalidPubKey();
 
     event PublishMessage(Message _message, PubKey _encPubKey);
     event TopupMessage(Message _message);
@@ -106,7 +107,7 @@ contract ClonablePoll is Params, Utilities, SnarkCommon, OwnableUpgradeable, IPo
         _setEmptyBallotRoots();
         // check that the coordinator public key is valid
         if (!CurveBabyJubJub.isOnCurve(_coordinatorPubKey.x, _coordinatorPubKey.y)) {
-        revert InvalidPubKey();
+            revert InvalidPubKey();
         }
 
         /// @notice deploy a new AccQueue contract to store messages

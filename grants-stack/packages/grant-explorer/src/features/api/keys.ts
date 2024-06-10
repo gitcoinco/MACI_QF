@@ -69,6 +69,28 @@ export const getMACIKeys = async ({
 };
 
 
+export const signAndStoreSignatures = async ({
+  pairs,
+  walletClient,
+  address,
+}: {
+  pairs: { chainId: number; roundId: string }[];
+  walletClient: WalletClient;
+  address: string;
+}) => {
+  for (const pair of pairs) {
+    const { chainId, roundId } = pair;
+    await getMACIKeys({
+      chainID: chainId,
+      roundID: roundId,
+      walletAddress: address,
+      walletClient: walletClient,
+    });
+  }
+};
+  
+
+
 export const getMACIKey = ({
   chainID,
   roundID,

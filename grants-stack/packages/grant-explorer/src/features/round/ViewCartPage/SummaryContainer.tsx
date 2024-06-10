@@ -32,11 +32,12 @@ import { zuAuthPopup } from "@pcd/zuauth";
 import { ZUAUTH_CONFIG, fieldsToReveal } from "../../api/pcd";
 import { useDataLayer } from "data-layer";
 import { PCommand } from "maci-domainobjs";
-import { NATIVE, getTokenPrice } from "common";
+import { NATIVE } from "common";
 
 export function SummaryContainer(props: {
   alreadyContributed: boolean;
   maciMessages: MACIContributions | null;
+  donatedAmount: bigint;
   decryptedMessages: PCommand[] | null;
   payoutTokenPrice: number;
   stateIndex: bigint;
@@ -312,8 +313,9 @@ export function SummaryContainer(props: {
                 <p>
                   ${" "}
                   {(
-                    Number(formatUnits(totalDonations, votingToken.decimal)) *
-                    props.payoutTokenPrice
+                    Number(
+                      formatUnits(props.donatedAmount, votingToken.decimal)
+                    ) * props.payoutTokenPrice
                   ).toFixed(2)}
                 </p>
               </div>
@@ -349,6 +351,8 @@ export function SummaryContainer(props: {
         {isConnected
           ? totalDonations > tokenBalance
             ? "Not enough funds to donate"
+            : props.alreadyContributed && props.donatedAmount < totalDonations
+            ? "Exceeds donation limit"
             : props.alreadyContributed
             ? "Change donations"
             : "Submit your donation!"

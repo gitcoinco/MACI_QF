@@ -127,8 +127,13 @@ export const useDecryptMessages = (
       [chainID: number]: { [roundID: string]: PCommand[] };
     } = {};
 
+    const needSignature: {
+      [chainID: number]: { [roundID: string]: boolean };
+    } = {};
+
     for (const chainID in maciMessages) {
       decryptedMessagesByRound[chainID] = {};
+      needSignature[chainID] = {};
       for (const roundID in maciMessages[chainID]) {
         const signature = getMACIKey({
           chainID: Number(chainID),
@@ -136,6 +141,7 @@ export const useDecryptMessages = (
           walletAddress: walletAddress,
         });
         if (!signature) {
+          needSignature[chainID][roundID] = true;
           continue; // Skip to the next round
         }
         const pk = generatePubKeyWithSeed(signature);
@@ -152,12 +158,15 @@ export const useDecryptMessages = (
             })),
           },
         });
-
+        needSignature[chainID][roundID] = false;
         decryptedMessagesByRound[chainID][roundID] = decryptedMessages;
       }
     }
 
-    return decryptedMessagesByRound;
+    return {
+      decryptedMessagesByRound: decryptedMessagesByRound,
+      needSignature: needSignature,
+    };
   };
 
   const { data, error } = useSWR(

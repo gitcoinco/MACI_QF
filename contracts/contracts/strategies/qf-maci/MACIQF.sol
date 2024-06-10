@@ -12,7 +12,7 @@ import {Poll} from "maci-contracts/contracts/Poll.sol";
 // Interfaces
 import {IZuPassVerifier} from "./interfaces/IZuPassVerifier.sol";
 
-import {IAllo} from "../interfaces/IAllo.sol";
+import {IAllo} from "../../core/interfaces/IAllo.sol";
 
 // Core Contracts
 import {MACIQFBase} from "./MACIQFBase.sol";
@@ -400,9 +400,6 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
             revert IncorrectTallyResult();
         }
 
-        totalRecipientVotes += _tallyResult;
-        totalVotesSquares = totalVotesSquares + (_tallyResult * _tallyResult);
-
         _tallyRecipientVotes(_voteOptionIndex, _tallyResult);
 
         emit TallyResultsAdded(_voteOptionIndex, _tallyResult);
@@ -422,12 +419,17 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
             return;
         }
 
-        recipient.tallyVerified = true;
-
         if (!_isAcceptedRecipient(recipientId)) return;
+        
         if (_voiceCreditsToAllocate == 0) return;
 
+        totalRecipientVotes += _voiceCreditsToAllocate;
+
+        totalVotesSquares = totalVotesSquares + (_voiceCreditsToAllocate * _voiceCreditsToAllocate);
+
         recipient.totalVotesReceived = _voiceCreditsToAllocate;
+
+        recipient.tallyVerified = true;
 
         emit TallyResultsAdded(_voteOptionIndex, _voiceCreditsToAllocate);
     }

@@ -31,6 +31,11 @@ export function RoundInCart(
   const needsSignature =
     (props.maciContributions?.encrypted?.messages?.length??0 > 0) &&
     props.decryptedContributions?.length === 0;
+
+  const donatedCredits = BigInt(
+    props.maciContributions?.encrypted?.voiceCreditBalance ?? 0n
+  );
+  const donatedAmount = donatedCredits * 10n ** 13n;
   const round = useRoundById(
     props.roundCart[0].chainId,
     props.roundCart[0].roundId
@@ -169,7 +174,7 @@ export function RoundInCart(
                     : totalDonationInUSD.toFixed(2)}
                 </p>
               </div>
-              {!needsSignature && (
+              {needsSignature && (
                 <div className="flex flex-row items-center gap-2">
                   <Button
                     onClick={async () => {
@@ -205,6 +210,7 @@ export function RoundInCart(
             stateIndex={BigInt(
               props.maciContributions?.encrypted?.stateIndex ?? "0"
             )}
+            donatedAmount={donatedAmount}
             maciMessages={props.maciContributions ?? null}
             roundId={props.roundCart[0].roundId}
             chainId={props.roundCart[0].chainId}

@@ -27,6 +27,9 @@ import {
   MACIContributionsByRoundId,
   MACIDecryptedContributionsByRoundId,
 } from "../../api/types";
+import { signAndStoreSignatures } from "../../api/keys";
+import { WalletClient, getWalletClient } from "@wagmi/core";
+import { set } from "lodash";
 export default function ViewCart() {
   const [fetchedContributed, setFetchedContributed] = useState(false);
 
@@ -36,17 +39,62 @@ export default function ViewCart() {
 
   const dataLayer = useDataLayer();
 
-  const groupedCartProjects = groupProjectsInCart(projects);
-
   const { data: maciContributions } = useMACIContributions(
     walletAddress?.toLowerCase() as string,
     dataLayer
   );
 
-  const { data: groupedDecryptedContributions } = useDecryptMessages(
+  const { data: DecryptedContributions } = useDecryptMessages(
     maciContributions?.groupedMaciContributions,
     walletAddress?.toLowerCase() as string
   );
+
+  const groupedDecryptedContributions =
+    DecryptedContributions?.decryptedMessagesByRound;
+
+  const groupedNeedsSignature = DecryptedContributions?.needSignature;
+
+  async function getNeededSignatures() {
+    // Vreate thr pairs{chainid and roundid} from maciContributions.groupedRounds
+    const pairs = maciContributions?.groupedRounds.flatMap((round) => {
+      return { chainId: round.chainId, roundId: round.roundId };
+    }) as { chainId: number; roundId: string }[];
+    const walletClient = await getWalletClient();
+    await signAndStoreSignatures({
+      pairs,
+      walletClient: walletClient as WalletClient,
+      address: walletAddress as string,
+    });
+  }
+
+  const groupedCartProjects = groupProjectsInCart(projects);
+
+  const combinedGroupedCartProjects = groupedCartProjects;
+
+  for (const chainId of Object.keys(groupedNeedsSignature || {})) {
+    for (const roundId of Object.keys(
+      groupedNeedsSignature ? groupedNeedsSignature[Number(chainId)] : {}
+    )) {
+      if (!combinedGroupedCartProjects[Number(chainId)]) {
+        combinedGroupedCartProjects[Number(chainId)] = {};
+      }
+
+      if (!combinedGroupedCartProjects[Number(chainId)][roundId]) {
+        combinedGroupedCartProjects[Number(chainId)][roundId] = [];
+      }
+
+      if (
+        groupedNeedsSignature &&
+        groupedNeedsSignature[Number(chainId)][roundId]
+      ) {
+        groupedCartProjects[Number(chainId)][roundId].push({
+          chainId: Number(chainId),
+          roundId,
+          amount: "0",
+        } as CartProject);
+      }
+    }
+  }
 
   const { data: applications } = useRoundsApprovedApplications(
     maciContributions?.groupedRounds ?? [],
@@ -241,9 +289,7 @@ export default function ViewCart() {
     return applicationRefs;
   }
 
-  useEffect(() => {
-    setFetchedContributed(false);
-  }, [projects]);
+  useEffect(() => {}, [projects]);
 
   useEffect(() => {
     if (!fetchedContributed) {
@@ -273,15 +319,23 @@ export default function ViewCart() {
         <main>
           <Header projects={projects} />
           <div className="flex flex-col md:flex-row gap-5">
-            {/* <Button onClick={async () => await setContributed()}>
+            <Button onClick={async () => await setContributed()}>
               Set contributed
-            </Button> */}
+            </Button>
+            <Button
+              onClick={async () => {
+                await getNeededSignatures();
+                setFetchedContributed(false);
+              }}
+            >
+              SignToDecrypt
+            </Button>
             {projects.length === 0 ? (
               <>
                 <EmptyCart />
               </>
             ) : (
-              <div className={"grid sm:grid-cols-2 gap-5 w-full mx-[5%]"}>
+              <div className={"grid sm:grid-cols-2 gap-5 w-full mx-[10%]"}>
                 <div className="flex flex-col gap-5 sm:col-span-2 order-2 sm:order-1">
                   {Object.keys(groupedCartProjects).map((chainId) => (
                     <div key={Number(chainId)}>
