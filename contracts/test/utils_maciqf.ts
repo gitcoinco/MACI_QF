@@ -165,44 +165,38 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
 
   const Allo = AlloContracts.AlloAddress;
 
-  const pollFactoryContract = await ethers.getContractFactory("ClonablePoll",
-    {
+  const pollFactoryContract = await ethers
+    .getContractFactory("ClonablePoll", {
       libraries: {
         PoseidonT3: poseidonAddrs.poseidonT3,
         PoseidonT4: poseidonAddrs.poseidonT4,
         PoseidonT5: poseidonAddrs.poseidonT5,
         PoseidonT6: poseidonAddrs.poseidonT6,
       },
-    }
-  ).then((factory) => factory.deploy()
-  
-);
+    })
+    .then((factory) => factory.deploy());
 
-  const messageProcessorFactoryContract = await ethers.getContractFactory("ClonableMessageProcessor",
-    {
+  const messageProcessorFactoryContract = await ethers
+    .getContractFactory("ClonableMessageProcessor", {
       libraries: {
         PoseidonT3: poseidonAddrs.poseidonT3,
         PoseidonT4: poseidonAddrs.poseidonT4,
         PoseidonT5: poseidonAddrs.poseidonT5,
         PoseidonT6: poseidonAddrs.poseidonT6,
       },
-    }
-  ).then((factory) => factory.deploy()
-  
-);
-  
-  const tallyFactoryContract = await ethers.getContractFactory("ClonableTally",
-    {
+    })
+    .then((factory) => factory.deploy());
+
+  const tallyFactoryContract = await ethers
+    .getContractFactory("ClonableTally", {
       libraries: {
         PoseidonT3: poseidonAddrs.poseidonT3,
         PoseidonT4: poseidonAddrs.poseidonT4,
         PoseidonT5: poseidonAddrs.poseidonT5,
         PoseidonT6: poseidonAddrs.poseidonT6,
       },
-    }
-  ).then((factory) => factory.deploy()
-  
-  );
+    })
+    .then((factory) => factory.deploy());
 
   const [pollAddr, mpAddr, tallyAddr] = await Promise.all([
     pollFactoryContract.getAddress(),
@@ -212,32 +206,31 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
 
   // --------------------------------------------------  Clonable MACI  --------------------------------------------------
 
-  const ClonableMACI = await ethers.getContractFactory("ClonableMACI",
-    {
+  const ClonableMACI = await ethers
+    .getContractFactory("ClonableMACI", {
       libraries: {
         PoseidonT3: poseidonAddrs.poseidonT3,
         PoseidonT4: poseidonAddrs.poseidonT4,
         PoseidonT5: poseidonAddrs.poseidonT5,
         PoseidonT6: poseidonAddrs.poseidonT6,
       },
-    }
-  ).then((factory) => factory.deploy()
-  
-);
-
+    })
+    .then((factory) => factory.deploy());
 
   const ClonableMACIAddress = await ClonableMACI.getAddress();
 
   // --------------------------------------------------  Clonable MACI Factory  --------------------------------------------------
 
-  const ClonableMACIFactory = await ethers.getContractFactory(
-    "ClonableMACIFactory"
-  ).then((factory) => upgrades.deployProxy(
-    factory,
-    [ClonableMACIAddress, pollAddr, tallyAddr, mpAddr]
-  ));
-
-
+  const ClonableMACIFactory = await ethers
+    .getContractFactory("ClonableMACIFactory")
+    .then((factory) =>
+      upgrades.deployProxy(factory, [
+        ClonableMACIAddress,
+        pollAddr,
+        tallyAddr,
+        mpAddr,
+      ])
+    );
 
   const ClonableMACIFactoryAddress = await ClonableMACIFactory.getAddress();
 
@@ -246,11 +239,18 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
     deployParams.stateTreeDepth,
     verifierContractAddress,
     vkRegistryContractAddress,
+    [
+      4904028317433377177773123885584230878115556059208431880161186712332781831975n,
+      344732312350052944041104345325295111408747975338908491763817872057138864163n,
+      19445814455012978799483892811950396383084183210860279923207176682490489907069n,
+      10621810780690303482827422143389858049829670222244900617652404672125492013328n,
+      17077690379337026179438044602068085690662043464643511544329656140997390498741n,
+    ],
   ]);
 
   await setMaciParameters.wait();
 
-  const QVMODE = 0n
+  const QVMODE = 0n;
 
   await vkRegistryContract.setVerifyingKeys(
     deployParams.stateTreeDepth,
@@ -331,9 +331,9 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
     // VALID_EVENT_IDS
     [192993346581360151154216832563903227660n],
     // maxContributionAmountForZupass
-    10n ** 18n *  100n,
+    10n ** 18n * 100n,
     // maxContributionAmountForNonZupass
-    10n ** 18n *  100n,
+    10n ** 18n * 100n,
   ];
 
   let initStruct = [initializeParams, MaciParams];

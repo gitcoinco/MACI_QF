@@ -192,18 +192,21 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
 
         maciFactory = _params.maciParams.maciFactory;
 
+        uint8 _maciId = _params.maciParams.maciId;
+
         ClonableMACIFactory _maciFactory = ClonableMACIFactory(maciFactory);
 
-        _maci = _maciFactory.createMACI(strategy, strategy, coordinator, _params.maciParams.maciId);
+        _maci = _maciFactory.createMACI(strategy, strategy, coordinator,_maciId);
 
-        maxAcceptedRecipients = _maciFactory.getMaxVoteOptions(_params.maciParams.maciId);
+        maxAcceptedRecipients = _maciFactory.getMaxVoteOptions(_maciId);
 
         uint256 _pollDuration = _params.initializeParams.allocationEndTime - block.timestamp;
 
         _pollContracts = ClonableMACI(_maci).deployPoll(
             _pollDuration,
             _params.maciParams.coordinatorPubKey,
-            Mode.QV
+            Mode.QV,
+            _maciId
         );
     }
 
@@ -309,6 +312,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         }
 
         paidOut[recipientId] = true;
+        
         IAllo.Pool memory pool = allo.getPool(poolId);
 
         _transferAmount(pool.token, recipientId, amount);

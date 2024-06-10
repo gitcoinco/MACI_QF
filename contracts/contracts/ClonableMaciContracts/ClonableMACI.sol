@@ -208,7 +208,8 @@ contract ClonableMACI is IMACI, Params, Utilities, Initializable, OwnableUpgrade
     function deployPoll(
         uint256 _duration,
         PubKey memory _coordinatorPubKey,
-        Mode _mode
+        Mode _mode,
+        uint8 _maciId
     ) public virtual onlyOwner returns (PollContracts memory pollAddr) {
         // cache the poll to a local variable so we can increment it
         uint256 pollId = nextPollId;
@@ -236,7 +237,8 @@ contract ClonableMACI is IMACI, Params, Utilities, Initializable, OwnableUpgrade
             treeDepths,
             _coordinatorPubKey,
             address(this),
-            _owner
+            _owner,
+            _maciId
         );
 
         address mp = maciFactory.deployMessageProcessor(verifier, vkRegistry, p, _owner, _mode);

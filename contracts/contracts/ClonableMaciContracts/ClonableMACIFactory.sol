@@ -27,6 +27,7 @@ contract ClonableMACIFactory is OwnableUpgradeable, DomainObjs {
         uint8 stateTreeDepth;
         address verifier;
         address vkRegistry;
+        uint256[] emptyBallotTreeRoots;
     }
 
     mapping(uint8 => MACI_SETTINGS) public maciSettings;
@@ -102,7 +103,8 @@ contract ClonableMACIFactory is OwnableUpgradeable, DomainObjs {
         Params.TreeDepths memory _treeDepths,
         DomainObjs.PubKey memory _coordinatorPubKey,
         address _maci,
-        address _pollOwner
+        address _pollOwner,
+        uint8 _maciId
     ) public virtual returns (address pollAddr) {
         /// @notice Validate _maxValues
         /// maxVoteOptions must be less than 2 ** 50 due to circuit limitations;
@@ -128,7 +130,7 @@ contract ClonableMACIFactory is OwnableUpgradeable, DomainObjs {
 
         ClonablePoll _poll = ClonablePoll(poll);
 
-        _poll.initialize(_duration, _maxValues, _treeDepths, _coordinatorPubKey, extContracts);
+        _poll.initialize(_duration, _maxValues, _treeDepths, _coordinatorPubKey, extContracts, maciSettings[_maciId].emptyBallotTreeRoots);
 
         // init Poll
         _poll.init();
