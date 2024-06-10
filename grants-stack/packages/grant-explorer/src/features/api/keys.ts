@@ -13,7 +13,7 @@ export const getMACIKeys = async ({
   walletClient: WalletClient;
 }) => {
   const MACIKeys = localStorage.getItem("MACIKeys");
-  const address = walletAddress as string;
+  const address = walletAddress.toLowerCase() as string;
 
   let signatureSeeds;
 
@@ -64,6 +64,62 @@ export const getMACIKeys = async ({
 
     signatureSeeds.rounds[chainID][roundID][address] = signature;
     localStorage.setItem("MACIKeys", JSON.stringify(signatureSeeds));
+  }
+  return signature;
+};
+
+
+export const getMACIKey = ({
+  chainID,
+  roundID,
+  walletAddress,
+}: {
+  chainID: number;
+  roundID: string;
+  walletAddress: string;
+}) => {
+  const MACIKeys = localStorage.getItem("MACIKeys");
+  const address = walletAddress.toLowerCase() as string;
+
+  let signatureSeeds;
+
+  try {
+    signatureSeeds = JSON.parse(MACIKeys ? MACIKeys : "{}");
+  } catch (e) {
+    console.error("Failed to parse MACIKeys from localStorage:", e);
+    signatureSeeds = {};
+  }
+
+  // Ensure the structure exists
+  if (
+    typeof signatureSeeds.rounds !== "object" ||
+    signatureSeeds.rounds === null
+  ) {
+    signatureSeeds.rounds = {};
+  }
+
+  if (
+    typeof signatureSeeds.rounds[chainID] !== "object" ||
+    signatureSeeds.rounds[chainID] === null
+  ) {
+    signatureSeeds.rounds[chainID] = {};
+  }
+
+  if (
+    typeof signatureSeeds.rounds[chainID][roundID] !== "object" ||
+    signatureSeeds.rounds[chainID][roundID] === null
+  ) {
+    signatureSeeds.rounds[chainID][roundID] = {};
+  }
+
+  console.log("signatureSeeds after ensuring structure:", signatureSeeds);
+
+  const signature = signatureSeeds.rounds[chainID][roundID][address];
+  console.log("signature", signature);
+  console.log("signatureSeeds", signatureSeeds);
+
+  if (!signature) {
+    return;
   }
   return signature;
 };

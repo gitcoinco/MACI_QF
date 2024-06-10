@@ -51,6 +51,7 @@ import {
   getDonationsByDonorAddress,
   getApplicationsForExplorer,
   getContributionsByAddressAndId,
+  getContributionsByAddress,
 } from "./queries";
 import { mergeCanonicalAndLinkedProjects } from "./utils";
 
@@ -864,6 +865,28 @@ export class DataLayer {
     const response: { contributions: MACIContribution[] } = await request(
       this.gsIndexerEndpoint,
       getContributionsByAddressAndId,
+      requestVariables,
+    );
+
+    return response.contributions ?? [];
+  }
+
+  /**
+   * getContributionsByAddress() returns a list of MACI contributions (Encrypted messages) by address.
+   * @param contributorAddress
+   */
+  async getContributionsByAddress({
+    contributorAddress,
+  }: {
+    contributorAddress: string;
+  }): Promise<MACIContribution[]> {
+    const requestVariables = {
+      contributorAddress: contributorAddress,
+    };
+
+    const response: { contributions: MACIContribution[] } = await request(
+      this.gsIndexerEndpoint,
+      getContributionsByAddress,
       requestVariables,
     );
 

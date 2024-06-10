@@ -1118,7 +1118,7 @@ export async function handleEvent(
         },
       ];
     }
-
+    
     case "ProfileMigrated": {
       const alloV1ProfileId = event.params.alloV1;
       const alloV2ProfileId = event.params.alloV2;

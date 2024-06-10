@@ -660,6 +660,8 @@ export const getContributionsByAddressAndId = gql`
       }
     ) {
       contributorAddress
+      chainId
+      roundId
       stateIndex
       maciId
       id
@@ -670,6 +672,22 @@ export const getContributionsByAddressAndId = gql`
         createdByAddress
         contributionId
       }
+    }
+  }
+`;
+
+export const getContributionsByAddress = gql`
+  query getContributionsByAddress($contributorAddress: String!) {
+    contributions(filter: { contributorAddress: { equalTo: $contributorAddress } }) {
+      stateIndex
+      contributorAddress
+      chainId
+      roundId
+      maciId
+      messages {
+        message
+      }
+      voiceCreditBalance
     }
   }
 `;

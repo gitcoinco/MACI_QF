@@ -734,7 +734,7 @@ export const generatePubKey = async (
   return getUserPubKey;
 };
 
-export const generatePubKeyWithSeed = async (seed: string) => {
+export const generatePubKeyWithSeed = (seed: string) => {
   const getUserPubKey = GenKeyPair.createFromSeed(seed);
   return getUserPubKey;
 };
