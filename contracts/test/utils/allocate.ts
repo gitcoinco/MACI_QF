@@ -37,6 +37,8 @@ export const allocate = async ({
     amount: contributionAmount,
     proof: emptyProof,
   })) as string;
+
+  console.log("contributeEncodedData1", contributeEncodedData1);
   // signup2
 
   const SignUpTx = await AlloContract.connect(allocator).allocate(

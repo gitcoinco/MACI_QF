@@ -67,7 +67,8 @@ contract ZuPassRegistry is Ownable {
         }
     }
 
-    function roundRegistration(uint256[] memory _eventIds) external {
+    function setRoundAllowlist(bytes memory encodedEventIds) external {
+        uint256[] memory _eventIds = abi.decode(encodedEventIds, (uint256[]));
         for (uint256 i = 0; i < _eventIds.length; i++) {
             if (!eventIds.contains(_eventIds[i])) {
                 revert EventIsNotRegistered();
@@ -94,16 +95,18 @@ contract ZuPassRegistry is Ownable {
     /// ===================================
 
     /// @notice Validate proof of attendance
-    /// @param _pA Proof part A
-    /// @param _pB Proof part B
-    /// @param _pC Proof part C
-    /// @param _pubSignals The public signals
-    function validateProofOfAttendance(
-        uint[2] memory _pA,
-        uint[2][2] memory _pB,
-        uint[2] memory _pC,
-        uint[38] memory _pubSignals
+    /// @param _EncodedProof Proof
+    function validateAllowlist(
+        bytes memory _EncodedProof
     ) external returns (bool) {
+        // Decode the proof
+        (
+            uint[2] memory _pA,
+            uint[2][2] memory _pB,
+            uint[2] memory _pC,
+            uint[38] memory _pubSignals
+        ) = abi.decode(_EncodedProof, (uint[2], uint[2][2], uint[2], uint[38]));
+
         // The eventID used to generate the proof as public input
         uint256 eventID = _pubSignals[1];
 

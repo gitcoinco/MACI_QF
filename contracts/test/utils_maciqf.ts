@@ -316,6 +316,12 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
 
   let CoordinatorKeypair = new Keypair();
 
+  let AbiCoder = new ethers.AbiCoder();
+
+  const eventIDs = ["192993346581360151154216832563903227660"];
+
+  let encodedEventIDs = AbiCoder.encode(["uint256[]"], [eventIDs]);
+
   let MaciParams = [
     // coordinator:
     signer.address,
@@ -329,7 +335,7 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
     // maci_id
     0,
     // VALID_EVENT_IDS
-    [192993346581360151154216832563903227660n],
+    encodedEventIDs,
     // maxContributionAmountForZupass
     10n ** 18n * 100n,
     // maxContributionAmountForNonZupass
@@ -339,10 +345,9 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
   let initStruct = [initializeParams, MaciParams];
 
   let types = [
-    "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,uint8,uint256[],uint256,uint256))",
+    "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,uint8,bytes,uint256,uint256))",
   ];
 
-  let AbiCoder = new ethers.AbiCoder();
 
   let bytes = AbiCoder.encode(types, [initStruct]);
 

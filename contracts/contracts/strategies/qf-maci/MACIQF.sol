@@ -10,7 +10,7 @@ import {Tally} from "maci-contracts/contracts/Tally.sol";
 import {Poll} from "maci-contracts/contracts/Poll.sol";
 
 // Interfaces
-import {IZuPassVerifier} from "./interfaces/IZuPassVerifier.sol";
+import {IAlowlistVerifier} from "./interfaces/IAlowlistVerifier.sol";
 
 import {IAllo} from "../../core/interfaces/IAllo.sol";
 
@@ -47,7 +47,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         uint8 maciId;
         // The valid event IDs are used to verify the proof of attendance
         // In ZuZalu events. The user must have attended one of those events
-        uint256[] validEventIds;
+        bytes allowlistDetails;
         // Those Variables might change in the future TODO
         // We are still getting feedback from the Zuzalu community
         // Those values purpose is to limit the amount of voice credits
@@ -55,8 +55,8 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         // Another idea is to use a weight so that non-Zupass users can contribute
         // But if they contribute X amount they will get X * weight voice credits
         // Weight can be a value between 0 and 1
-        uint256 maxContributionAmountForZupass;
-        uint256 maxContributionAmountForNonZupass;
+        uint256 maxContributionAllowlisted;
+        uint256 maxContributionNotAllowlisted;
     }
 
     /// @notice Initialization parameters for the strategy
@@ -137,10 +137,10 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
     /// ======================
 
     /// @notice The maximum contribution amount for users with Zupass
-    uint256 public maxContributionAmountForZupass;
+    uint256 public maxContributionAllowlisted;
 
     /// @notice The maximum contribution amount for users without Zupass
-    uint256 public maxContributionAmountForNonZupass;
+    uint256 public maxContributionNotAllowlisted;
 
     /// @notice Poll contracts for MACI
     ClonableMACI.PollContracts public _pollContracts;
@@ -149,7 +149,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
     address public maciFactory;
 
     /// @notice The verifier contract instance
-    IZuPassVerifier public zupassVerifier;
+    IAlowlistVerifier public allowlistVerifier;
 
     /// ====================================
     /// ========== Constructor =============
@@ -178,13 +178,13 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
     /// @param _params The initialize params for the strategy
     function __MACIQFStrategy_init(uint256 _poolId, InitializeParamsMACI memory _params) internal {
         __MACIQFBaseStrategy_init(_poolId, _params.initializeParams);
-        // Initialize the zupassVerifier contract
-        zupassVerifier = IZuPassVerifier(_params.maciParams.verifier);
+        // Initialize the allowlistVerifier contract
+        allowlistVerifier = IAlowlistVerifier(_params.maciParams.verifier);
         // Round Whitelisted events registration
-        zupassVerifier.roundRegistration(_params.maciParams.validEventIds);
+        allowlistVerifier.setRoundAllowlist(_params.maciParams.allowlistDetails);
         // Set the maximum contribution amounts for Zupass and non-Zupass users
-        maxContributionAmountForZupass = _params.maciParams.maxContributionAmountForZupass;
-        maxContributionAmountForNonZupass = _params.maciParams.maxContributionAmountForNonZupass;
+        maxContributionAllowlisted = _params.maciParams.maxContributionAllowlisted;
+        maxContributionNotAllowlisted= _params.maciParams.maxContributionNotAllowlisted;
 
         address strategy = address(allo.getPool(_poolId).strategy);
         // Deploy the MACI contracts
@@ -221,28 +221,23 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         (
             PubKey memory pubKey,
             uint256 amount,
-            uint[2] memory _pA,
-            uint[2][2] memory _pB,
-            uint[2] memory _pC,
-            uint[38] memory _pubSignals
-        ) = abi.decode(_data, (PubKey, uint256, uint[2], uint[2][2], uint[2], uint[38]));
+            bytes memory _proof
+        ) = abi.decode(_data, (PubKey, uint256, bytes));
 
-        if (isAddressZero(_maci)) revert MaciNotSet();
         if (isFinalized) revert RoundAlreadyFinalized();
         if (contributorCredits[_sender] != 0) revert AlreadyContributed();
-        if (amount != msg.value) revert INVALID();
         if (amount > MAX_VOICE_CREDITS * voiceCreditFactor) revert ContributionAmountTooLarge();
 
-        // Validate proof of attendance if provided
-        if (_pA[0] != 0) {
-            if (!zupassVerifier.validateProofOfAttendance(_pA, _pB, _pC, _pubSignals)) {
+        // Validate allowlist proof if provided
+        if (_proof.length != 0) {
+            if (!allowlistVerifier.validateAllowlist(_proof)) {
                 revert InvalidProof();
             }
-            if (amount > maxContributionAmountForZupass) {
+            if (amount > maxContributionAllowlisted) {
                 revert ContributionAmountTooLarge();
             }
         } else {
-            if (amount > maxContributionAmountForNonZupass) {
+            if (amount > maxContributionNotAllowlisted) {
                 revert ContributionAmountTooLarge();
             }
         }
@@ -312,7 +307,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         }
 
         paidOut[recipientId] = true;
-        
+               
         IAllo.Pool memory pool = allo.getPool(poolId);
 
         _transferAmount(pool.token, recipientId, amount);
@@ -471,7 +466,6 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
             revert RoundAlreadyFinalized();
         }
 
-        if (isAddressZero(_maci)) revert MaciNotSet();
         if (!tally.isTallied()) {
             revert VotesNotTallied();
         }
@@ -527,7 +521,6 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
     /// @dev Reset tally results. This should only be used if the tally script
     /// failed to proveOnChain due to unexpected error processing MACI logs
     function resetTally() external onlyCoordinator onlyAfterAllocation {
-        if (isAddressZero(address(_maci))) revert MaciNotSet();
         if (isFinalized) revert RoundAlreadyFinalized();
 
         (Poll poll, Tally tally) = getMaciContracts();
@@ -603,16 +596,5 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
     // @return Poll and Tally contracts
     function getMaciContracts() internal view returns (Poll _poll, Tally _tally) {
         return (Poll(_pollContracts.poll), Tally(_pollContracts.tally));
-    }
-
-    /// ========================
-    /// ==== Util Function =====
-    /// ========================
-
-    /// @notice Check if the given address is zero
-    /// @param _address The address to check
-    /// @return True if the address is zero, otherwise false
-    function isAddressZero(address _address) internal pure returns (bool) {
-        return _address == address(0);
     }
 }

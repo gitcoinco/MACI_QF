@@ -189,21 +189,23 @@ export const prepareAllocationData = async ({
     // Contribution amount
     "uint256",
     // ZK Proof for Zuzalu circuit
-    "uint[2]",
-    "uint[2][2]",
-    "uint[2]",
-    "uint[38]",
+    "bytes",
   ];
 
+  try {
+    const encodedEmptyProof = AbiCoder.defaultAbiCoder().encode(
+      ["uint256[]", "uint256[][]", "uint256[]", "uint256[]"],
+      [proof.pA, proof.pB, proof.pC, proof.pubSignals]
+    );
+  } catch (e) {
+    console.log(e);
+  }
   let data;
   try {
     data = AbiCoder.defaultAbiCoder().encode(types, [
       [userMaciPubKey.asContractParam().x, userMaciPubKey.asContractParam().y],
       amount,
-      proof.pA,
-      proof.pB,
-      proof.pC,
-      proof.pubSignals,
+      "0x",
     ]);
   } catch (e) {
     console.log(e);
