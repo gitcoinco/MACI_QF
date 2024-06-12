@@ -39,6 +39,8 @@ contract ZuPassRegistry is Ownable {
 
     mapping(address => EnumerableSet.UintSet) private contractToEventIds;
 
+    mapping(address => mapping(uint256 => EnumerableSet.UintSet)) private contractToEventToProductIds;
+
     mapping(address => mapping(uint256 => bool)) public usedRoundNullifiers;
 
     mapping(uint256 => ZUPASS_SIGNER) public eventToZupassSigner;
@@ -68,19 +70,38 @@ contract ZuPassRegistry is Ownable {
     }
 
     function setRoundAllowlist(bytes memory encodedEventIds) external {
-        uint256[] memory _eventIds = abi.decode(encodedEventIds, (uint256[]));
-        for (uint256 i = 0; i < _eventIds.length; i++) {
-            if (!eventIds.contains(_eventIds[i])) {
+        (uint256[] memory _eventIds,uint256[][] memory _productIds) = abi.decode(encodedEventIds, (uint256[],uint256[][]));
+        for (uint256 i = 0; i < _eventIds.length;) {
+            uint256 eventId = _eventIds[i];
+            if (!eventIds.contains(eventId)) {
                 revert EventIsNotRegistered();
             }
-            contractToEventIds[msg.sender].add(_eventIds[i]);
+            for (uint256 j = 0; j < _productIds[i].length;) {
+                contractToEventToProductIds[msg.sender][eventId].add(_productIds[i][j]);
+                unchecked {
+                    j++;
+                }
+            }
+            contractToEventIds[msg.sender].add(eventId);
+            unchecked {
+                i++;
+            }
         }
     }
 
     /// @notice Get the whitelisted events for a FundingRound (Strategy)
-    /// @return List of whitelisted event IDs
-    function getWhitelistedEvents(address _contract) external view returns (uint256[] memory) {
-        return contractToEventIds[_contract].values();
+    function getWhitelistedEventsAndProductIDs(address _contract) external view returns (uint256[] memory, uint256[][] memory) {
+        uint256[] memory _eventIds = new uint256[](contractToEventIds[_contract].length());
+        uint256[][] memory _productIds = new uint256[][](contractToEventIds[_contract].length());
+        for (uint256 i = 0; i < contractToEventIds[_contract].length(); i++) {
+            uint256 eventId = contractToEventIds[_contract].at(i);
+            _eventIds[i] = eventId;
+            _productIds[i] = new uint256[](contractToEventToProductIds[_contract][eventId].length());
+            for (uint256 j = 0; j < contractToEventToProductIds[_contract][eventId].length(); j++) {
+                _productIds[i][j] = contractToEventToProductIds[_contract][eventId].at(j);
+            }
+        }
+        return (_eventIds, _productIds);
     }
 
     /// @notice Get the Zupass signer for an event
@@ -110,9 +131,15 @@ contract ZuPassRegistry is Ownable {
         // The eventID used to generate the proof as public input
         uint256 eventID = _pubSignals[1];
 
+        uint256 productId = _pubSignals[2];
+
         // Validate that the event ID used in the proof is whitelisted
         // for the FundingRound (Strategy) that is validating the proof
         if (!contractToEventIds[msg.sender].contains(eventID)) return false;
+
+        // Validate that the product ID used in the proof is whitelisted
+        // for the FundingRound (Strategy) that is validating the proof
+        if (!contractToEventToProductIds[msg.sender][eventID].contains(productId) && contractToEventToProductIds[msg.sender][eventID].length() != 0) return false;
 
         // Get the Zupass signer used in the proof publicSignals[13] and publicSignals[14]
         ZUPASS_SIGNER memory signer = ZUPASS_SIGNER({G1: _pubSignals[13], G2: _pubSignals[14]});

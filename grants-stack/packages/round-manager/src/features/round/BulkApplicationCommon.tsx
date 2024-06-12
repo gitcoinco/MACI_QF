@@ -29,7 +29,7 @@ export function ApplicationLogo(props: {
   classNameOverride?: string;
 }) {
   const applicationLogoImage = props.application.project?.logoImg
-    ? `https://${process.env.REACT_APP_PINATA_GATEWAY}/ipfs/${props.application.project.logoImg}`
+    ? `https://${process.env.REACT_APP_PINATA_GATEWAY}/ipfs/${props.application.project?.logoImg}`
     : DefaultLogoImage;
 
   return (

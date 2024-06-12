@@ -734,7 +734,7 @@ function ProjectCard(props: {
         </CardHeader>
 
         <CardContent className="px-2 relative">
-          {project.projectMetadata.logoImg && (
+          {project.projectMetadata?.logoImg && (
             <ProjectLogo
               imageCid={project.projectMetadata.logoImg}
               size={48}

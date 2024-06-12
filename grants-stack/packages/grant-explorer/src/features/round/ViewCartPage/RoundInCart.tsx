@@ -26,20 +26,19 @@ export function RoundInCart(
     selectedPayoutToken: VotingToken;
     handleRemoveProjectFromCart: (project: CartProject) => void;
     payoutTokenPrice: number;
+    chainId: number;
+    roundId: string;
   }
 ) {
   const needsSignature =
-    (props.maciContributions?.encrypted?.messages?.length??0 > 0) &&
+    (props.maciContributions?.encrypted?.messages?.length ?? 0 > 0) &&
     props.decryptedContributions?.length === 0;
 
   const donatedCredits = BigInt(
     props.maciContributions?.encrypted?.voiceCreditBalance ?? 0n
   );
   const donatedAmount = donatedCredits * 10n ** 13n;
-  const round = useRoundById(
-    props.roundCart[0].chainId,
-    props.roundCart[0].roundId
-  ).round;
+  const round = useRoundById(props.chainId, props.roundId).round;
 
   const minDonationThresholdAmount =
     round?.roundMetadata?.quadraticFundingConfig?.minDonationThresholdAmount ??
@@ -48,7 +47,7 @@ export function RoundInCart(
   const { address } = useAccount();
 
   const votingTokenForChain = useCartStorage((state) =>
-    state.getVotingTokenForChain(props.roundCart[0]?.chainId)
+    state.getVotingTokenForChain(props.chainId)
   );
 
   const {
@@ -58,7 +57,7 @@ export function RoundInCart(
   } = useMatchingEstimates([
     {
       roundId: getFormattedRoundId(round?.id ?? zeroAddress),
-      chainId: props.roundCart[0].chainId,
+      chainId: props.chainId,
       potentialVotes: props.roundCart.map((proj) => ({
         roundId: getFormattedRoundId(round?.id ?? zeroAddress),
         projectId: proj.projectRegistryId,
@@ -130,7 +129,7 @@ export function RoundInCart(
                     index={key}
                     showMatchingEstimate={showMatchingEstimate}
                     matchingEstimateUSD={matchingEstimateUSD}
-                    roundRoutePath={`/round/${props.roundCart[0].chainId}/${props.roundCart[0].roundId}`}
+                    roundRoutePath={`/round/${props.chainId}/${props.roundCart[0].roundId}`}
                     last={key === props.roundCart.length - 1}
                     payoutTokenPrice={props.payoutTokenPrice}
                   />
@@ -179,7 +178,7 @@ export function RoundInCart(
                   <Button
                     onClick={async () => {
                       const walletClient = await getWalletClient();
-                      const maciKeys = await getMACIKeys({
+                      await getMACIKeys({
                         chainID: props.roundCart[0].chainId,
                         roundID: props.roundCart[0].roundId,
                         walletAddress: address as string,
@@ -198,24 +197,21 @@ export function RoundInCart(
       {/* Summary Container */}
       {/* <div className="ml-[4%] flex-shrink-0 flex-grow-0"> */}
       <div className="ml-[4%] sm:col-span-1 order-1 sm:order-2">
-        {props.roundCart[0].roundId && (
-          <SummaryContainer
-            alreadyContributed={
-              (props.maciContributions?.encrypted
-                ? true
-                : (false as boolean)) || false
-            }
-            payoutTokenPrice={props.payoutTokenPrice}
-            decryptedMessages={props.decryptedContributions}
-            stateIndex={BigInt(
-              props.maciContributions?.encrypted?.stateIndex ?? "0"
-            )}
-            donatedAmount={donatedAmount}
-            maciMessages={props.maciContributions ?? null}
-            roundId={props.roundCart[0].roundId}
-            chainId={props.roundCart[0].chainId}
-          />
-        )}
+        <SummaryContainer
+          alreadyContributed={
+            (props.maciContributions?.encrypted ? true : (false as boolean)) ||
+            false
+          }
+          payoutTokenPrice={props.payoutTokenPrice}
+          decryptedMessages={props.decryptedContributions}
+          stateIndex={BigInt(
+            props.maciContributions?.encrypted?.stateIndex ?? "0"
+          )}
+          donatedAmount={donatedAmount}
+          maciMessages={props.maciContributions ?? null}
+          roundId={props.roundId}
+          chainId={props.chainId}
+        />
       </div>
     </div>
   );

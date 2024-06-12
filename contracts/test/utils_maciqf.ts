@@ -320,7 +320,12 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
 
   const eventIDs = ["192993346581360151154216832563903227660"];
 
-  let encodedEventIDs = AbiCoder.encode(["uint256[]"], [eventIDs]);
+  const productIds = [["271983995692370745911245180290580132601"]];
+
+  let encodedEventIDs = AbiCoder.encode(
+    ["uint256[]", "uint256[][]"],
+    [eventIDs, productIds]
+  );
 
   let MaciParams = [
     // coordinator:
@@ -377,6 +382,15 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
   const poolAddress = (await AlloContracts.Allo.getPool(1)).strategy;
 
   const MACIQF_STRATEGY = await ethers.getContractAt("MACIQF", poolAddress);
+
+  const ZuPassFactory = await ethers.getContractAt(
+    "ZuPassRegistry",
+    AlloContracts.ZuPassRegistryAddress
+  );
+
+  const strategyWhitelistedData = await ZuPassFactory.getWhitelistedEventsAndProductIDs(poolAddress)
+
+  console.log("Strategy Whitelisted Data : ", strategyWhitelistedData);
 
   const maci = await MACIQF_STRATEGY._maci();
 

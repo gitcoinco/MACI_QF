@@ -126,7 +126,9 @@ export function SummaryContainer(props: {
   const handleConfirmation = async () => {
     if (
       filteredProjects.some(
-        (project) => !project.amount || Number(project.amount) === 0
+        (project) =>
+          !project.amount ||
+          (Number(project.amount) === 0 && !props.alreadyContributed)
       )
     ) {
       return;
@@ -303,6 +305,7 @@ export function SummaryContainer(props: {
             chainId={parseChainId(maciChainId)}
             selectedPayoutToken={votingToken}
             totalDonation={totalDonations}
+            alreadyContributed={props.alreadyContributed}
           />
           {totalDonations > 0 && (
             <div className="flex flex-row justify-between mt-4 border-t-2">
@@ -336,7 +339,7 @@ export function SummaryContainer(props: {
       <Button
         data-testid="handle-confirmation"
         type="button"
-        disabled={totalDonations > tokenBalance}
+        disabled={totalDonations > tokenBalance && !props.alreadyContributed}
         onClick={() => {
           if (!isConnected) {
             openConnectModal?.();
@@ -349,7 +352,7 @@ export function SummaryContainer(props: {
         }`}
       >
         {isConnected
-          ? totalDonations > tokenBalance
+          ? totalDonations > tokenBalance && !props.alreadyContributed
             ? "Not enough funds to donate"
             : props.alreadyContributed && props.donatedAmount < totalDonations
             ? "Exceeds donation limit"

@@ -37,8 +37,8 @@ export function ProjectInCart(
             <img
               className="inline-block rounded-full"
               src={
-                props.project.projectMetadata.logoImg
-                  ? `https://${process.env.REACT_APP_PINATA_GATEWAY}/ipfs/${props.project.projectMetadata.logoImg}`
+                props.project.projectMetadata?.logoImg
+                  ? `https://${process.env.REACT_APP_PINATA_GATEWAY}/ipfs/${props.project.projectMetadata?.logoImg}`
                   : DefaultLogoImage
               }
               alt={"Project Logo"}
@@ -59,12 +59,12 @@ export function ProjectInCart(
               data-testid={"cart-project-link"}
             >
               <p className="font-semibold text-lg mb-2 text-ellipsis line-clamp-1 max-w-[400px] 2xl:max-w-none">
-                {props.project.projectMetadata.title}
+                {props.project.projectMetadata?.title}
               </p>
             </Link>
             <p className="text-sm text-ellipsis line-clamp-3 max-w-[400px] 2xl:max-w-none">
               {renderToPlainText(
-                props.project.projectMetadata.description
+                props.project.projectMetadata?.description ?? ""
               ).substring(0, 130)}
             </p>
           </div>
@@ -75,7 +75,7 @@ export function ProjectInCart(
           <Input
             aria-label={
               "Donation amount for project " +
-              props.project.projectMetadata.title
+              props.project.projectMetadata?.title
             }
             id={inputID}
             key={inputID}
@@ -84,21 +84,22 @@ export function ProjectInCart(
             value={
               props.projects.find(
                 (project) =>
-                  project.projectRegistryId === props.project.projectRegistryId
+                  project?.projectRegistryId ===
+                  props.project?.projectRegistryId
               )?.amount ?? "0"
             }
             type="number"
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               store.updateDonationAmount(
-                props.project.chainId,
-                props.project.roundId,
-                props.project.grantApplicationId,
-                e.target.value
+                props.project?.chainId,
+                props.project?.roundId,
+                props.project?.grantApplicationId,
+                e.target?.value
               );
             }}
             className="w-[100px] sm:w-[80px] text-center border border-black"
           />
-          <p className="m-auto">{props.selectedPayoutToken.name}</p>
+          <p className="m-auto">{props.selectedPayoutToken?.name}</p>
           {props.payoutTokenPrice && (
             <div className="m-auto px-2 min-w-max flex flex-col">
               <span className="text-sm text-grey-400 ">
@@ -113,11 +114,11 @@ export function ProjectInCart(
                   ) * props.payoutTokenPrice
                 ).toFixed(2)}
               </span>
-              { props.showMatchingEstimate && 
+              {props.showMatchingEstimate && (
                 <span className="text-teal-500 italic text-sm">
                   ~{props.matchingEstimateUSD?.toFixed(2) || 0} USD
                 </span>
-              }
+              )}
             </div>
           )}
           <TrashIcon
@@ -129,9 +130,7 @@ export function ProjectInCart(
           />
         </div>
       </div>
-      {!props.last && 
-        <hr className="border-b-[2px] border-grey-100 mx-4" />
-      }
+      {!props.last && <hr className="border-b-[2px] border-grey-100 mx-4" />}
     </div>
   );
 }

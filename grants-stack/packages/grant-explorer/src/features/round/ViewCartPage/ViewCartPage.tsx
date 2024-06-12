@@ -43,6 +43,11 @@ export default function ViewCart() {
     walletAddress?.toLowerCase() as string,
     dataLayer
   );
+  const { data: applications } = useRoundsApprovedApplications(
+    maciContributions?.groupedRounds ?? [],
+    dataLayer
+  );
+  console.log("maciContributions", maciContributions);
 
   const { data: DecryptedContributions } = useDecryptMessages(
     maciContributions?.groupedMaciContributions,
@@ -95,11 +100,6 @@ export default function ViewCart() {
       }
     }
   }
-
-  const { data: applications } = useRoundsApprovedApplications(
-    maciContributions?.groupedRounds ?? [],
-    dataLayer
-  );
 
   interface Result {
     applicationId: string;
@@ -245,6 +245,9 @@ export default function ViewCart() {
             )
         );
 
+        console.log("updatedProjects", updatedProjects);
+        console.log("newProjects", newProjects);
+
         // Combine new projects with updated ones, excluding contributed projects with newVoteWeight === "0"
         setCart([
           ...updatedProjects.filter((p) => p.amount !== "0"),
@@ -291,12 +294,12 @@ export default function ViewCart() {
 
   useEffect(() => {}, [projects]);
 
-  useEffect(() => {
-    if (!fetchedContributed) {
-      setContributed();
-      setFetchedContributed(true);
-    }
-  }, [fetchedContributed]);
+  // useEffect(() => {
+  //   if (!fetchedContributed) {
+  //     setContributed();
+  //     setFetchedContributed(true);
+  //   }
+  // }, [fetchedContributed]);
 
   const breadCrumbs: BreadcrumbItem[] = [
     {

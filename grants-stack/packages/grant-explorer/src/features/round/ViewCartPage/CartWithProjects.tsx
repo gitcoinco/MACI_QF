@@ -30,6 +30,7 @@ export function CartWithProjects({
 }: Props) {
   const chain = CHAINS[chainId];
   const cartByRound = Object.values(cart);
+  const roundIds = Object.keys(cart);
 
   console.log("cartByRound", cartByRound);
 
@@ -121,19 +122,20 @@ export function CartWithProjects({
             key={key}
             roundCart={roundcart}
             maciContributions={
-              maciContributions && maciContributions[roundcart[0].roundId]
-                ? maciContributions[roundcart[0].roundId]
+              maciContributions && maciContributions[roundIds[key]]
+                ? maciContributions[roundIds[key]]
                 : null
             }
             decryptedContributions={
-              decryptedContributions &&
-              decryptedContributions[roundcart[0].roundId]
-                ? decryptedContributions[roundcart[0].roundId]
+              decryptedContributions && decryptedContributions[roundIds[key]]
+                ? decryptedContributions[roundIds[key]]
                 : null
             }
             handleRemoveProjectFromCart={store.remove}
             selectedPayoutToken={selectedPayoutToken}
             payoutTokenPrice={payoutTokenPrice ?? 0}
+            chainId={chainId} 
+            roundId={roundIds[key]}
           />
         </div>
       ))}
