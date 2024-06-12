@@ -142,6 +142,8 @@ export function SummaryContainer(props: {
   const [openMRCProgressModal, setOpenMRCProgressModal] = useState(false);
   const [enabled, setEnabled] = useState(false);
 
+  console.log("props.decryptedMessages", props.decryptedMessages);
+
   const PayoutModals = () => (
     <>
       <ChainConfirmationModal
@@ -203,7 +205,7 @@ export function SummaryContainer(props: {
         }
         isOpen={openChainConfirmationModal}
         setIsOpen={setOpenChainConfirmationModal}
-        disabled={totalDonations > tokenBalance}
+        disabled={totalDonations > tokenBalance && !props.alreadyContributed}
       />
       <MRCProgressModal
         isOpen={openMRCProgressModal}

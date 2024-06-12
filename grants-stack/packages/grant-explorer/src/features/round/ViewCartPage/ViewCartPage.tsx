@@ -33,6 +33,8 @@ import { set } from "lodash";
 export default function ViewCart() {
   const [fetchedContributed, setFetchedContributed] = useState(false);
 
+  const [firstLoad, setFirstLoad] = useState(true);
+
   const { projects, setCart } = useCartStorage();
 
   const { address: walletAddress } = useAccount();
@@ -61,15 +63,19 @@ export default function ViewCart() {
 
   async function getNeededSignatures() {
     // Vreate thr pairs{chainid and roundid} from maciContributions.groupedRounds
-    const pairs = maciContributions?.groupedRounds.flatMap((round) => {
-      return { chainId: round.chainId, roundId: round.roundId };
-    }) as { chainId: number; roundId: string }[];
+    const pairs =
+      maciContributions?.groupedRounds &&
+      (maciContributions?.groupedRounds.flatMap((round) => {
+        return { chainId: round.chainId, roundId: round.roundId };
+      }) as { chainId: number; roundId: string }[]);
     const walletClient = await getWalletClient();
-    await signAndStoreSignatures({
-      pairs,
-      walletClient: walletClient as WalletClient,
-      address: walletAddress as string,
-    });
+    if (pairs) {
+      await signAndStoreSignatures({
+        pairs,
+        walletClient: walletClient as WalletClient,
+        address: walletAddress as string,
+      });
+    }
   }
 
   const groupedCartProjects = groupProjectsInCart(projects);
@@ -186,6 +192,19 @@ export default function ViewCart() {
       for (const roundID of Object.keys(
         maciContributions?.groupedMaciContributions[chainId] || {}
       )) {
+        const round = (
+          await dataLayer.getRoundForExplorer({
+            roundId: roundID,
+            chainId,
+          })
+        )?.round;
+        const currentTime = new Date();
+
+        const isActiveRound = round && round?.roundEndTime > currentTime;
+        if (!isActiveRound) {
+          continue;
+        }
+
         const decryptedMessages = groupedDecryptedContributions
           ? groupedDecryptedContributions[chainId]?.[roundID] || []
           : [];
@@ -253,6 +272,7 @@ export default function ViewCart() {
           ...updatedProjects.filter((p) => p.amount !== "0"),
           ...newProjects,
         ]);
+        setFetchedContributed(true);
       })
       .catch((error) => {
         console.error("Error fetching applications in cart", error);
@@ -295,11 +315,22 @@ export default function ViewCart() {
   useEffect(() => {}, [projects]);
 
   // useEffect(() => {
-  //   if (!fetchedContributed) {
-  //     setContributed();
-  //     setFetchedContributed(true);
+  //   if (
+  //     (fetchedContributed && !firstLoad) ||
+  //     (projects.length === 0 && DecryptedContributions)
+  //   ) {
+  //     setFetchedContributed(false);
   //   }
-  // }, [fetchedContributed]);
+  //   if (firstLoad) {
+  //     setContributed();
+  //     setFirstLoad(false);
+  //   }
+  // }, [fetchedContributed, firstLoad, DecryptedContributions]);
+
+  useEffect(() => {
+    setCart([]);
+    setContributed();
+  }, [walletAddress]);
 
   const breadCrumbs: BreadcrumbItem[] = [
     {
@@ -321,7 +352,7 @@ export default function ViewCart() {
         </div>
         <main>
           <Header projects={projects} />
-          <div className="flex flex-col md:flex-row gap-5">
+          <div>
             <Button onClick={async () => await setContributed()}>
               Set contributed
             </Button>
@@ -333,12 +364,15 @@ export default function ViewCart() {
             >
               SignToDecrypt
             </Button>
-            {projects.length === 0 ? (
+          </div>
+          <div className="flex flex-col md:flex-row gap-5">
+            {!groupedDecryptedContributions ||
+            (groupedDecryptedContributions && projects.length === 0) ? (
               <>
                 <EmptyCart />
               </>
             ) : (
-              <div className={"grid sm:grid-cols-2 gap-5 w-full mx-[10%]"}>
+              <div className={"grid sm:grid-cols-2 gap-5 w-full mx-5"}>
                 <div className="flex flex-col gap-5 sm:col-span-2 order-2 sm:order-1">
                   {Object.keys(groupedCartProjects).map((chainId) => (
                     <div key={Number(chainId)}>
@@ -360,6 +394,12 @@ export default function ViewCart() {
                               ] as MACIDecryptedContributionsByRoundId)
                             : null
                         }
+                        needsSignature={
+                          groupedNeedsSignature?.[Number(chainId)]
+                            ? groupedNeedsSignature?.[Number(chainId)]
+                            : null
+                        }
+                        handleDecrypt={setContributed}
                         chainId={Number(chainId) as ChainId}
                       />
                     </div>

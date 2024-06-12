@@ -41,6 +41,7 @@ import { decodeAbiParameters, parseAbiParameters, formatEther } from "viem";
 // NEW CODE
 import { Keypair, PCommand, PubKey, PrivKey } from "maci-domainobjs";
 import { genRandomSalt } from "maci-crypto";
+import { is } from "date-fns/locale";
 
 type ChainMap<T> = Record<ChainId, T>;
 
@@ -61,6 +62,14 @@ interface CheckoutState {
     chain: ChainId,
     contributionStatus: ProgressStatus
   ) => void;
+  changeDonationsStatus: ChainMap<ProgressStatus>;
+  setChangeDonationsStatusForChain: (
+    chain: ChainId,
+    changeDonationsStatus: ProgressStatus
+  ) => void;
+
+  isDonationOrChangeDonationInProgress: boolean;
+  setIsDonationOrChangeDonationInProgress: (isInProgress: boolean) => void;
 
   voteStatus: ChainMap<ProgressStatus>;
   setVoteStatusForChain: (chain: ChainId, voteStatus: ProgressStatus) => void;
@@ -126,6 +135,19 @@ export const useCheckoutStore = create<CheckoutState>()(
           [chain]: contributionStatus,
         },
       })),
+
+    changeDonationsStatus: defaultProgressStatusForAllChains,
+    setChangeDonationsStatusForChain: (
+      chain: ChainId,
+      changeDonationsStatus: ProgressStatus
+    ) =>
+      set((oldState) => ({
+        changeDonationsStatus: {
+          ...oldState.changeDonationsStatus,
+          [chain]: changeDonationsStatus,
+        },
+      })),
+
     voteStatus: defaultProgressStatusForAllChains,
     setVoteStatusForChain: (chain: ChainId, voteStatus: ProgressStatus) =>
       set((oldState) => ({
@@ -149,6 +171,12 @@ export const useCheckoutStore = create<CheckoutState>()(
         chainsToCheckout: chains,
       });
     },
+    isDonationOrChangeDonationInProgress: false,
+    setIsDonationOrChangeDonationInProgress: (isInProgress: boolean) => {
+      set({
+        isDonationOrChangeDonationInProgress: isInProgress,
+      });
+    },
     /** Checkout the given chains
      * this has the side effect of adding the chains to the wallet if they are not yet present
      * We get the data necessary to construct the votes from the cart store */
@@ -163,6 +191,9 @@ export const useCheckoutStore = create<CheckoutState>()(
       get().setChainsToCheckout(
         uniq([...get().chainsToCheckout, ...chainIdsToCheckOut])
       );
+
+      get().setIsDonationOrChangeDonationInProgress(false);
+
 
       const projectsToCheckOut = useCartStorage
         .getState()
@@ -370,6 +401,8 @@ export const useCheckoutStore = create<CheckoutState>()(
         uniq([...get().chainsToCheckout, ...chainIdsToCheckOut])
       );
 
+      get().setIsDonationOrChangeDonationInProgress(true);
+
       const projectsToCheckOut = useCartStorage
         .getState()
         .projects.filter(
@@ -441,6 +474,11 @@ export const useCheckoutStore = create<CheckoutState>()(
         );
 
         get().setMaciKeyStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
+
+        get().setChangeDonationsStatusForChain(
+          chainId,
+          ProgressStatus.IN_PROGRESS
+        );
 
         const groupedAmounts: Record<string, bigint> = {};
         groupedDonations[roundId].forEach((donation) => {
@@ -549,6 +587,11 @@ export const useCheckoutStore = create<CheckoutState>()(
           walletClient,
           chainId,
         });
+
+        get().setChangeDonationsStatusForChain(
+          chainId,
+          ProgressStatus.IS_SUCCESS
+        );
 
         // donations.forEach((donation) => {
         //   useCartStorage.getState().remove(donation);

@@ -52,6 +52,7 @@ import {
   getApplicationsForExplorer,
   getContributionsByAddressAndId,
   getContributionsByAddress,
+  getVoiceCreditsByChainIdAndRoundId,
 } from "./queries";
 import { mergeCanonicalAndLinkedProjects } from "./utils";
 
@@ -891,5 +892,33 @@ export class DataLayer {
     );
 
     return response.contributions ?? [];
+  }
+
+  async getContributionsByChainIdAndRoundID({
+    contributorAddress,
+    chainId,
+    roundId,
+  }: {
+    contributorAddress: string;
+    chainId: number;
+    roundId: string;
+  }): Promise<string> {
+    const requestVariables = {
+      contributorAddress: contributorAddress,
+      chainId: chainId,
+      roundId: roundId,
+    };
+
+    const response: {
+      contributions: {
+        voiceCreditBalance: string;
+      }[];
+    } = await request(
+      this.gsIndexerEndpoint,
+      getVoiceCreditsByChainIdAndRoundId,
+      requestVariables,
+    );
+
+    return response.contributions[0].voiceCreditBalance;
   }
 }

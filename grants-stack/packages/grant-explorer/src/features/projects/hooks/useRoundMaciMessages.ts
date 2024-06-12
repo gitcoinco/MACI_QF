@@ -142,6 +142,7 @@ export const useDecryptMessages = (
         });
         if (!signature) {
           needSignature[chainID][roundID] = true;
+          // decryptedMessagesByRound[chainID][roundID] = [];
           continue; // Skip to the next round
         }
         const pk = generatePubKeyWithSeed(signature);
@@ -178,6 +179,23 @@ export const useDecryptMessages = (
     data,
     error,
   };
+};
+
+export const useVoiceCreditsByRoundIdAndChainId = (
+  chainId: number,
+  roundId: string,
+  address: string,
+  dataLayer: DataLayer
+) => {
+  return useSWR(["voiceCredits", chainId, roundId, address], async () => {
+    const response = await dataLayer.getContributionsByChainIdAndRoundID({
+      chainId,
+      roundId,
+      contributorAddress: address.toLowerCase(),
+    });
+
+    return response;
+  });
 };
 
 

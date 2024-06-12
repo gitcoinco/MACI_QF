@@ -20,6 +20,10 @@ type Props = {
   maciContributions: MACIContributionsByRoundId | null;
   decryptedContributions: MACIDecryptedContributionsByRoundId | null;
   chainId: ChainId;
+  needsSignature: {
+    [roundId: string]: boolean;
+  } | null;
+  handleDecrypt: () => Promise<void>;
 };
 
 export function CartWithProjects({
@@ -27,9 +31,14 @@ export function CartWithProjects({
   chainId,
   maciContributions,
   decryptedContributions,
+  needsSignature,
+  handleDecrypt,
 }: Props) {
   const chain = CHAINS[chainId];
   const cartByRound = Object.values(cart);
+
+  const decryptedProjectsByRound = Object.values(decryptedContributions ?? {});
+
   const roundIds = Object.keys(cart);
 
   console.log("cartByRound", cartByRound);
@@ -134,8 +143,12 @@ export function CartWithProjects({
             handleRemoveProjectFromCart={store.remove}
             selectedPayoutToken={selectedPayoutToken}
             payoutTokenPrice={payoutTokenPrice ?? 0}
-            chainId={chainId} 
+            chainId={chainId}
             roundId={roundIds[key]}
+            needsSignature={
+              needsSignature ? needsSignature[roundIds[key]] : null
+            }
+            handleDecrypt={handleDecrypt}
           />
         </div>
       ))}
