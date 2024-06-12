@@ -74,6 +74,8 @@ export function CartWithProjects({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chainId]);
 
+  useEffect(() => {}, [maciContributions]);
+
   return (
     <div className="grow block px-[16px] lg:pl-0 py-4 bg-white">
       <div className="flex flex-col md:flex-row justify-between border-b-2 pb-2 gap-3 mb-6">
@@ -125,6 +127,7 @@ export function CartWithProjects({
           </div>
         </div>
       </div>
+
       {cartByRound.map((roundcart, key) => (
         <div key={key}>
           <RoundInCart
