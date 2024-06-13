@@ -9,28 +9,52 @@ import { Header } from "./Header";
 import { useCartStorage } from "../../../store";
 import { CartWithProjects } from "./CartWithProjects";
 import { useDataLayer } from "data-layer";
-
 import { useRoundsApprovedApplications } from "../../projects/hooks/useRoundApplications";
 import {
   useMACIContributions,
   useDecryptMessages,
 } from "../../projects/hooks/useRoundMaciMessages";
-
 import { useAccount } from "wagmi";
-import { Button } from "@chakra-ui/react";
+import { Spinner } from "@chakra-ui/react"; // Added Spinner for loading indicator
 import { setContributed } from "../../api/maciCartUtils";
 import {
-  CartProject,
+  GroupedMaciContributions,
   MACIContributionsByRoundId,
   MACIDecryptedContributionsByRoundId,
 } from "../../api/types";
 import { signAndStoreSignatures } from "../../api/keys";
 import { WalletClient, getWalletClient } from "@wagmi/core";
+import { getMACIKey } from "../../api/keys";
 
 export default function ViewCart() {
-  const [fetchedContributed, setFetchedContributed] = useState(false);
+  const [signaturesReady, setSignaturesReady] = useState(false);
+  const [signaturesRequested, setSignaturesRequested] = useState(false); // To prevent multiple signature requests
+  const [initialLoading, setInitialLoading] = useState(true); // Added initial loading state
+
   const { projects, setCart } = useCartStorage();
   const { address: walletAddress } = useAccount();
+
+  const areSignaturesPresent = (
+    maciContributions: GroupedMaciContributions,
+    walletAddress: string
+  ) => {
+    if (!maciContributions || !walletAddress) return false;
+
+    for (const chainId in maciContributions) {
+      for (const roundId in maciContributions[chainId]) {
+        const signature = getMACIKey({
+          chainID: Number(chainId),
+          roundID: roundId,
+          walletAddress,
+        });
+        if (!signature) {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
   const dataLayer = useDataLayer();
 
   const { data: maciContributions } = useMACIContributions(
@@ -47,37 +71,22 @@ export default function ViewCart() {
     dataLayer
   );
 
-  const { data: DecryptedContributions } = useDecryptMessages(
+  const { data: DecryptedContributions, refetch } = useDecryptMessages(
     maciContributions?.groupedMaciContributions,
-    walletAddress?.toLowerCase() as string
+    walletAddress?.toLowerCase() as string,
+    signaturesReady // Add signaturesReady as a dependency to refetch
   );
 
   const groupedCartProjects = groupProjectsInCart(projects);
-  const combinedGroupedCartProjects = groupedCartProjects;
+  const groupedProjectsByChainId = Object.keys(groupedCartProjects);
+  const combinedGroupedCartByChainId = Array.from(
+    new Set([...groupedProjectsByChainId, ...maciContributionsByChainId])
+  );
 
-  for (const chainId of Object.keys(
-    DecryptedContributions?.needSignature || {}
-  )) {
-    for (const roundId of Object.keys(
-      DecryptedContributions?.needSignature?.[Number(chainId)] || {}
-    )) {
-      if (!combinedGroupedCartProjects[Number(chainId)]) {
-        combinedGroupedCartProjects[Number(chainId)] = {};
-      }
-      if (!combinedGroupedCartProjects[Number(chainId)][roundId]) {
-        combinedGroupedCartProjects[Number(chainId)][roundId] = [];
-      }
-      if (DecryptedContributions?.needSignature?.[Number(chainId)]?.[roundId]) {
-        groupedCartProjects[Number(chainId)][roundId].push({
-          chainId: Number(chainId),
-          roundId,
-          amount: "0",
-        } as CartProject);
-      }
-    }
-  }
+  const getNeededSignatures = useCallback(async () => {
+    if (signaturesRequested) return; // Prevent multiple requests
+    setSignaturesRequested(true);
 
-  const getNeededSignatures = async () => {
     const pairs =
       maciContributions?.groupedRounds &&
       (maciContributions?.groupedRounds.flatMap((round) => {
@@ -91,31 +100,57 @@ export default function ViewCart() {
         address: walletAddress as string,
       });
     }
-  };
+    setSignaturesReady(true); // Update state to indicate signatures are ready
+  }, [maciContributions, walletAddress, signaturesRequested]);
 
-  const updateCart = useCallback(async () => {
-    if (DecryptedContributions && !fetchedContributed) {
-      setCart([]);
-      await setContributed(
-        projects,
-        dataLayer,
-        setCart,
-        applications,
-        maciContributions?.groupedMaciContributions,
-        DecryptedContributions?.decryptedMessagesByRound
-      );
-      setFetchedContributed(true);
-    }
-  }, [
-    applications,
-  ]);
+  const getCartProjects = useCallback(async () => {
+    await setContributed(
+      projects,
+      dataLayer,
+      setCart,
+      applications,
+      maciContributions?.groupedMaciContributions,
+      DecryptedContributions?.decryptedMessagesByRound
+    );
+    setInitialLoading(false); // Set initial loading to false after loading cart projects
+  }, [dataLayer, applications, maciContributions, DecryptedContributions]);
 
+  // Check for existing signatures and set state accordingly
   useEffect(() => {
-    updateCart();
-  }, [
-    walletAddress,
-    applications,
-  ]);
+    if (maciContributions && walletAddress) {
+      const signaturesExist = areSignaturesPresent(
+        maciContributions.groupedMaciContributions,
+        walletAddress
+      );
+      if (signaturesExist) {
+        setSignaturesReady(true);
+        setInitialLoading(false); // Set initial loading to false if signatures already exist
+      } else {
+        getNeededSignatures();
+      }
+    }
+  }, [maciContributions, walletAddress, getNeededSignatures]);
+
+  // Refetch decrypted contributions once signatures are ready
+  useEffect(() => {
+    if (signaturesReady) {
+      refetch();
+    }
+  }, [signaturesReady, refetch]);
+
+  // Get cart projects once decrypted contributions are available
+  useEffect(() => {
+    if (DecryptedContributions && signaturesReady) {
+      getCartProjects();
+    }
+  }, [DecryptedContributions, signaturesReady, getCartProjects]);
+
+  // Clear cart when wallet address changes
+  useEffect(() => {
+    setSignaturesRequested(false);
+    setCart([]);
+    setInitialLoading(true); // Set initial loading to true when wallet address changes
+  }, [walletAddress]);
 
   const breadCrumbs: BreadcrumbItem[] = [
     {
@@ -137,81 +172,53 @@ export default function ViewCart() {
         </div>
         <main>
           <Header projects={projects} />
-          <div>
-            <Button
-              onClick={async () =>
-                await setContributed(
-                  projects,
-                  dataLayer,
-                  setCart,
-                  applications,
-                  maciContributions?.groupedMaciContributions,
-                  DecryptedContributions?.decryptedMessagesByRound
-                )
-              }
-            >
-              Set contributed
-            </Button>
-            <Button
-              onClick={async () => {
-                await getNeededSignatures();
-                setFetchedContributed(false);
-              }}
-            >
-              SignToDecrypt
-            </Button>
-          </div>
-          <div className="flex flex-col md:flex-row gap-5">
-            {!maciContributionsByChainId ||
-            (maciContributionsByChainId && projects.length === 0) ? (
-              <>
+
+          {initialLoading ? (
+            <div className="flex justify-center items-center my-10">
+              <Spinner size="xl" />
+            </div>
+          ) : (
+            <div className="flex flex-col md:flex-row gap-5">
+              {!maciContributionsByChainId ||
+              (maciContributionsByChainId &&
+                maciContributionsByChainId.length === 0 &&
+                projects.length === 0) ? (
                 <EmptyCart />
-              </>
-            ) : (
-              <div className={"grid sm:grid-cols-2 gap-5 w-full mx-5"}>
-                <div className="flex flex-col gap-5 sm:col-span-2 order-2 sm:order-1">
-                  {maciContributionsByChainId &&
-                    maciContributionsByChainId.map((chainId) => (
-                      <div key={Number(chainId)}>
-                        <CartWithProjects
-                          cart={groupedCartProjects[Number(chainId)]}
-                          maciContributions={
-                            maciContributions?.groupedMaciContributions[
-                              Number(chainId)
-                            ]
-                              ? (maciContributions?.groupedMaciContributions[
-                                  Number(chainId)
-                                ] as MACIContributionsByRoundId)
-                              : null
-                          }
-                          decryptedContributions={
-                            DecryptedContributions?.decryptedMessagesByRound?.[
-                              Number(chainId)
-                            ]
-                              ? (DecryptedContributions
-                                  ?.decryptedMessagesByRound?.[
-                                  Number(chainId)
-                                ] as MACIDecryptedContributionsByRoundId)
-                              : null
-                          }
-                          needsSignature={
-                            DecryptedContributions?.needSignature?.[
-                              Number(chainId)
-                            ]
-                              ? DecryptedContributions?.needSignature?.[
-                                  Number(chainId)
-                                ]
-                              : null
-                          }
-                          handleDecrypt={getNeededSignatures}
-                          chainId={Number(chainId) as ChainId}
-                        />{" "}
-                      </div>
-                    ))}
+              ) : (
+                <div className={"grid sm:grid-cols-2 gap-5 w-full mx-5"}>
+                  <div className="flex flex-col gap-5 sm:col-span-2 order-2 sm:order-1">
+                    {combinedGroupedCartByChainId &&
+                      projects.length > 0 &&
+                      combinedGroupedCartByChainId.map((chainId) => (
+                        <div key={Number(chainId)}>
+                          <CartWithProjects
+                            cart={groupedCartProjects[Number(chainId)]}
+                            maciContributions={
+                              (maciContributions?.groupedMaciContributions[
+                                Number(chainId)
+                              ] as MACIContributionsByRoundId) ?? null
+                            }
+                            decryptedContributions={
+                              (DecryptedContributions
+                                ?.decryptedMessagesByRound?.[
+                                Number(chainId)
+                              ] as MACIDecryptedContributionsByRoundId) ?? null
+                            }
+                            needsSignature={
+                              DecryptedContributions?.needSignature?.[
+                                Number(chainId)
+                              ] ?? null
+                            }
+                            handleDecrypt={getCartProjects}
+                            chainId={Number(chainId) as ChainId}
+                          />
+                        </div>
+                      ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </main>
         <div className="my-11">
           <Footer />

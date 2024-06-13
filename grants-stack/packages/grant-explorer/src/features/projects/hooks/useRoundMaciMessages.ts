@@ -116,7 +116,8 @@ export function useMACIContributions(address: string, dataLayer: DataLayer) {
 
 export const useDecryptMessages = (
   maciMessages: GroupedMaciContributions | undefined,
-  walletAddress: string
+  walletAddress: string,
+  signaturesReady: boolean // add signaturesReady as a dependency
 ) => {
   const fetcher = async () => {
     if (!maciMessages) {
@@ -170,14 +171,17 @@ export const useDecryptMessages = (
     };
   };
 
-  const { data, error } = useSWR(
-    maciMessages ? ["decryptMessages", maciMessages, walletAddress] : null,
+  const { data, error, mutate } = useSWR(
+    maciMessages
+      ? ["decryptMessages", maciMessages, walletAddress, signaturesReady]
+      : null,
     fetcher
   );
 
   return {
     data,
     error,
+    refetch: mutate, // alias mutate to refetch
   };
 };
 

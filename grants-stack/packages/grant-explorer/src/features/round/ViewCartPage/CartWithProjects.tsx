@@ -74,7 +74,6 @@ export function CartWithProjects({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chainId]);
 
-  useEffect(() => {}, [maciContributions]);
 
   return (
     <div className="grow block px-[16px] lg:pl-0 py-4 bg-white">

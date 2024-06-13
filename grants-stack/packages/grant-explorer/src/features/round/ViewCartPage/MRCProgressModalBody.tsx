@@ -97,7 +97,16 @@ export function MRCProgressModalBody({
       isDonationOrChangeDonationInProgress
       ? stepsToChangeDonation
       : stepsWithChainSwitch;
-  }, [chainId, chainSwitchStatus, permitStatus, voteStatus]);
+  }, [
+    chainId,
+    chainSwitchStatus,
+    permitStatus,
+    voteStatus,
+    changeDonationsStatus,
+    maciKeyStatus,
+    contributionStatus,
+    isDonationOrChangeDonationInProgress,
+  ]);
 
   return (
     <div className="sm:w-fit md:w-[400px]">
@@ -114,7 +123,9 @@ export function MRCProgressModalBody({
               permitStatus[chainId] === ProgressStatus.IN_PROGRESS ||
               chainSwitchStatus[chainId] === ProgressStatus.IS_ERROR ||
               voteStatus[chainId] === ProgressStatus.IS_ERROR ||
-              permitStatus[chainId] === ProgressStatus.IS_ERROR;
+              permitStatus[chainId] === ProgressStatus.IS_ERROR ||
+              changeDonationsStatus[chainId] === ProgressStatus.IN_PROGRESS ||
+              changeDonationsStatus[chainId] === ProgressStatus.IS_ERROR;
             const isSuccess =
               checkoutStore.voteStatus[chainId] === ProgressStatus.IS_SUCCESS;
 

@@ -194,7 +194,6 @@ export const useCheckoutStore = create<CheckoutState>()(
 
       get().setIsDonationOrChangeDonationInProgress(false);
 
-
       const projectsToCheckOut = useCartStorage
         .getState()
         .projects.filter(
@@ -579,23 +578,30 @@ export const useCheckoutStore = create<CheckoutState>()(
           };
         });
 
-        await publishBatch({
-          messages: Messages,
-          Poll: poll.poll,
-          publicKey: groupedKeyPairs[roundId].pubKey,
-          privateKey: groupedKeyPairs[roundId].privKey,
-          walletClient,
-          chainId,
+        await Promise.all([
+          publishBatch({
+            messages: Messages,
+            Poll: poll.poll,
+            publicKey: groupedKeyPairs[roundId].pubKey,
+            privateKey: groupedKeyPairs[roundId].privKey,
+            walletClient,
+            chainId,
+          }),
+        ]);
+
+        donations.forEach((donation) => {
+          if (donation.amount === "0") {
+            useCartStorage.getState().remove(donation);
+          }
         });
+        // // reload the page
+        // window.location.reload();
 
         get().setChangeDonationsStatusForChain(
           chainId,
           ProgressStatus.IS_SUCCESS
         );
 
-        // donations.forEach((donation) => {
-        //   useCartStorage.getState().remove(donation);
-        // });
         set((oldState) => ({
           voteStatus: {
             ...oldState.voteStatus,
@@ -910,9 +916,12 @@ export const publishBatch = async ({
     functionName: "publishMessageBatch",
     args: [preparedMessages, preparedKeys],
   });
-  await publicClient.waitForTransactionReceipt({
-    hash: hash,
-  });
+  await Promise.all([
+    publicClient.waitForTransactionReceipt({
+      hash: hash,
+      confirmations: 2,
+    }),
+  ]);
 };
 
 /** This function handles switching to a chain
