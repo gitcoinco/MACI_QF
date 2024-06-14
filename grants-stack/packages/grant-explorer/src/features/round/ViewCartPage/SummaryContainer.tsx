@@ -242,7 +242,9 @@ export function SummaryContainer(props: {
         parseChainId(maciChainId),
         maciRoundId,
         walletClient,
-        getPublicClient(),
+        getPublicClient({
+          chainId: Number(maciChainId),
+        }),
         pcdFetched ? pcd : undefined
       );
     }

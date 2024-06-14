@@ -65,6 +65,11 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         MaciParams maciParams;
     }
 
+    struct Contributor {
+        uint256 voiceCredits;
+        bool signedUp;
+    }
+
     /// @notice Structure to claim funds
     // Used as a proof to verify and distribute funds to the recipients
     // Anyone can generate a claim and submit it to the contract
@@ -81,11 +86,6 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
     /// ======================
     /// ======= Events ======
     /// ======================
-
-    /// @notice Emitted when a recipient is added
-    /// @param recipientId ID of the recipient
-    /// @param recipientIndex ID of the recipient"s MACI voting option
-    event RecipientVotingOptionAdded(address recipientId, uint256 recipientIndex);
 
     /// @notice Emitted when the tally hash is published
     /// @param tallyHash The IPFS hash of the tally
@@ -151,6 +151,9 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
     /// @notice The verifier contract instance
     IAlowlistVerifier public allowlistVerifier;
 
+    /// @notice Mapping from contributor address to total credits
+    mapping(address => Contributor) public contributorInfo;
+
     /// ====================================
     /// ========== Constructor =============
     /// ====================================
@@ -196,7 +199,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
 
         ClonableMACIFactory _maciFactory = ClonableMACIFactory(maciFactory);
 
-        _maci = _maciFactory.createMACI(strategy, strategy, coordinator,_maciId);
+        _maci = _maciFactory.createMACI(address(this), address(this), coordinator,_maciId);
 
         maxAcceptedRecipients = _maciFactory.getMaxVoteOptions(_maciId);
 
@@ -225,7 +228,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         ) = abi.decode(_data, (PubKey, uint256, bytes));
 
         if (isFinalized) revert RoundAlreadyFinalized();
-        if (contributorCredits[_sender] != 0) revert AlreadyContributed();
+        if (contributorInfo[_sender].signedUp) revert AlreadyContributed();
         if (amount > MAX_VOICE_CREDITS * voiceCreditFactor) revert ContributionAmountTooLarge();
 
         // Validate allowlist proof if provided
@@ -251,8 +254,11 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         }
 
         uint256 voiceCredits = amount / voiceCreditFactor;
-        contributorCredits[_sender] = voiceCredits;
+        contributorInfo[_sender] = Contributor(voiceCredits, true);
         totalContributed += amount;
+
+        // Something needed not in the audit report TODO CHECK
+        poolAmount += amount;
 
         bytes memory signUpGatekeeperData = abi.encode(_sender, voiceCredits);
         bytes memory initialVoiceCreditProxyData = abi.encode(_sender);
@@ -283,6 +289,24 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         for (uint256 i = 0; i < claims.length; i++) {
             _distributeFunds(claims[i]);
         }
+    }
+
+    /// @notice Returns the voice credits for a given address
+    /// @param _data Encoded address of a user
+    /// @return The amount of voice credits
+    function getVoiceCredits(
+        address /* _caller */,
+        bytes memory _data
+    ) external view returns (uint256) {
+        address _allocator = abi.decode(_data, (address));
+        return contributorInfo[_allocator].voiceCredits;
+    }
+
+    /// @notice Checks if an allocator is valid
+    /// @param _allocator The allocator address
+    /// @return True if the allocator is valid, otherwise false
+    function _isValidAllocator(address _allocator) internal view override returns (bool) {
+        return contributorInfo[_allocator].signedUp;
     }
 
     /// @notice Distribute the funds to a recipient
@@ -328,7 +352,8 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         }
 
         address user = abi.decode(_data, (address));
-        bool verified = contributorCredits[user] > 0;
+        
+        bool verified = contributorInfo[user].signedUp;
 
         if (!verified) {
             revert UserNotVerified();
@@ -459,7 +484,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         uint256 _totalSpentSalt,
         uint256 _newResultCommitment,
         uint256 _perVOSpentVoiceCreditsHash
-    ) external onlyPoolManager(msg.sender) onlyAfterAllocation {
+    ) external onlyCoordinator onlyAfterAllocation {
         (, Tally tally) = getMaciContracts();
 
         if (isFinalized) {
@@ -489,9 +514,8 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
 
         totalSpent = _totalSpent;
 
-        uint256 _poolAmount = _getBalance(allo.getPool(poolId).token, address(this));
-        alpha = calcAlpha(_poolAmount, totalVotesSquares, _totalSpent);
-        matchingPoolSize = _poolAmount - _totalSpent * voiceCreditFactor;
+        alpha = calcAlpha(poolAmount, totalVotesSquares, _totalSpent);
+        matchingPoolSize = poolAmount - _totalSpent * voiceCreditFactor;
 
         isFinalized = true;
     }
@@ -562,18 +586,15 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
 
         for (uint256 i = 0; i < _contributors.length; i++) {
             address contributor = _contributors[i];
-            uint256 amount = contributorCredits[contributor] * voiceCreditFactor;
+            uint256 amount = contributorInfo[contributor].voiceCredits * voiceCreditFactor;
             if (amount > 0) {
+                totalContributed -= amount;
                 // Reset before sending funds the contributor credits to prevent Re-entrancy
-                contributorCredits[contributor] = 0;
-                if (allo.getPool(poolId).token != NATIVE) {
-                    _transferAmountFrom(
-                        allo.getPool(poolId).token,
-                        TransferData(address(this), contributor, amount)
-                    );
-                } else {
-                    _transferAmountFrom(NATIVE, TransferData(address(this), contributor, amount));
-                }
+                contributorInfo[contributor].voiceCredits = 0;
+                _transferAmountFrom(
+                    allo.getPool(poolId).token,
+                    TransferData(address(this), contributor, amount)
+                );
                 result[i] = true;
             } else {
                 result[i] = false;

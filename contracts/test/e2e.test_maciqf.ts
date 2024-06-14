@@ -156,14 +156,10 @@ describe("e2e", function test() {
 
   it("Should allow the Contributors to vote", async () => {
     // create 1 vote message for the recipient1
-    const votingOption1 = await MACIQFStrategy.connect(
-      Coordinator
-    ).recipientToVoteIndex(recipientAddress1);
+    const votingOption1 = 0n;
 
     // create 1 vote message for the recipient1
-    const votingOption2 = await MACIQFStrategy.connect(
-      Coordinator
-    ).recipientToVoteIndex(recipientAddress2);
+    const votingOption2 = 1n;
 
     await publishBatch({
       messages: [

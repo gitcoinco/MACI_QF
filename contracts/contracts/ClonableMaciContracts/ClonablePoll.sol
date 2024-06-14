@@ -209,7 +209,7 @@ contract ClonablePoll is Params, Utilities, SnarkCommon, OwnableUpgradeable, IPo
 
         // check if the public key is on the curve
         if (!CurveBabyJubJub.isOnCurve(_encPubKey.x, _encPubKey.y)) {
-        revert InvalidPubKey();
+            revert InvalidPubKey();
         }
 
         // cannot realistically overflow

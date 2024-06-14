@@ -12,6 +12,8 @@
     "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@nomicfoundation/hardhat-verify": "^2.0.7",
+    "@nomiclabs/hardhat-etherscan": "^3.0.0",
+
     "@nomicfoundation/ignition-core": "^0.15.4",
     "@openzeppelin/contracts": "^5.0.2",
     "@openzeppelin/contracts-upgradeable": "^5.0.2",

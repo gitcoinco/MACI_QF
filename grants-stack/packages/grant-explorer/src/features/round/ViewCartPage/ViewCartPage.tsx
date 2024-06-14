@@ -173,13 +173,13 @@ export default function ViewCart() {
         <main>
           <Header projects={projects} />
 
-          {initialLoading ? (
+          {initialLoading && walletAddress ? (
             <div className="flex justify-center items-center my-10">
               <Spinner size="xl" />
             </div>
           ) : (
             <div className="flex flex-col md:flex-row gap-5">
-              {!maciContributionsByChainId ||
+              {!maciContributionsByChainId || !walletAddress ||
               (maciContributionsByChainId &&
                 maciContributionsByChainId.length === 0 &&
                 projects.length === 0) ? (

@@ -320,11 +320,9 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
 
   const eventIDs = ["192993346581360151154216832563903227660"];
 
-  const productIds = [["271983995692370745911245180290580132601"]];
-
   let encodedEventIDs = AbiCoder.encode(
-    ["uint256[]", "uint256[][]"],
-    [eventIDs, productIds]
+    ["uint256[]"],
+    [eventIDs]
   );
 
   let MaciParams = [
@@ -388,7 +386,7 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
     AlloContracts.ZuPassRegistryAddress
   );
 
-  const strategyWhitelistedData = await ZuPassFactory.getWhitelistedEventsAndProductIDs(poolAddress)
+  const strategyWhitelistedData = await ZuPassFactory.getWhitelistedEvents(poolAddress)
 
   console.log("Strategy Whitelisted Data : ", strategyWhitelistedData);
 

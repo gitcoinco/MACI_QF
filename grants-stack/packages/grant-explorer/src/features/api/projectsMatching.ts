@@ -35,7 +35,9 @@ export const getVoteIdMap = async (
   } = {};
 
   for (const app of applications) {
-    const strategyAddress = await client
+    const strategyAddress = await getPublicClient({
+      chainId: Number(app.chainId),
+    })
       .readContract({
         address: "0x1133eA7Af70876e64665ecD07C0A0476d09465a1" as `0x${string}`,
         abi: parseAbi([
