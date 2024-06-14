@@ -15,6 +15,11 @@ import {
   MACIDecryptedContributionsByRoundId,
 } from "../../api/types";
 
+type GroupedCartProjects = {
+  [chainId: number]: {
+    [roundId: string]: boolean;
+  };
+};
 type Props = {
   cart: GroupedCartProjectsByRoundId;
   maciContributions: MACIContributionsByRoundId | null;
@@ -24,6 +29,7 @@ type Props = {
     [roundId: string]: boolean;
   } | null;
   handleDecrypt: () => Promise<void>;
+  groupedCartProjects: GroupedCartProjects;
 };
 
 export function CartWithProjects({
@@ -33,15 +39,14 @@ export function CartWithProjects({
   decryptedContributions,
   needsSignature,
   handleDecrypt,
+  groupedCartProjects,
 }: Props) {
   const chain = CHAINS[chainId];
   const cartByRound = Object.values(cart);
 
-  const decryptedProjectsByRound = Object.values(decryptedContributions ?? {});
-
   const roundIds = Object.keys(cart);
 
-  console.log("cartByRound", cartByRound);
+  const chainGroupedCartProjects = groupedCartProjects[Number(chainId)];
 
   const store = useCartStorage();
 
@@ -73,7 +78,6 @@ export function CartWithProjects({
     /* We only want this to happen on first render */
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chainId]);
-
 
   return (
     <div className="grow block px-[16px] lg:pl-0 py-4 bg-white">
@@ -127,33 +131,34 @@ export function CartWithProjects({
         </div>
       </div>
 
-      {cartByRound.map((roundcart, key) => (
-        <div key={key}>
-          <RoundInCart
-            key={key}
-            roundCart={roundcart}
-            maciContributions={
-              maciContributions && maciContributions[roundIds[key]]
-                ? maciContributions[roundIds[key]]
-                : null
+      {roundIds &&
+        roundIds.map((key, index) => (
+          <div key={key}>
+            {
+              <RoundInCart
+                key={key}
+                roundCart={cartByRound[index]}
+                maciContributions={
+                  maciContributions && maciContributions[key]
+                    ? maciContributions[key]
+                    : null
+                }
+                decryptedContributions={
+                  decryptedContributions && decryptedContributions[key]
+                    ? decryptedContributions[key]
+                    : null
+                }
+                handleRemoveProjectFromCart={store.remove}
+                selectedPayoutToken={selectedPayoutToken}
+                payoutTokenPrice={payoutTokenPrice ?? 0}
+                chainId={chainId}
+                roundId={key}
+                needsSignature={needsSignature ? needsSignature[key] : null}
+                handleDecrypt={handleDecrypt}
+              />
             }
-            decryptedContributions={
-              decryptedContributions && decryptedContributions[roundIds[key]]
-                ? decryptedContributions[roundIds[key]]
-                : null
-            }
-            handleRemoveProjectFromCart={store.remove}
-            selectedPayoutToken={selectedPayoutToken}
-            payoutTokenPrice={payoutTokenPrice ?? 0}
-            chainId={chainId}
-            roundId={roundIds[key]}
-            needsSignature={
-              needsSignature ? needsSignature[roundIds[key]] : null
-            }
-            handleDecrypt={handleDecrypt}
-          />
-        </div>
-      ))}
+          </div>
+        ))}
     </div>
   );
 }

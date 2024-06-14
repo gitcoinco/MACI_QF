@@ -88,6 +88,25 @@ export const signAndStoreSignatures = async ({
     });
   }
 };
+
+export const signAndStoreSignature = async ({
+  pair,
+  walletClient,
+  address,
+}: {
+  pair: { chainId: number; roundId: string };
+  walletClient: WalletClient;
+  address: string;
+}) => {
+  const { chainId, roundId } = pair;
+  await getMACIKeys({
+    chainID: chainId,
+    roundID: roundId,
+    walletAddress: address,
+    walletClient: walletClient,
+  });
+};
+
   
 
 

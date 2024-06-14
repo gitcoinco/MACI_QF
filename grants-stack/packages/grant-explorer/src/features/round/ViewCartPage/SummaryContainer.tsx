@@ -173,8 +173,7 @@ export function SummaryContainer(props: {
                   Join Allowlist
                 </Switch.Label>
                 <Switch.Description as="span" className="text-sm text-gray-500">
-                  You will gain access to the Allowlist and be able to donate
-                  more
+                  Maximize your donation by joining the Allowlist
                 </Switch.Description>
               </span>
               <Switch

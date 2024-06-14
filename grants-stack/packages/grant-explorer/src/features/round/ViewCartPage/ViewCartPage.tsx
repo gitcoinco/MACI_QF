@@ -83,6 +83,32 @@ export default function ViewCart() {
     new Set([...groupedProjectsByChainId, ...maciContributionsByChainId])
   );
 
+  // create a combined cart with projects and maci contributions {[chainID:number] => roundIDs: string[]}
+  type GroupedCartProjects = {
+    [chainId: number]: {
+      [roundId: string]: boolean;
+    };
+  };
+  const combinedGroupedCartProjects: GroupedCartProjects = {};
+
+  // Find out the map of projects and maci contributions that exist in the cart and add true to those check and handle the error above
+  for (const chainId of combinedGroupedCartByChainId) {
+    const chainID = Number(chainId);
+    if (!combinedGroupedCartProjects[chainID]) {
+      combinedGroupedCartProjects[chainID] = {};
+    }
+    for (const roundId of Object.keys(groupedCartProjects[chainID] || {})) {
+      combinedGroupedCartProjects[chainID][roundId] = true;
+    }
+    for (const roundId of Object.keys(
+      maciContributions?.groupedMaciContributions[chainID] || {}
+    )) {
+      combinedGroupedCartProjects[chainID][roundId] = true;
+    }
+  }
+
+  console.log("combinedGroupedCartProjects", combinedGroupedCartProjects);
+
   const getNeededSignatures = useCallback(async () => {
     if (signaturesRequested) return; // Prevent multiple requests
     setSignaturesRequested(true);
@@ -173,13 +199,14 @@ export default function ViewCart() {
         <main>
           <Header projects={projects} />
 
-          {initialLoading ? (
+          {initialLoading && walletAddress ? (
             <div className="flex justify-center items-center my-10">
               <Spinner size="xl" />
             </div>
           ) : (
             <div className="flex flex-col md:flex-row gap-5">
               {!maciContributionsByChainId ||
+              !walletAddress ||
               (maciContributionsByChainId &&
                 maciContributionsByChainId.length === 0 &&
                 projects.length === 0) ? (
@@ -211,6 +238,7 @@ export default function ViewCart() {
                             }
                             handleDecrypt={getCartProjects}
                             chainId={Number(chainId) as ChainId}
+                            groupedCartProjects={combinedGroupedCartProjects}
                           />
                         </div>
                       ))}

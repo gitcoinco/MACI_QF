@@ -1,24 +1,18 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { CartProject, MACIContributions } from "../../api/types";
 import { useRoundById } from "../../../context/RoundContext";
 import { ProjectInCart } from "./ProjectInCart";
-import {
-  matchingEstimatesToText,
-  useMatchingEstimates,
-} from "../../../hooks/matchingEstimate";
-import { formatUnits, getAddress, parseUnits, zeroAddress } from "viem";
 import { useAccount } from "wagmi";
 import { useCartStorage } from "../../../store";
-import { Button, Skeleton } from "@chakra-ui/react";
-import { BoltIcon } from "@heroicons/react/24/outline";
-import { ChainId, VotingToken } from "common";
-import { getFormattedRoundId } from "../../common/utils/utils";
+import { Button, Input, Tooltip } from "@chakra-ui/react";
+import { VotingToken } from "common";
 import { getMACIKeys } from "../../api/keys";
 import { PCommand } from "maci-domainobjs";
 import { SummaryContainer } from "./SummaryContainer";
 import { WalletClient, getWalletClient } from "@wagmi/core";
 import { useDataLayer } from "data-layer";
 import { useVoiceCreditsByRoundIdAndChainId } from "../../projects/hooks/useRoundMaciMessages";
+import { parseEther } from "viem";
 
 export function RoundInCart(
   props: React.ComponentProps<"div"> & {
@@ -41,7 +35,6 @@ export function RoundInCart(
     1;
 
   const { address } = useAccount();
-
   const dataLayer = useDataLayer();
 
   const { data: voiceCreditBalance } = useVoiceCreditsByRoundIdAndChainId(
@@ -51,64 +44,128 @@ export function RoundInCart(
     dataLayer
   );
 
-  console.log("voiceCreditBalance", voiceCreditBalance);
+  const [percentages, setPercentages] = useState<number[]>([]);
+  const [locked, setLocked] = useState<boolean[]>([]);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [totalAmount, setTotalAmount] = useState<number>(0);
 
-  const donatedCredits = BigInt(voiceCreditBalance ?? 0n);
+  useEffect(() => {
+    if (props.roundCart.length > 0) {
+      const totalAmount = props.roundCart.reduce(
+        (acc, proj) => acc + Number(proj.amount),
+        0
+      );
+      setTotalAmount(totalAmount);
+      setPercentages(
+        props.roundCart.map((proj) =>
+          totalAmount > 0 ? (Number(proj.amount) / totalAmount) * 100 : 0
+        )
+      );
+      setLocked(props.roundCart.map(() => false));
+    }
+  }, [props.roundCart]);
 
-  const donatedAmount = donatedCredits * 10n ** 13n;
+  const handleTotalAmountChange = (newTotalAmount: number) => {
+    if (newTotalAmount < 0) return;
 
-  const votingTokenForChain = useCartStorage((state) =>
-    state.getVotingTokenForChain(props.chainId)
-  );
+    setTotalAmount(newTotalAmount);
 
-  const {
-    data: matchingEstimates,
-    error: matchingEstimateError,
-    isLoading: matchingEstimateLoading,
-  } = useMatchingEstimates([
-    {
-      roundId: getFormattedRoundId(round?.id ?? zeroAddress),
-      chainId: props.chainId,
-      potentialVotes: props.roundCart.map((proj) => ({
-        roundId: getFormattedRoundId(round?.id ?? zeroAddress),
-        projectId: proj.projectRegistryId,
-        amount: parseUnits(
-          proj.amount ?? "0",
-          votingTokenForChain.decimal ?? 18
-        ),
-        grantAddress: proj.recipient,
-        voter: address ?? zeroAddress,
-        token: votingTokenForChain.address.toLowerCase(),
-        applicationId: proj.grantApplicationId,
-      })),
-    },
-  ]);
+    const lockedPercentage = percentages.reduce(
+      (acc, perc, idx) => (locked[idx] ? acc + perc : acc),
+      0
+    );
+    const unlockedPercentage = 100 - lockedPercentage;
 
-  const estimate = matchingEstimatesToText(matchingEstimates);
+    const newPercentages = percentages.map((percentage, idx) => {
+      if (locked[idx]) {
+        return percentage;
+      }
+      return (percentage / unlockedPercentage) * (100 - lockedPercentage);
+    });
 
-  const totalDonationInUSD =
-    props.roundCart.reduce((acc, proj) => acc + Number(proj.amount), 0) *
-    props.payoutTokenPrice;
+    setPercentages(newPercentages);
 
-  const showMatchingEstimate =
-    matchingEstimateError === undefined &&
-    matchingEstimates !== undefined &&
-    round?.chainId !== ChainId.AVALANCHE;
+    const newAmounts = newPercentages.map((percentage) =>
+      Math.max(Math.floor((percentage / 100) * newTotalAmount), 0)
+    );
 
-  // create a variable with the current Date time in UTC
-  const currentTime = new Date();
+    props.roundCart.forEach((proj, idx) => {
+      proj.amount = newAmounts[idx].toString();
+    });
+  };
 
-  const isActiveRound = round && round?.roundEndTime > currentTime;
+  const handlePercentageChange = (index: number, newPercentage: number) => {
+    const totalPercentage = percentages.reduce(
+      (acc, perc, idx) => acc + (locked[idx] ? perc : 0),
+      0
+    );
+    const availablePercentage = 100 - totalPercentage;
+
+    if (newPercentage > availablePercentage) {
+      setTooltipVisible(true);
+      setTimeout(() => setTooltipVisible(false), 2000);
+      return;
+    }
+
+    const updatedPercentages = [...percentages];
+    updatedPercentages[index] = newPercentage;
+
+    const remainingPercentage = 100 - newPercentage;
+    const remainingUnlockedIndexes = percentages
+      .map((perc, idx) => !locked[idx] && idx)
+      .filter((idx) => idx !== false && idx !== index);
+
+    const distributedPercentages = remainingUnlockedIndexes.map((idx) => {
+      const currentPerc = percentages[idx as number];
+      return (currentPerc / remainingPercentage) * (100 - newPercentage);
+    });
+
+    remainingUnlockedIndexes.forEach((idx, i) => {
+      updatedPercentages[idx as number] = distributedPercentages[i];
+    });
+
+    setPercentages(updatedPercentages);
+
+    const newAmounts = updatedPercentages.map((percentage) =>
+      Math.max(Math.floor((percentage / 100) * totalAmount), 0)
+    );
+
+    props.roundCart.forEach((proj, idx) => {
+      proj.amount = newAmounts[idx].toString();
+    });
+  };
+
+  const handleLockToggle = (index: number) => {
+    setLocked((prev) => {
+      const updated = [...prev];
+      updated[index] = !updated[index];
+      return updated;
+    });
+  };
 
   const alreadyContributed =
     (props.maciContributions?.encrypted ? true : (false as boolean)) || false;
 
   return (
     <div className="my-4 flex w-full">
-      {/* Left Section: Round In Cart and Total Donations */}
-      {isActiveRound ? (
+      {round ? (
         <div className="flex w-full">
           <div className="flex flex-col flex-grow w-3/4">
+            {!alreadyContributed && (
+              <div className="flex items-center mb-4 justify-end">
+                <p className="mr-2 font-semibold">Total Contribution Amount:</p>
+                <Input
+                  type="number"
+                  value={totalAmount}
+                  onChange={(e) =>
+                    handleTotalAmountChange(parseFloat(e.target.value) || 0)
+                  }
+                  min={0}
+                  step={0.01}
+                  className="w-[100px] sm:w-[80px] text-center border border-black"
+                />
+              </div>
+            )}
             <div className="bg-grey-50 px-4 py-6 rounded-t-xl mb-4 flex-grow">
               <div className="flex flex-row items-end justify-between">
                 <div className="flex flex-col">
@@ -117,7 +174,7 @@ export function RoundInCart(
                       {round?.roundMetadata?.name}
                     </p>
                     <p className="text-lg font-bold ml-2 inline">
-                      ({props.roundCart.length})
+                      ({props?.roundCart?.length})
                     </p>
                   </div>
                   {minDonationThresholdAmount && (
@@ -132,102 +189,37 @@ export function RoundInCart(
                 </div>
               </div>
               <div>
-                {props.roundCart.map((project, key) => {
-                  const matchingEstimateUSD = matchingEstimates
-                    ?.flat()
-                    .find(
-                      (est) =>
-                        getAddress(est.recipient ?? zeroAddress) ===
-                        getAddress(project.recipient ?? zeroAddress)
-                    )?.differenceInUSD;
-                  return (
+                {props?.roundCart?.length > 0 &&
+                  props.roundCart.map((project, key) => (
                     <div key={key}>
                       <ProjectInCart
-                        projects={props.roundCart}
-                        selectedPayoutToken={props.selectedPayoutToken}
+                        projects={props?.roundCart}
+                        selectedPayoutToken={props?.selectedPayoutToken}
                         removeProjectFromCart={
-                          props.handleRemoveProjectFromCart
+                          props?.handleRemoveProjectFromCart
                         }
                         project={project}
                         index={key}
-                        showMatchingEstimate={showMatchingEstimate}
-                        matchingEstimateUSD={matchingEstimateUSD}
-                        roundRoutePath={`/round/${props.chainId}/${props.roundCart[0].roundId}`}
-                        last={key === props.roundCart.length - 1}
-                        payoutTokenPrice={props.payoutTokenPrice}
+                        roundRoutePath={`/round/${props?.chainId}/${props.roundCart[0]?.roundId}`}
+                        last={key === props?.roundCart?.length - 1}
+                        payoutTokenPrice={props?.payoutTokenPrice}
+                        percentage={percentages[key]}
+                        onPercentageChange={handlePercentageChange}
+                        isLocked={locked[key]}
+                        onLockToggle={handleLockToggle}
                       />
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-            {/* Total Donations */}
-            <div className="p-4 bg-grey-100 rounded-b-xl font-medium text-lg">
-              <div className="flex flex-row justify-between items-center">
-                <div className="flex flex-row gap-3 justify-center pt-1 pr-2">
-                  <div>
-                    {showMatchingEstimate && (
-                      <div className="flex justify-end flex-nowrap">
-                        <Skeleton isLoaded={!matchingEstimateLoading}>
-                          <div className="flex flex-row font-semibold">
-                            <div
-                              className={
-                                "flex flex-col md:flex-row items-center gap-2 text-base"
-                              }
-                            >
-                              <span className="mr-2">Total match</span>
-                              <div className="flex flex-row items-center justify-between font-semibold text-teal-500">
-                                <BoltIcon className={"w-4 h-4 inline"} />
-                                ~$
-                                {estimate?.toFixed(2)}
-                              </div>
-                            </div>
-                            <span className="pl-4">|</span>
-                          </div>
-                        </Skeleton>
-                      </div>
-                    )}
-                  </div>
-                  <div className="font-semibold">
-                    <p>
-                      <span className="mr-2">Total donation</span>$
-                      {!alreadyContributed
-                        ? isNaN(totalDonationInUSD)
-                          ? "0.0"
-                          : totalDonationInUSD.toFixed(2)
-                        : (
-                            Number(
-                              formatUnits(
-                                donatedAmount,
-                                votingTokenForChain.decimal
-                              )
-                            ) * props.payoutTokenPrice
-                          ).toFixed(2)}
-                    </p>
-                  </div>
-                  {props.needsSignature && (
-                    <div className="flex flex-row items-center gap-2">
-                      <Button
-                        onClick={async () => {
-                          const walletClient = await getWalletClient();
-                          await getMACIKeys({
-                            chainID: props.roundCart[0].chainId,
-                            roundID: props.roundCart[0].roundId,
-                            walletAddress: address as string,
-                            walletClient: walletClient as WalletClient,
-                          });
-                          await props.handleDecrypt();
-                        }}
-                      >
-                        Decrypt
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                  ))}
+                {tooltipVisible && (
+                  <Tooltip label="Total percentage cannot exceed 100%">
+                    <span className="text-red-500">
+                      Total percentage cannot exceed 100%
+                    </span>
+                  </Tooltip>
+                )}
               </div>
             </div>
           </div>
-          {/* Summary Container */}
           <div className="w-1/4 ml-[4%]">
             <SummaryContainer
               alreadyContributed={
@@ -240,10 +232,10 @@ export function RoundInCart(
               stateIndex={BigInt(
                 props.maciContributions?.encrypted?.stateIndex ?? "0"
               )}
-              donatedAmount={donatedAmount}
-              maciMessages={props.maciContributions ?? null}
-              roundId={props.roundId}
-              chainId={props.chainId}
+              donatedAmount={BigInt(parseEther(totalAmount.toString()))}
+              maciMessages={props?.maciContributions ?? null}
+              roundId={props?.roundId}
+              chainId={props?.chainId}
             />
           </div>
         </div>
