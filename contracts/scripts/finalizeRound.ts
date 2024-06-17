@@ -2,12 +2,9 @@ import { ethers } from "hardhat";
 import { existsSync, mkdirSync } from "fs";
 import path from "path";
 
-import { Keypair, PrivKey } from "maci-domainobjs";
+import { Keypair, PrivKey, PubKey } from "maci-domainobjs";
 import { genTreeCommitment as genTallyResultCommitment } from "maci-crypto";
-import {
-  addTallyResultsBatch,
-  mergeMaciSubtrees,
-} from "../test/utils/maci";
+import { addTallyResultsBatch, mergeMaciSubtrees } from "../test/utils/maci";
 import { getCircuitFiles } from "../test/utils/circuits";
 import { JSONFile } from "../test/utils/JSONFile";
 import { getIpfsHash } from "../test/utils/ipfs";
@@ -16,6 +13,7 @@ import { MACIQF } from "../typechain-types";
 import { getTalyFilePath } from "../test/utils/misc";
 
 import dotenv from "dotenv";
+import { genAndSubmitProofs } from "../test/utils";
 dotenv.config();
 const circuitDirectory = process.env.CIRCUIT_DIRECTORY || "./zkeys/zkeys";
 const proofOutputDirectory = process.env.PROOF_OUTPUT_DIR || "./proof_output";
@@ -25,13 +23,15 @@ const voteOptionTreeDepth = 3;
 async function finalizeRound() {
   const [Coordinator] = await ethers.getSigners();
 
-  const SerializedPrivateKey = process.env.COORDINATOR_PRIVATE_KEY || "0x";
+  const SerializedPrivateKey = process.env.COORDINATOR_PRIVATE_KEY as string;
+
+  console.log("SerializedPrivateKey", SerializedPrivateKey);
 
   const deserializedPrivKey = PrivKey.deserialize(SerializedPrivateKey);
 
   const CoordinatorKeypair = new Keypair(deserializedPrivKey);
 
-  const MACIQFStrategyAddress = "0x";
+  const MACIQFStrategyAddress = "0x55a522c0a5418e22c2405333e56ef4de60c25f29";
 
   const MACIQFStrategy = (await ethers.getContractAt(
     "MACIQF",
@@ -40,9 +40,30 @@ async function finalizeRound() {
   )) as MACIQF;
 
   const pollContracts = await MACIQFStrategy._pollContracts();
+  const coordinatorkey = await MACIQFStrategy.coordinator();
+  console.log("coordinatorkey", coordinatorkey);
   const maciContractAddress = await MACIQFStrategy._maci();
   const tallyContractAddress = pollContracts[2];
   const mpContractAddress = pollContracts[1];
+
+  const pollContract = await ethers.getContractAt(
+    "ClonablePoll",
+    pollContracts[0],
+    Coordinator
+  );
+
+  const coord = await pollContract.coordinatorPubKey();
+  console.log("coord", coord);
+
+  const keyAsContractParams = CoordinatorKeypair.pubKey.asContractParam();
+
+  console.log("keyAsContractParams", keyAsContractParams);
+
+  const pubkeyAsContractParam = PubKey.isValidSerializedPubKey(
+    "macipk.90441dcc0d4fe8fe9736801623169e6e43dadbe3f2e5b09cc5cbc7826f0ddf1c"
+  );
+
+  console.log("pubkeyAsContractParam", pubkeyAsContractParam);
 
   const random = Math.floor(Math.random() * 10 ** 8);
 
@@ -63,57 +84,24 @@ async function finalizeRound() {
     });
   }
 
+  console.log("Merged Subtrees");
+
   // Generate Proofs and Submit to MACI Contract
   async function generateProofsAndSubmit() {
-    const tallyFile = getTalyFilePath(outputDir);
+    console.log("Generating Proofs");
 
-    const {
-      processZkFile,
-      tallyZkFile,
-      processWitness,
-      processWasm,
-      tallyWitness,
-      tallyWasm,
-      processDatFile,
-      tallyDatFile,
-    } = getCircuitFiles("micro", circuitDirectory);
-
-    await genProofs({
-      outputDir,
-      tallyFile,
-      tallyZkey: tallyZkFile,
-      processZkey: processZkFile,
-      pollId: 0n,
-      rapidsnark: undefined,
-      processWitgen: processWitness,
-      processDatFile: processDatFile,
-      tallyWitgen: tallyWitness,
-      tallyDatFile: tallyDatFile,
-      coordinatorPrivKey: CoordinatorKeypair.privKey.serialize(),
+    await genAndSubmitProofs({
+      coordinatorKeypair: CoordinatorKeypair,
+      coordinator: Coordinator,
       maciAddress: maciContractAddress,
-      transactionHash: undefined,
-      processWasm,
-      tallyWasm,
-      useWasm: true,
-      stateFile: undefined,
-      startBlock: undefined,
-      blocksPerBatch: 30,
-      endBlock: undefined,
-      signer: Coordinator,
-      tallyAddress: tallyContractAddress,
-      useQuadraticVoting: true,
-      quiet: false,
-    } as GenProofsArgs);
-
-    await proveOnChain({
-      pollId: 0n,
-      proofDir: outputDir,
-      maciAddress: maciContractAddress,
-      messageProcessorAddress: mpContractAddress,
-      tallyAddress: tallyContractAddress,
-      signer: Coordinator,
-      quiet: true,
+      tallyContractAddress: tallyContractAddress,
+      mpContractAddress: mpContractAddress,
+      outputDir: outputDir,
+      circuitDirectory: circuitDirectory,
+      maciTransactionHash: undefined,
     });
+
+    console.log("Proofs Submitted");
   }
 
   // Publish Tally Hash
@@ -126,6 +114,8 @@ async function finalizeRound() {
       Coordinator
     ).publishTallyHash(tallyHash);
     await publishTallyHashReceipt.wait();
+
+    console.log("Tally Hash Published");
   }
 
   // Add Tally Results in Batches
@@ -134,16 +124,21 @@ async function finalizeRound() {
     const tally = JSONFile.read(tallyFile) as any;
     const recipientTreeDepth = voteOptionTreeDepth;
 
+    console.log("Adding Tally Results");
+
     await addTallyResultsBatch(
       MACIQFStrategy.connect(Coordinator) as MACIQF,
       recipientTreeDepth,
       tally,
       tallyBatchSize
     );
+
+    console.log("Tally Results Added");
   }
 
   // Finalize the Round
   async function finalize() {
+    console.log("Finalizing Round");
     const tallyFile = getTalyFilePath(outputDir);
     const tally = JSONFile.read(tallyFile) as any;
     const recipientTreeDepth = voteOptionTreeDepth;
@@ -168,6 +163,8 @@ async function finalizeRound() {
     );
 
     await finalize.wait();
+
+    console.log("Round Finalized");
   }
 
   await mergeSubtrees();

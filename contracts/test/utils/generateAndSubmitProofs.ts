@@ -37,7 +37,7 @@ export const genAndSubmitProofs = async ({
       maciAddress,
       coordinatorKeypair,
       0n,
-      0,
+      6128639,
       50,
       undefined,
       undefined
@@ -47,6 +47,8 @@ export const genAndSubmitProofs = async ({
   // Create file and write the state
   const stateFilePath = path.join(outputDir, "state.json");
   JSONFile.write(stateFilePath, MaciState);
+
+  console.log("finished genMaciStateFromContract");
 
   const {
     processZkFile,
@@ -74,7 +76,7 @@ export const genAndSubmitProofs = async ({
     tallyWasm: tallyWasm,
     useWasm: true,
     stateFile: stateFilePath,
-    startBlock: undefined,
+    startBlock: 6128639,
     blocksPerBatch: 50,
     endBlock: undefined,
     signer: coordinator,
@@ -82,6 +84,8 @@ export const genAndSubmitProofs = async ({
     useQuadraticVoting: true,
     quiet: false,
   } as GenProofsArgs);
+
+  console.log("finished genProofs");
 
   // Submit proofs to MACI contract
   await proveOnChain({

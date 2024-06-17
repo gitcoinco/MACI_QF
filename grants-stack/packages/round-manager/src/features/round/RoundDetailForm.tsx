@@ -283,12 +283,10 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
                     disabled={coordinatorKeyPairCreated}
                     onClick={() => {
                       const keypair = new Keypair();
-                      const rawPrivKey = keypair.privKey.serialize();
-                      const KP = {
-                        coordinatorKey: rawPrivKey,
-                      };
+                      const KeyPairJson = keypair.toJSON();
+
                       // Convert the object to a JSON string
-                      const jsonString = JSON.stringify(KP, null, 2);
+                      const jsonString = JSON.stringify(KeyPairJson);
 
                       // Create a Blob from the JSON string
                       const blob = new Blob([jsonString], {
@@ -316,10 +314,10 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
 
                       alert(message);
 
-                      const  pubkey = keypair.pubKey.serialize();
+                      const pubkey = keypair.pubKey.serialize();
 
-                      const pubk = PubKey.deserialize(pubkey)
-                      console.log(pubkey)
+                      const pubk = PubKey.deserialize(pubkey);
+                      console.log(pubkey);
 
                       // Saving the Coordinator Public Key in the form
                       setValue(

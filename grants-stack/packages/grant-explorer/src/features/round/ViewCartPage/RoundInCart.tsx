@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { CartProject, MACIContributions } from "../../api/types";
 import { useRoundById } from "../../../context/RoundContext";
 import { ProjectInCart } from "./ProjectInCart";
@@ -44,18 +44,30 @@ export function RoundInCart(
 
   const donatedAmount = donatedCredits * 10n ** 13n;
 
-  const votingTokenForChain = useCartStorage((state) =>
-    state.getVotingTokenForChain(props.chainId)
-  );
-
-  const totalDonationInUSD =
-    props.roundCart.reduce((acc, proj) => acc + Number(proj.amount), 0) *
-    props.payoutTokenPrice;
-
   // create a variable with the current Date time in UTC
   const currentTime = new Date();
 
   const isActiveRound = round && round?.roundEndTime > currentTime;
+
+  // State to hold the input value
+  const [donationInput, setDonationInput] = useState(
+    alreadyContributed ? formatUnits(donatedAmount, 18) : "0.0"
+  );
+
+  // Memoized value to ensure it's numeric and to apply any additional logic
+  const donationValue = isNaN(parseFloat(donationInput))
+    ? 0
+    : parseFloat(donationInput) * props.payoutTokenPrice;
+
+  // Handle input changes
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    // Use a regex to ensure only numeric input (optional: include decimal handling)
+    if (/^\d*\.?\d*$/.test(value)) {
+      setDonationInput(value);
+    }
+  };
+
 
   return (
     <div className="my-4 flex w-full">
@@ -63,7 +75,9 @@ export function RoundInCart(
       {isActiveRound ? (
         <div className="flex w-full">
           <div className="flex flex-col flex-grow w-3/4">
-            <div className="bg-grey-50 px-4 py-6 rounded-t-xl mb-4 flex-grow">
+            <div className="bg-grey-50 px-4 py-6 rounded-t-xl mb-4 flex-grow mr-2">
+              {" "}
+              {/* Margin right of 2 added here */}
               <div className="flex flex-row items-end justify-between">
                 <div className="flex flex-col">
                   <div>
@@ -84,6 +98,25 @@ export function RoundInCart(
                     </div>
                   )}
                 </div>
+
+                {!alreadyContributed && (
+                  <div className="flex flex-col items-end">
+                    <label
+                      htmlFor="totalDonationETH"
+                      className="text-lg font-semibold"
+                    >
+                      Total Donation (ETH):
+                    </label>
+                    <input
+                      type="text"
+                      id="totalDonationETH"
+                      value={donationInput}
+                      onChange={handleInputChange}
+                      className="mt-1 px-3 py-2 bg-white border shadow-sm border-slate-300 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-sky-500 block w-full rounded-md sm:text-sm focus:ring-1"
+                      placeholder="Enter amount in ETH"
+                    />
+                  </div>
+                )}
               </div>
               <div>
                 {props.roundCart.map((project, key) => {
@@ -95,7 +128,7 @@ export function RoundInCart(
                         removeProjectFromCart={
                           props.handleRemoveProjectFromCart
                         }
-                        credits={donatedCredits}
+                        totalAmount={parseFloat(donationInput)}
                         project={project}
                         index={key}
                         roundRoutePath={`/round/${props.chainId}/${props.roundCart[0].roundId}`}
@@ -114,18 +147,7 @@ export function RoundInCart(
                   <div className="font-semibold">
                     <p>
                       <span className="mr-2">Total donation</span>$
-                      {!alreadyContributed
-                        ? isNaN(totalDonationInUSD)
-                          ? "0.0"
-                          : totalDonationInUSD.toFixed(2)
-                        : (
-                            Number(
-                              formatUnits(
-                                donatedAmount,
-                                votingTokenForChain.decimal
-                              )
-                            ) * props.payoutTokenPrice
-                          ).toFixed(2)}
+                      {donationValue.toFixed(2)}
                     </p>
                   </div>
                   {props.needsSignature && (
@@ -163,7 +185,7 @@ export function RoundInCart(
               stateIndex={BigInt(
                 props.maciContributions?.encrypted?.stateIndex ?? "0"
               )}
-              donatedAmount={donatedAmount}
+              donatedAmount={BigInt(parseFloat(donationInput) * 10 ** 18)}
               maciMessages={props.maciContributions ?? null}
               roundId={props.roundId}
               chainId={props.chainId}

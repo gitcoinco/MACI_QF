@@ -133,7 +133,12 @@ export function SummaryContainer(props: {
     ) {
       return;
     }
-
+    if (
+      (props.alreadyContributed && props.donatedAmount > totalDonations) ||
+      (props.alreadyContributed && props.donatedAmount < totalDonations)
+    ) {
+      return;
+    }
     setOpenChainConfirmationModal(true);
   };
 
@@ -250,28 +255,6 @@ export function SummaryContainer(props: {
     }
   };
 
-  const {
-    data,
-    error: matchingEstimateError,
-    isLoading: matchingEstimateLoading,
-  } = useMatchingEstimates([
-    {
-      roundId: getFormattedRoundId(maciRoundId),
-      chainId: parseChainId(maciChainId),
-      potentialVotes: filteredProjects.map((proj) => ({
-        amount: parseUnits(proj.amount ?? "0", votingToken.decimal ?? 18),
-        grantAddress: proj.recipient,
-        voter: address ?? zeroAddress,
-        token: votingToken.address.toLowerCase(),
-        projectId: proj.projectRegistryId,
-        applicationId: proj.grantApplicationId,
-        roundId: getFormattedRoundId(maciRoundId),
-      })),
-    },
-  ]);
-
-  const matchingEstimates = data?.length && data.length > 0 ? data : undefined;
-  const estimate = matchingEstimatesToText(matchingEstimates);
 
   if (filteredProjects.length === 0) {
     return null;
@@ -285,25 +268,7 @@ export function SummaryContainer(props: {
           className={`flex flex-row items-center justify-between mt-2 font-semibold italic ${getClassForPassportColor(
             "black"
           )}`}
-        >
-          {matchingEstimateError === undefined &&
-            matchingEstimates !== undefined && (
-              <>
-                <div className="flex flex-row my-4 items-center">
-                  <p className="font-bold mt-1">Estimated match</p>
-                  <MatchingEstimateTooltip isEligible={true} />
-                </div>
-                <div className="flex justify-end mt-2">
-                  <Skeleton isLoaded={!matchingEstimateLoading}>
-                    <p>
-                      <BoltIcon className={"w-4 h-4 inline mb-1"} />
-                      ~${estimate?.toFixed(2)} {}
-                    </p>
-                  </Skeleton>
-                </div>
-              </>
-            )}
-        </div>
+        ></div>
         <div>
           <Summary
             chainId={parseChainId(maciChainId)}
@@ -360,6 +325,8 @@ export function SummaryContainer(props: {
             ? "Not enough funds to donate"
             : props.alreadyContributed && props.donatedAmount < totalDonations
             ? "Exceeds donation limit"
+            : props.alreadyContributed && props.donatedAmount > totalDonations
+            ? "Make use 100% of your donation amount"
             : props.alreadyContributed
             ? "Change donations"
             : "Submit your donation!"
