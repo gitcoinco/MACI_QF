@@ -53,6 +53,7 @@ import {
   getContributionsByAddressAndId,
   getContributionsByAddress,
   getVoiceCreditsByChainIdAndRoundId,
+  getVoiceCreditsByChainIdsAndRoundIds,
 } from "./queries";
 import { mergeCanonicalAndLinkedProjects } from "./utils";
 
@@ -921,4 +922,39 @@ export class DataLayer {
 
     return response.contributions[0].voiceCreditBalance;
   }
+
+  async getVoiceCreditsByChainIdAndRoundId({
+    contributorAddress,
+  }: {
+    contributorAddress: string;
+  }): Promise<{ [chainId: number]: { [roundId: string]: string } }> {
+    const requestVariables = {
+      contributorAddress: contributorAddress,
+    };
+
+    const response: {
+      contributions: {
+        chainId: number;
+        roundId: string;
+        voiceCreditBalance: string;
+      }[];
+    } = await request(
+      this.gsIndexerEndpoint,
+      getVoiceCreditsByChainIdsAndRoundIds,
+      requestVariables,
+    );
+
+    const result: { [chainId: number]: { [roundId: string]: string } } = {};
+
+    response.contributions.forEach((contribution) => {
+      const { chainId, roundId, voiceCreditBalance } = contribution;
+      if (!result[chainId]) {
+        result[chainId] = {};
+      }
+      result[chainId][roundId] = voiceCreditBalance;
+    });
+
+    return result;
+  }
 }
+

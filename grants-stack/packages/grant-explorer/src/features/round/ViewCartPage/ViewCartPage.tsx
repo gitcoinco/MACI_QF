@@ -16,44 +16,25 @@ import {
 } from "../../projects/hooks/useRoundMaciMessages";
 import { useAccount } from "wagmi";
 import { Spinner } from "@chakra-ui/react"; // Added Spinner for loading indicator
-import { setContributed } from "../../api/maciCartUtils";
+import { setContributed, areSignaturesPresent } from "../../api/maciCartUtils";
 import {
-  GroupedMaciContributions,
   MACIContributionsByRoundId,
   MACIDecryptedContributionsByRoundId,
+  GroupedCredits,
 } from "../../api/types";
 import { signAndStoreSignatures } from "../../api/keys";
 import { WalletClient, getWalletClient } from "@wagmi/core";
-import { getMACIKey } from "../../api/keys";
 
 export default function ViewCart() {
   const [signaturesReady, setSignaturesReady] = useState(false);
   const [signaturesRequested, setSignaturesRequested] = useState(false); // To prevent multiple signature requests
   const [initialLoading, setInitialLoading] = useState(true); // Added initial loading state
+  const [groupedCredits, setGroupedCredits] = useState<GroupedCredits>({}); // Added groupedCredits state
+
+  console.log("groupedCredits", groupedCredits);
 
   const { projects, setCart } = useCartStorage();
   const { address: walletAddress } = useAccount();
-
-  const areSignaturesPresent = (
-    maciContributions: GroupedMaciContributions,
-    walletAddress: string
-  ) => {
-    if (!maciContributions || !walletAddress) return false;
-
-    for (const chainId in maciContributions) {
-      for (const roundId in maciContributions[chainId]) {
-        const signature = getMACIKey({
-          chainID: Number(chainId),
-          roundID: roundId,
-          walletAddress,
-        });
-        if (!signature) {
-          return false;
-        }
-      }
-    }
-    return true;
-  };
 
   const dataLayer = useDataLayer();
 
@@ -112,6 +93,10 @@ export default function ViewCart() {
       maciContributions?.groupedMaciContributions,
       DecryptedContributions?.decryptedMessagesByRound
     );
+    const credits = await dataLayer.getVoiceCreditsByChainIdAndRoundId({
+      contributorAddress: walletAddress?.toLowerCase() as string,
+    });
+    setGroupedCredits(credits);
     setInitialLoading(false); // Set initial loading to false after loading cart projects
   }, [dataLayer, applications, maciContributions, DecryptedContributions]);
 
@@ -179,7 +164,8 @@ export default function ViewCart() {
             </div>
           ) : (
             <div className="flex flex-col md:flex-row gap-5">
-              {!maciContributionsByChainId || !walletAddress ||
+              {!maciContributionsByChainId ||
+              !walletAddress ||
               (maciContributionsByChainId &&
                 maciContributionsByChainId.length === 0 &&
                 projects.length === 0) ? (
@@ -203,6 +189,9 @@ export default function ViewCart() {
                                 ?.decryptedMessagesByRound?.[
                                 Number(chainId)
                               ] as MACIDecryptedContributionsByRoundId) ?? null
+                            }
+                            groupedCredits={
+                              groupedCredits?.[Number(chainId)] ?? {}
                             }
                             needsSignature={
                               DecryptedContributions?.needSignature?.[

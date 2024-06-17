@@ -202,6 +202,44 @@ export const useVoiceCreditsByRoundIdAndChainId = (
   });
 };
 
+export const useGetMultiVoiceCreditsByRoundIdAndChainId = (
+  pairs: { chainId: number; roundId: string }[],
+  address: string,
+  dataLayer: DataLayer
+) => {
+  return useSWR(
+    ["voiceCredits", pairs, address],
+    async () => {
+      const fetchPromises = pairs.map(({ chainId, roundId }) =>
+        dataLayer
+          .getContributionsByChainIdAndRoundID({
+            chainId,
+            roundId,
+            contributorAddress: address.toLowerCase(),
+          })
+          .then((response) => ({ chainId, roundId, response }))
+      );
+
+      const responses = await Promise.all(fetchPromises);
+
+      const result: { [chainId: number]: { [roundId: string]: string } } = {};
+
+      responses.forEach(({ chainId, roundId, response }) => {
+        if (!result[chainId]) {
+          result[chainId] = {};
+        }
+        result[chainId][roundId] = response;
+      });
+
+      return result;
+    },
+    {
+      refreshInterval: 30000, // Set this to a desired value for automatic refresh
+      revalidateOnFocus: true, // Revalidate data on window focus
+    }
+  );
+};
+
 
 async function getMaciAddress(chainID: number, roundID: string) {
   const publicClient = getPublicClient({ chainId: chainID });

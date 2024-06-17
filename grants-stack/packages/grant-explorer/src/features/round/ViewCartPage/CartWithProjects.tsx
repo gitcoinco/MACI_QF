@@ -11,9 +11,11 @@ import { ChainId, useTokenPrice, VotingToken } from "common";
 import { Button, Input } from "common/src/styles";
 import { useCartStorage } from "../../../store";
 import {
+  GroupedCreditsByRoundId,
   MACIContributionsByRoundId,
   MACIDecryptedContributionsByRoundId,
 } from "../../api/types";
+import { group } from "console";
 
 type Props = {
   cart: GroupedCartProjectsByRoundId;
@@ -23,6 +25,7 @@ type Props = {
   needsSignature: {
     [roundId: string]: boolean;
   } | null;
+  groupedCredits: GroupedCreditsByRoundId;
   handleDecrypt: () => Promise<void>;
 };
 
@@ -32,12 +35,11 @@ export function CartWithProjects({
   maciContributions,
   decryptedContributions,
   needsSignature,
+  groupedCredits,
   handleDecrypt,
 }: Props) {
   const chain = CHAINS[chainId];
   const cartByRound = Object.values(cart);
-
-  const decryptedProjectsByRound = Object.values(decryptedContributions ?? {});
 
   const roundIds = Object.keys(cart);
 
@@ -73,7 +75,6 @@ export function CartWithProjects({
     /* We only want this to happen on first render */
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chainId]);
-
 
   return (
     <div className="grow block px-[16px] lg:pl-0 py-4 bg-white">
@@ -142,6 +143,7 @@ export function CartWithProjects({
                 ? decryptedContributions[roundIds[key]]
                 : null
             }
+            voiceCredits={groupedCredits[roundIds[key]]}
             handleRemoveProjectFromCart={store.remove}
             selectedPayoutToken={selectedPayoutToken}
             payoutTokenPrice={payoutTokenPrice ?? 0}

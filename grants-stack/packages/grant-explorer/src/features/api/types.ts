@@ -201,3 +201,11 @@ export interface GroupedMACIDecryptedContributions {
 export interface MACIDecryptedContributionsByRoundId {
   [roundId: string]: PCommand[];
 }
+
+export interface GroupedCredits {
+  [chainId: number]: { [roundId: string]: string };
+}
+
+export interface GroupedCreditsByRoundId {
+  [roundId: string]: string;
+}

@@ -8,6 +8,7 @@ import { PCommand } from "maci-domainobjs";
 import { formatAmount } from "./formatAmount";
 import { getVoteIdMap } from "./projectsMatching";
 import { createCartProjectFromApplication } from "../discovery/ExploreProjectsPage";
+import { getMACIKey } from "./keys";
 
 interface Result {
   applicationId: string;
@@ -240,3 +241,24 @@ function getApplicationRefs(
   }
   return applicationRefs;
 }
+
+export const areSignaturesPresent = (
+  maciContributions: GroupedMaciContributions,
+  walletAddress: string
+) => {
+  if (!maciContributions || !walletAddress) return false;
+
+  for (const chainId in maciContributions) {
+    for (const roundId in maciContributions[chainId]) {
+      const signature = getMACIKey({
+        chainID: Number(chainId),
+        roundID: roundId,
+        walletAddress,
+      });
+      if (!signature) {
+        return false;
+      }
+    }
+  }
+  return true;
+};

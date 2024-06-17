@@ -17,9 +17,8 @@ export function ProjectInCart(
     last?: boolean;
     selectedPayoutToken: VotingToken;
     payoutTokenPrice: number;
+    credits: bigint;
     removeProjectFromCart: (project: CartProject) => void;
-    showMatchingEstimate: boolean;
-    matchingEstimateUSD: number | undefined;
   }
 ) {
   const { project, roundRoutePath } = props;
@@ -114,11 +113,6 @@ export function ProjectInCart(
                   ) * props.payoutTokenPrice
                 ).toFixed(2)}
               </span>
-              {props.showMatchingEstimate && (
-                <span className="text-teal-500 italic text-sm">
-                  ~{props.matchingEstimateUSD?.toFixed(2) || 0} USD
-                </span>
-              )}
             </div>
           )}
           <TrashIcon

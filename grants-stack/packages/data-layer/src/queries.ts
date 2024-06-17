@@ -703,3 +703,15 @@ export const getVoiceCreditsByChainIdAndRoundId = gql`
     }
   }
 `;
+
+export const getVoiceCreditsByChainIdsAndRoundIds = gql`
+  query getContributionsByAddress($contributorAddress: String!) {
+    contributions(
+      filter: { contributorAddress: { equalTo: $contributorAddress } }
+    ) {
+      chainId
+      roundId
+      voiceCreditBalance
+    }
+  }
+`;

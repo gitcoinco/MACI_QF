@@ -2,23 +2,16 @@ import React from "react";
 import { CartProject, MACIContributions } from "../../api/types";
 import { useRoundById } from "../../../context/RoundContext";
 import { ProjectInCart } from "./ProjectInCart";
-import {
-  matchingEstimatesToText,
-  useMatchingEstimates,
-} from "../../../hooks/matchingEstimate";
-import { formatUnits, getAddress, parseUnits, zeroAddress } from "viem";
+import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
 import { useCartStorage } from "../../../store";
-import { Button, Skeleton } from "@chakra-ui/react";
-import { BoltIcon } from "@heroicons/react/24/outline";
-import { ChainId, VotingToken } from "common";
-import { getFormattedRoundId } from "../../common/utils/utils";
+import { Button } from "@chakra-ui/react";
+import { VotingToken } from "common";
+
 import { getMACIKeys } from "../../api/keys";
 import { PCommand } from "maci-domainobjs";
 import { SummaryContainer } from "./SummaryContainer";
 import { WalletClient, getWalletClient } from "@wagmi/core";
-import { useDataLayer } from "data-layer";
-import { useVoiceCreditsByRoundIdAndChainId } from "../../projects/hooks/useRoundMaciMessages";
 
 export function RoundInCart(
   props: React.ComponentProps<"div"> & {
@@ -27,6 +20,7 @@ export function RoundInCart(
     decryptedContributions: PCommand[] | null;
     selectedPayoutToken: VotingToken;
     handleRemoveProjectFromCart: (project: CartProject) => void;
+    voiceCredits: string | null;
     payoutTokenPrice: number;
     chainId: number;
     roundId: string;
@@ -36,20 +30,13 @@ export function RoundInCart(
 ) {
   const round = useRoundById(props.chainId, props.roundId).round;
 
-  const minDonationThresholdAmount =
-    round?.roundMetadata?.quadraticFundingConfig?.minDonationThresholdAmount ??
-    1;
+  const minDonationThresholdAmount = 1;
 
   const { address } = useAccount();
 
-  const dataLayer = useDataLayer();
+  const voiceCreditBalance = props.voiceCredits;
 
-  const { data: voiceCreditBalance } = useVoiceCreditsByRoundIdAndChainId(
-    props.chainId,
-    props.roundId,
-    address as string,
-    dataLayer
-  );
+  const alreadyContributed = voiceCreditBalance ? true : false;
 
   console.log("voiceCreditBalance", voiceCreditBalance);
 
@@ -61,47 +48,14 @@ export function RoundInCart(
     state.getVotingTokenForChain(props.chainId)
   );
 
-  const {
-    data: matchingEstimates,
-    error: matchingEstimateError,
-    isLoading: matchingEstimateLoading,
-  } = useMatchingEstimates([
-    {
-      roundId: getFormattedRoundId(round?.id ?? zeroAddress),
-      chainId: props.chainId,
-      potentialVotes: props.roundCart.map((proj) => ({
-        roundId: getFormattedRoundId(round?.id ?? zeroAddress),
-        projectId: proj.projectRegistryId,
-        amount: parseUnits(
-          proj.amount ?? "0",
-          votingTokenForChain.decimal ?? 18
-        ),
-        grantAddress: proj.recipient,
-        voter: address ?? zeroAddress,
-        token: votingTokenForChain.address.toLowerCase(),
-        applicationId: proj.grantApplicationId,
-      })),
-    },
-  ]);
-
-  const estimate = matchingEstimatesToText(matchingEstimates);
-
   const totalDonationInUSD =
     props.roundCart.reduce((acc, proj) => acc + Number(proj.amount), 0) *
     props.payoutTokenPrice;
-
-  const showMatchingEstimate =
-    matchingEstimateError === undefined &&
-    matchingEstimates !== undefined &&
-    round?.chainId !== ChainId.AVALANCHE;
 
   // create a variable with the current Date time in UTC
   const currentTime = new Date();
 
   const isActiveRound = round && round?.roundEndTime > currentTime;
-
-  const alreadyContributed =
-    (props.maciContributions?.encrypted ? true : (false as boolean)) || false;
 
   return (
     <div className="my-4 flex w-full">
@@ -133,13 +87,6 @@ export function RoundInCart(
               </div>
               <div>
                 {props.roundCart.map((project, key) => {
-                  const matchingEstimateUSD = matchingEstimates
-                    ?.flat()
-                    .find(
-                      (est) =>
-                        getAddress(est.recipient ?? zeroAddress) ===
-                        getAddress(project.recipient ?? zeroAddress)
-                    )?.differenceInUSD;
                   return (
                     <div key={key}>
                       <ProjectInCart
@@ -148,10 +95,9 @@ export function RoundInCart(
                         removeProjectFromCart={
                           props.handleRemoveProjectFromCart
                         }
+                        credits={donatedCredits}
                         project={project}
                         index={key}
-                        showMatchingEstimate={showMatchingEstimate}
-                        matchingEstimateUSD={matchingEstimateUSD}
                         roundRoutePath={`/round/${props.chainId}/${props.roundCart[0].roundId}`}
                         last={key === props.roundCart.length - 1}
                         payoutTokenPrice={props.payoutTokenPrice}
@@ -165,29 +111,6 @@ export function RoundInCart(
             <div className="p-4 bg-grey-100 rounded-b-xl font-medium text-lg">
               <div className="flex flex-row justify-between items-center">
                 <div className="flex flex-row gap-3 justify-center pt-1 pr-2">
-                  <div>
-                    {showMatchingEstimate && (
-                      <div className="flex justify-end flex-nowrap">
-                        <Skeleton isLoaded={!matchingEstimateLoading}>
-                          <div className="flex flex-row font-semibold">
-                            <div
-                              className={
-                                "flex flex-col md:flex-row items-center gap-2 text-base"
-                              }
-                            >
-                              <span className="mr-2">Total match</span>
-                              <div className="flex flex-row items-center justify-between font-semibold text-teal-500">
-                                <BoltIcon className={"w-4 h-4 inline"} />
-                                ~$
-                                {estimate?.toFixed(2)}
-                              </div>
-                            </div>
-                            <span className="pl-4">|</span>
-                          </div>
-                        </Skeleton>
-                      </div>
-                    )}
-                  </div>
                   <div className="font-semibold">
                     <p>
                       <span className="mr-2">Total donation</span>$
