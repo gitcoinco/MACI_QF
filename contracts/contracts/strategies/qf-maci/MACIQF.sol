@@ -603,14 +603,10 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
                 totalContributed -= amount;
                 // Reset before sending funds the contributor credits to prevent Re-entrancy
                 contributorInfo[contributor].voiceCredits = 0;                
-                if (allo.getPool(poolId).token != NATIVE) {
-                    _transferAmountFrom(
-                        allo.getPool(poolId).token,
-                        TransferData(address(this), contributor, amount)
-                    );
-                } else {
-                    _transferAmountFrom(NATIVE, TransferData(address(this), contributor, amount));
-                }
+                _transferAmountFrom(
+                    allo.getPool(poolId).token,
+                    TransferData(address(this), contributor, amount)
+                );
                 result[i] = true;
             } else {
                 result[i] = false;
