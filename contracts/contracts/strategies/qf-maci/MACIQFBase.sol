@@ -233,7 +233,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         if (address(pool.token) == NATIVE) {
             tokenDecimals = 10 ** 18;
         } else {
-            tokenDecimals = ERC20(pool.token).decimals();
+            tokenDecimals = 10 ** ERC20(pool.token).decimals();
         }
         // Calculate the voice credit factor
         voiceCreditFactor = (MAX_CONTRIBUTION_AMOUNT * tokenDecimals) / MAX_VOICE_CREDITS;
