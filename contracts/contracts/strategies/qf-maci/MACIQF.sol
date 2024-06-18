@@ -356,7 +356,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         bytes memory _data
     ) external view returns (uint256) {
         address _allocator = abi.decode(_data, (address));
-        
+
         if (!_isValidAllocator(_allocator)) {
             return 0;
         }
@@ -599,8 +599,11 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
             address contributor = _contributors[i];
             uint256 amount = contributorInfo[contributor].voiceCredits * voiceCreditFactor;
             if (amount > 0) {
+                // Decrease the total contributed amount
+                totalContributed -= amount;
                 // Reset before sending funds the contributor credits to prevent Re-entrancy
-                contributorInfo[contributor].voiceCredits = 0;                if (allo.getPool(poolId).token != NATIVE) {
+                contributorInfo[contributor].voiceCredits = 0;                
+                if (allo.getPool(poolId).token != NATIVE) {
                     _transferAmountFrom(
                         allo.getPool(poolId).token,
                         TransferData(address(this), contributor, amount)
