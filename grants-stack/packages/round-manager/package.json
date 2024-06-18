@@ -93,7 +93,7 @@
     "url": "^0.11.0",
     "util": "^0.12.4",
     "uuid": "^9.0.1",
-    "verify-env": "*",
+    "verify-env": "workspace:*",
     "viem": "^2.5.0",
     "wagmi": "0.12.18",
     "web-vitals": "^2.1.0",

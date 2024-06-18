@@ -274,8 +274,8 @@ importers:
         specifier: ^0.11.0
         version: 0.11.3
       verify-env:
-        specifier: '*'
-        version: 0.0.1
+        specifier: workspace:*
+        version: link:../verify-env
       viem:
         specifier: ^1.5.3
         version: 1.21.4(bufferutil@4.0.8)(typescript@5.4.5)(utf-8-validate@5.0.10)(zod@3.23.8)
@@ -868,8 +868,8 @@ importers:
         specifier: ^0.12.4
         version: 0.12.5
       verify-env:
-        specifier: '*'
-        version: 0.0.1
+        specifier: workspace:*
+        version: link:../verify-env
       viem:
         specifier: ^1.5.3
         version: 1.21.4(bufferutil@4.0.8)(typescript@5.4.5)(utf-8-validate@5.0.10)(zod@3.23.8)
@@ -1202,8 +1202,8 @@ importers:
         specifier: ^9.0.1
         version: 9.0.1
       verify-env:
-        specifier: '*'
-        version: 0.0.1
+        specifier: workspace:*
+        version: link:../verify-env
       viem:
         specifier: ^2.5.0
         version: 2.15.1(bufferutil@4.0.8)(typescript@5.4.5)(utf-8-validate@5.0.10)(zod@3.23.8)
@@ -14524,9 +14524,6 @@ packages:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
 
-  verify-env@0.0.1:
-    resolution: {integrity: sha512-NNniee3edMzaN9kdjvNp8WN+ygMoO/gQzvSPQqfoAgwHoD6AydF49n56xo4yorXmhtm9yoEwNiTxyE9xxR2R+g==}
-
   verror@1.10.0:
     resolution: {integrity: sha512-ZZKSmDAEFOijERBLkmYfJ+vmk3w+7hOLYDNkRCuRuMJGEmqYNCNLyBBFwWKVMhfwaEF3WOd0Zlw86U/WC/+nYw==}
     engines: {'0': node >=0.6.0}
@@ -20497,7 +20494,7 @@ snapshots:
 
   '@types/bn.js@4.11.6':
     dependencies:
-      '@types/node': 18.19.36
+      '@types/node': 20.14.5
 
   '@types/bn.js@5.1.5':
     dependencies:
@@ -20694,7 +20691,7 @@ snapshots:
 
   '@types/pbkdf2@3.1.2':
     dependencies:
-      '@types/node': 18.19.36
+      '@types/node': 20.14.5
 
   '@types/prettier@2.7.3': {}
 
@@ -20742,7 +20739,7 @@ snapshots:
 
   '@types/secp256k1@4.0.6':
     dependencies:
-      '@types/node': 18.19.36
+      '@types/node': 20.14.5
 
   '@types/semver@7.5.8': {}
 
@@ -20802,13 +20799,13 @@ snapshots:
 
   '@types/webpack-sources@3.2.3':
     dependencies:
-      '@types/node': 18.19.36
+      '@types/node': 20.14.5
       '@types/source-list-map': 0.1.6
       source-map: 0.7.4
 
   '@types/webpack@4.41.38':
     dependencies:
-      '@types/node': 18.19.36
+      '@types/node': 20.14.5
       '@types/tapable': 1.0.12
       '@types/uglify-js': 3.17.5
       '@types/webpack-sources': 3.2.3
@@ -28541,7 +28538,7 @@ snapshots:
 
   jest-serializer@26.6.2:
     dependencies:
-      '@types/node': 18.19.36
+      '@types/node': 20.14.5
       graceful-fs: 4.2.11
 
   jest-serializer@27.5.1:
@@ -33757,8 +33754,6 @@ snapshots:
   varint@6.0.0: {}
 
   vary@1.1.2: {}
-
-  verify-env@0.0.1: {}
 
   verror@1.10.0:
     dependencies:

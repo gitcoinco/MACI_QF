@@ -14,9 +14,9 @@ export const SortFilterDropdown = (props: SortFilterDropdownProps) => {
       </span>
       <select
         className="border-0 cursor-pointer text-violet-400 text-sm"
-        placeholder="Select Filter"
         onChange={props.onChange}
       >
+        <option value="">Select Filter</option>
         <option value="round_asc">Round End (Earliest)</option>
         <option value="round_desc">Round Start (Earliest)</option>
       </select>
@@ -38,9 +38,9 @@ export const GrantRoundTypeFilterDropdown = (
       </span>
       <select
         className="border-0 cursor-pointer text-violet-400 text-sm"
-        placeholder="All"
         onChange={props.onChange}
       >
+        <option value="">All</option>
         <option value="round_type_all">All Round Types</option>
         <option value="round_type_quadratic">Quadratic Funding</option>
         <option value="round_type_direct">Direct Grant</option>
