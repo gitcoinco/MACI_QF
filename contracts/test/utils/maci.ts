@@ -179,31 +179,20 @@ export const prepareAllocationData = async ({
 
   const userMaciPubKey = PubKey.deserialize(publicKey);
 
-  // uint[2] memory _pA,
-  // uint[2][2] memory _pB,
-  // uint[2] memory _pC,
-  // uint[38] memory _pubSignals
   let types = [
     // Contributor PubKey
     "(uint256,uint256)",
     // Contribution amount
     "uint256",
     // ZK Proof for Zuzalu circuit
-    "uint[2]",
-    "uint[2][2]",
-    "uint[2]",
-    "uint[38]",
+    "bytes",
   ];
-
   let data;
   try {
     data = AbiCoder.defaultAbiCoder().encode(types, [
       [userMaciPubKey.asContractParam().x, userMaciPubKey.asContractParam().y],
       amount,
-      proof.pA,
-      proof.pB,
-      proof.pC,
-      proof.pubSignals,
+      "0x",
     ]);
   } catch (e) {
     console.log(e);

