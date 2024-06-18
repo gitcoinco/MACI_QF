@@ -195,7 +195,6 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         maxContributionAllowlisted = _params.maciParams.maxContributionAllowlisted;
         maxContributionNotAllowlisted= _params.maciParams.maxContributionNotAllowlisted;
 
-        address strategy = address(allo.getPool(_poolId).strategy);
         // Deploy the MACI contracts
         coordinator = _params.maciParams.coordinator;
 
@@ -203,7 +202,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
 
         ClonableMACIFactory _maciFactory = ClonableMACIFactory(maciFactory);
 
-        _maci = _maciFactory.createMACI(strategy, strategy, coordinator, _params.maciParams.maciId);
+        _maci = _maciFactory.createMACI(address(this), address(this), coordinator, _params.maciParams.maciId);
 
         maxAcceptedRecipients = _maciFactory.getMaxVoteOptions(_params.maciParams.maciId);
 
