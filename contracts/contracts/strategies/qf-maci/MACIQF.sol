@@ -234,7 +234,8 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         if (contributorInfo[_sender].signedUp) revert AlreadyContributed();
         if (amount > MAX_VOICE_CREDITS * voiceCreditFactor) revert ContributionAmountTooLarge();
 
-        // Validate allowlist proof if provided
+        // Validate allowlist proof if provided GAS optimization
+        // Don't check if the proof is empty
         if (_proof.length != 0) {
             if (!allowlistVerifier.validateAllowlist(_proof)) {
                 revert InvalidProof();
