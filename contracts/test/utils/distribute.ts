@@ -43,12 +43,14 @@ export const distribute = async ({
     await MACIQFStrategy.getAddress()
   );
 
+  // Temp Fix for testing later on we 
+  // should get all the RecipientVotingOptionsAdded events
+  let option = 0 
   // First pass to gather all required data
   for (const recipient of recipients) {
     const recipientAddress = await recipient.getAddress();
-    const recipientIndex = await MACIQFStrategy.recipientToVoteIndex(
-      recipientAddress
-    );
+    const recipientIndex = option;
+    option += 1;
 
     recipientsBalances[recipientAddress] = {
       before: await provider.getBalance(recipientAddress),

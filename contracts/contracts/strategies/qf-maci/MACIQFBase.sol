@@ -72,6 +72,12 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         address sender,
         IStrategy.Status status
     );
+    
+    /// @notice Emitted when a recipient is added
+    /// @param recipientId ID of the recipient
+    /// @param recipientIndex ID of the recipient"s MACI voting option
+    event RecipientVotingOptionAdded(address recipientId, uint256 recipientIndex);
+
 
     /// @notice Emitted when the pool timestamps are updated
     /// @param registrationStartTime The start time for the registration
@@ -164,11 +170,6 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
 
     /// @notice Mapping from vote index to recipient address
     mapping(uint256 => address) public recipientVoteIndexToAddress;
-
-    /// @notice Mapping from recipient address to vote index
-    // This is used to get the MACI vote index for a recipient in the front end
-    // Maybe we can use the event logs to get this information TODO 
-    mapping(address => uint256) public recipientToVoteIndex;
 
     /// @notice Mapping to track if the recipient has been paid out
     mapping(address => bool) public paidOut;
@@ -303,7 +304,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
             if (_statuses[i] == Status.Accepted && recipient.status != Status.Accepted) {
                 recipientVoteIndexToAddress[acceptedRecipientsCounter] = recipientId;
 
-                recipientToVoteIndex[recipientId] = acceptedRecipientsCounter;
+                emit RecipientVotingOptionAdded(recipientId, acceptedRecipientsCounter);
 
                 unchecked {
                     acceptedRecipientsCounter++;

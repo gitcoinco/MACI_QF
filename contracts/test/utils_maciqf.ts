@@ -299,6 +299,7 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
       .timestamp
   );
 
+
   let initializeParams = [
     // RegistryGatting
     false,
@@ -307,7 +308,7 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
     // RegistrationStartTime
     BigInt(time + BigInt(1)),
     // RegistrationEndTime
-    BigInt(time + BigInt(200)),
+    BigInt(time + BigInt(199)),
     // AllocationStartTime
     BigInt(time + BigInt(200)),
     // AllocationEndTime
