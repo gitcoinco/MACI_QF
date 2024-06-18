@@ -233,7 +233,6 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         if (isAddressZero(_maci)) revert MaciNotSet();
         if (isFinalized) revert RoundAlreadyFinalized();
         if (contributorInfo[_sender].signedUp) revert AlreadyContributed();
-        if (amount != msg.value) revert INVALID();
         if (amount > MAX_VOICE_CREDITS * voiceCreditFactor) revert ContributionAmountTooLarge();
 
         // Validate allowlist proof if provided
