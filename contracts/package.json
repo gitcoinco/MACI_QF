@@ -15,7 +15,7 @@
     "@nomicfoundation/ignition-core": "^0.15.4",
     "@openzeppelin/contracts": "^5.0.2",
     "@openzeppelin/contracts-upgradeable": "^5.0.2",
-    "@openzeppelin/hardhat-upgrades": "^3.1.0",
+    "@openzeppelin/hardhat-upgrades": "^3.1.1",
     "@typechain/ethers-v6": "^0.5.1",
     "@typechain/hardhat": "^9.1.0",
     "@types/chai": "^4.3.16",
@@ -34,13 +34,6 @@
     "ts-node": "^10.9.2",
     "typechain": "^8.3.2",
     "typescript": "^5.4.5"
-  },
-  "overrides": {
-    "@openzeppelin/hardhat-upgrades": {
-      "@openzeppelin/defender-sdk-base-client": "1.13.1",
-      "@openzeppelin/defender-sdk-deploy-client": "1.13.1",
-      "@openzeppelin/defender-sdk-monitor-client": "1.13.1",
-      "@openzeppelin/defender-sdk-network-client": "1.13.1"
-    }
   }
+  
 }

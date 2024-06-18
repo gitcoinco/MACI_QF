@@ -12,7 +12,7 @@ import {Poll} from "maci-contracts/contracts/Poll.sol";
 // Interfaces
 import {IZuPassVerifier} from "./interfaces/IZuPassVerifier.sol";
 
-import {IAllo} from "../interfaces/IAllo.sol";
+import {IAllo} from "../../core/interfaces/IAllo.sol";
 
 // Core Contracts
 import {MACIQFBase} from "./MACIQFBase.sol";
