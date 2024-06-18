@@ -12,6 +12,7 @@ import {IMACI} from "maci-contracts/contracts/interfaces/IMACI.sol";
 import {Params} from "maci-contracts/contracts/utilities/Params.sol";
 import {Utilities} from "maci-contracts/contracts/utilities/Utilities.sol";
 import {ClonableMACIFactory} from "./ClonableMACIFactory.sol";
+import { CurveBabyJubJub } from "maci-contracts/contracts/crypto/BabyJubJub.sol";
 
 /// @title MACI - Minimum Anti-Collusion Infrastructure Version 1
 /// @notice A contract which allows users to sign up, and deploy new polls
@@ -99,7 +100,7 @@ contract ClonableMACI is IMACI, Params, Utilities, Initializable, OwnableUpgrade
     error CallerMustBePoll(address _caller);
     error PoseidonHashLibrariesNotLinked();
     error TooManySignups();
-    error MaciPubKeyLargerThanSnarkFieldSize();
+    error InvalidPubKey();
     error PreviousPollNotCompleted(uint256 pollId);
     error PollDoesNotExist(uint256 pollId);
     error SignupTemporaryBlocked();
@@ -171,8 +172,8 @@ contract ClonableMACI is IMACI, Params, Utilities, Initializable, OwnableUpgrade
         // ensure we do not have more signups than what the circuits support
         if (numSignUps >= uint256(TREE_ARITY) ** uint256(stateTreeDepth)) revert TooManySignups();
 
-        if (_pubKey.x >= SNARK_SCALAR_FIELD || _pubKey.y >= SNARK_SCALAR_FIELD) {
-            revert MaciPubKeyLargerThanSnarkFieldSize();
+        if (!CurveBabyJubJub.isOnCurve(_pubKey.x, _pubKey.y)) {
+            revert InvalidPubKey();
         }
 
         // Increment the number of signups
