@@ -374,8 +374,6 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     ) internal pure {
         if (
             _registrationStartTime > _registrationEndTime ||
-            _registrationStartTime > _allocationStartTime ||
-            _registrationEndTime > _allocationEndTime ||
             _allocationStartTime > _allocationEndTime ||
             // Added condition to ensure registrationEndTime cannot be greater than allocationStartTime
             // This is to prevent accepting a recipient after the allocation has started
