@@ -44,6 +44,7 @@ export default function Header({
               type="button"
               onClick={() => setNavbarOpen(!navbarOpen)}
               className="lg:hidden"
+              aria-label="Hamburger"
             >
               <div className="border-solid border rounded border-primary-text p-2">
                 <Hamburger color={colors["primary-text"]} />
