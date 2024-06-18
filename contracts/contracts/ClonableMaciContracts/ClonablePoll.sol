@@ -97,13 +97,15 @@ contract ClonablePoll is Params, Utilities, SnarkCommon, OwnableUpgradeable, IPo
         MaxValues memory _maxValues,
         TreeDepths memory _treeDepths,
         PubKey memory _coordinatorPubKey,
-        ExtContracts memory _extContracts
+        ExtContracts memory _extContracts,
+        uint256[] memory _emptyBallotRoots
     ) public initializer {
         __Context_init_unchained();
         __Ownable_init_unchained(msg.sender);
 
+
         // set the emptyBallotRoots
-        _setEmptyBallotRoots();
+        _setEmptyBallotRoots(_emptyBallotRoots);
         // check that the coordinator public key is valid
         if (!CurveBabyJubJub.isOnCurve(_coordinatorPubKey.x, _coordinatorPubKey.y)) {
             revert InvalidPubKey();
@@ -318,21 +320,9 @@ contract ClonablePoll is Params, Utilities, SnarkCommon, OwnableUpgradeable, IPo
 
     // Needed function to set the emptyBallotRoots because we cannot set them in the constructor
     // due to the fact that the Poll is a Proxy contract
-    function _setEmptyBallotRoots() internal {
-        emptyBallotRoots[0] = uint256(
-            4904028317433377177773123885584230878115556059208431880161186712332781831975
-        );
-        emptyBallotRoots[1] = uint256(
-            344732312350052944041104345325295111408747975338908491763817872057138864163
-        );
-        emptyBallotRoots[2] = uint256(
-            19445814455012978799483892811950396383084183210860279923207176682490489907069
-        );
-        emptyBallotRoots[3] = uint256(
-            10621810780690303482827422143389858049829670222244900617652404672125492013328
-        );
-        emptyBallotRoots[4] = uint256(
-            17077690379337026179438044602068085690662043464643511544329656140997390498741
-        );
+    function _setEmptyBallotRoots(uint256[] memory _emptyBallotRoots) internal {
+        for (uint256 i = 0; i < 5; i++) {
+            emptyBallotRoots[i] = _emptyBallotRoots[i];
+        }
     }
 }
