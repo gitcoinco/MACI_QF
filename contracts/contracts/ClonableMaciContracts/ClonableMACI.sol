@@ -184,11 +184,11 @@ contract ClonableMACI is IMACI, Params, Utilities, Initializable, OwnableUpgrade
 
         // Register the user via the sign-up gatekeeper. This function should
         // throw if the user has already registered or if ineligible to do so.
-        signUpGatekeeper.register(msg.sender, _signUpGatekeeperData);
+        signUpGatekeeper.register(address(this), _signUpGatekeeperData);
 
         // Get the user's voice credit balance.
         uint256 voiceCreditBalance = initialVoiceCreditProxy.getVoiceCredits(
-            msg.sender,
+            address(this),
             _initialVoiceCreditProxyData
         );
 

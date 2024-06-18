@@ -3,7 +3,8 @@
   "scripts": {
     "compile": "hardhat compile",
     "test:solidity": "hardhat test --network sepolia",
-    "test:live": "hardhat test --network localhost"
+    "test:live": "hardhat test --network localhost",
+    "test:3.1.1": "hardhat test ./test/3_1_1.test.ts --network localhost"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.6",

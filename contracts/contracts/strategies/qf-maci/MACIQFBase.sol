@@ -493,13 +493,6 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         return _getRecipientStatus(recipientId) == Status.Accepted;
     }
 
-    /// @notice Checks if an allocator is valid
-    /// @param _allocator The allocator address
-    /// @return True if the allocator is valid, otherwise false
-    function _isValidAllocator(address _allocator) internal view override returns (bool) {
-        return contributorCredits[_allocator] > 0;
-    }
-
     /// @notice Returns the status of a recipient
     /// @param _recipientId The ID of the recipient
     /// @return The status of the recipient
@@ -535,20 +528,6 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         address _recipientId,
         bytes memory data
     ) internal view override returns (PayoutSummary memory _payoutSummary) {}
-
-    /// @notice Returns the voice credits for a given address
-    /// @param _data Encoded address of a user
-    /// @return The amount of voice credits
-    function getVoiceCredits(
-        address /* _caller */,
-        bytes memory _data
-    ) external view returns (uint256) {
-        address _allocator = abi.decode(_data, (address));
-        if (!_isValidAllocator(_allocator)) {
-            return 0;
-        }
-        return contributorCredits[_allocator];
-    }
 
     /// @notice Ensures the pool amount can be increased
     function _beforeIncreasePoolAmount(uint256) internal view override {

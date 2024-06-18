@@ -65,6 +65,12 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         MaciParams maciParams;
     }
 
+    /// @notice Structure to store the Contributor details
+    struct Contributor {
+        uint256 voiceCredits;
+        bool signedUp;
+    }
+
     /// @notice Structure to claim funds
     // Used as a proof to verify and distribute funds to the recipients
     // Anyone can generate a claim and submit it to the contract
@@ -117,7 +123,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
     error TallyHashNotPublished();
     error NoVotes();
     error OnlyMaciCanRegisterVoters();
-    error UserNotVerified();
+    error UserAlreadySignedUp();
     error EmptyTallyHash();
     error IncorrectSpentVoiceCredits();
     error IncorrectTallyResult();
@@ -150,6 +156,9 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
 
     /// @notice The verifier contract instance
     IZuPassVerifier public zupassVerifier;
+
+    /// @notice Mapping from contributor address to total credits
+    mapping(address => Contributor) public contributorInfo;
 
     /// ====================================
     /// ========== Constructor =============
@@ -226,7 +235,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
 
         if (isAddressZero(_maci)) revert MaciNotSet();
         if (isFinalized) revert RoundAlreadyFinalized();
-        if (contributorCredits[_sender] != 0) revert AlreadyContributed();
+        if (contributorInfo[_sender].signedUp) revert AlreadyContributed();
         if (amount != msg.value) revert INVALID();
         if (amount > MAX_VOICE_CREDITS * voiceCreditFactor) revert ContributionAmountTooLarge();
 
@@ -253,13 +262,13 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         }
 
         uint256 voiceCredits = amount / voiceCreditFactor;
-        contributorCredits[_sender] = voiceCredits;
+        // A contributor is considered signed only if he calls the allocate function    
+        contributorInfo[_sender].voiceCredits = voiceCredits;
         totalContributed += amount;
+        // Make use same data for _signUpGatekeeperData and _initialVoiceCreditProxyData
+        bytes memory data = abi.encode(_sender);
 
-        bytes memory signUpGatekeeperData = abi.encode(_sender, voiceCredits);
-        bytes memory initialVoiceCreditProxyData = abi.encode(_sender);
-
-        ClonableMACI(_maci).signUp(pubKey, signUpGatekeeperData, initialVoiceCreditProxyData);
+        ClonableMACI(_maci).signUp(pubKey, data, data);
 
         emit Allocated(address(0), amount, token, _sender);
     }
@@ -323,17 +332,42 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
     /// @notice Register a user for voting
     /// @dev This function is part of the SignUpGatekeeper interface
     /// @param _data Encoded address of a contributor
-    function register(address /* _caller */, bytes memory _data) external view {
+    function register(address /* _caller */, bytes memory _data) external {
         if (msg.sender != _maci) {
             revert OnlyMaciCanRegisterVoters();
         }
 
         address user = abi.decode(_data, (address));
-        bool verified = contributorCredits[user] > 0;
+        
+        bool AlreadySignedUp = contributorInfo[user].signedUp;
 
-        if (!verified) {
-            revert UserNotVerified();
+        if (AlreadySignedUp) {
+            revert UserAlreadySignedUp();
         }
+
+        contributorInfo[user].signedUp = true;
+    }
+
+    /// @notice Returns the voice credits for a given address
+    /// @param _data Encoded address of a user
+    /// @return The amount of voice credits
+    function getVoiceCredits(
+        address /* _caller */,
+        bytes memory _data
+    ) external view returns (uint256) {
+        address _allocator = abi.decode(_data, (address));
+        
+        if (!_isValidAllocator(_allocator)) {
+            return 0;
+        }
+
+        return contributorInfo[_allocator].voiceCredits;
+    }
+
+    /// @notice Checks if an allocator is valid
+    /// @param _allocator The allocator address
+    function _isValidAllocator(address _allocator) internal view override returns (bool) {
+        return contributorInfo[_allocator].signedUp;
     }
 
     /// @notice Add and verify tally results by batch
@@ -563,11 +597,10 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
 
         for (uint256 i = 0; i < _contributors.length; i++) {
             address contributor = _contributors[i];
-            uint256 amount = contributorCredits[contributor] * voiceCreditFactor;
+            uint256 amount = contributorInfo[contributor].voiceCredits * voiceCreditFactor;
             if (amount > 0) {
                 // Reset before sending funds the contributor credits to prevent Re-entrancy
-                contributorCredits[contributor] = 0;
-                if (allo.getPool(poolId).token != NATIVE) {
+                contributorInfo[contributor].voiceCredits = 0;                if (allo.getPool(poolId).token != NATIVE) {
                     _transferAmountFrom(
                         allo.getPool(poolId).token,
                         TransferData(address(this), contributor, amount)

