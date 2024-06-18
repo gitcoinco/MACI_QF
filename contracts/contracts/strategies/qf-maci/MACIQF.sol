@@ -262,6 +262,11 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         // A contributor is considered signed only if he calls the allocate function    
         contributorInfo[_sender].voiceCredits = voiceCredits;
         totalContributed += amount;
+        
+        // Something needed after removing _poolAmount using getBalance in finalize after calcAlpha 
+        // for updating the matchingPoolSize and only relying on poolAmount not in the audit report TODO CHECK
+        poolAmount += amount;
+
         // Make use same data for _signUpGatekeeperData and _initialVoiceCreditProxyData
         bytes memory data = abi.encode(_sender);
 
@@ -520,9 +525,8 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
 
         totalSpent = _totalSpent;
 
-        uint256 _poolAmount = _getBalance(allo.getPool(poolId).token, address(this));
-        alpha = calcAlpha(_poolAmount, totalVotesSquares, _totalSpent);
-        matchingPoolSize = _poolAmount - _totalSpent * voiceCreditFactor;
+        alpha = calcAlpha(poolAmount, totalVotesSquares, _totalSpent);
+        matchingPoolSize = poolAmount - _totalSpent * voiceCreditFactor;
 
         isFinalized = true;
     }
