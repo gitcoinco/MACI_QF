@@ -357,19 +357,12 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         bytes memory _data
     ) external view returns (uint256) {
         address _allocator = abi.decode(_data, (address));
-
-        if (!_isValidAllocator(_allocator)) {
-            return 0;
-        }
-
         return contributorInfo[_allocator].voiceCredits;
     }
 
     /// @notice Checks if an allocator is valid
     /// @param _allocator The allocator address
-    function _isValidAllocator(address _allocator) internal view override returns (bool) {
-        return contributorInfo[_allocator].signedUp;
-    }
+    function _isValidAllocator(address _allocator) internal view override returns (bool _isValid) {}
 
     /// @notice Add and verify tally results by batch
     /// @param _voteOptionIndices List of vote option indices
