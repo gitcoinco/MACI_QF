@@ -224,6 +224,11 @@ contract ClonableMACI is IMACI, Params, Utilities, Initializable, OwnableUpgrade
             if (!stateAq.treeMerged()) revert PreviousPollNotCompleted(pollId);
         }
 
+        // check that the coordinator public key is valid
+        if (!CurveBabyJubJub.isOnCurve(_coordinatorPubKey.x, _coordinatorPubKey.y)) {
+            revert InvalidPubKey();
+        }
+
         MaxValues memory maxValues = MaxValues({
             maxMessages: uint256(TREE_ARITY) ** treeDepths.messageTreeDepth,
             maxVoteOptions: uint256(TREE_ARITY) ** treeDepths.voteOptionTreeDepth
