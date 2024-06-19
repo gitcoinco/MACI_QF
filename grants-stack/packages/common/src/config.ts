@@ -133,129 +133,141 @@ export function getConfig(
       ? "allo-v1"
       : undefined;
 
-  config = {
-    appEnv: z
-      .enum(["development", "test", "production"])
-      .default("development")
-      .parse(process.env.REACT_APP_ENV),
-    ipfs: {
-      baseUrl: z
-        .string()
-        .url()
-        .default("https://local-ipfs.dev")
-        .parse(process.env.REACT_APP_IPFS_BASE_URL),
-    },
-    dataLayer: {
-      searchServiceBaseUrl: z
-        .string()
-        .url()
-        .parse(process.env.REACT_APP_GRANTS_STACK_SEARCH_API_BASE_URL),
-      subgraphEndpoints: {
-        [ChainId.DEV1]: z
+  try {
+    config = {
+      appEnv: z
+        .enum(["development", "test", "production"])
+        .default("development")
+        .parse(process.env.REACT_APP_ENV),
+      ipfs: {
+        baseUrl: z
           .string()
-          .parse(process.env.REACT_APP_SUBGRAPH_DEV1_API),
-        [ChainId.DEV2]: z
-          .string()
-          .parse(process.env.REACT_APP_SUBGRAPH_DEV2_API),
-        [ChainId.PGN]: z.string().parse(process.env.REACT_APP_SUBGRAPH_PGN_API),
-        [ChainId.PGN_TESTNET]: z
-          .string()
-          .parse(process.env.REACT_APP_SUBGRAPH_PGN_TESTNET_API),
-        [ChainId.MAINNET]: z
-          .string()
-          .parse(process.env.REACT_APP_SUBGRAPH_MAINNET_API),
-        [ChainId.OPTIMISM_MAINNET_CHAIN_ID]: z
-          .string()
-          .parse(process.env.REACT_APP_SUBGRAPH_OPTIMISM_MAINNET_API),
-        [ChainId.FANTOM_MAINNET_CHAIN_ID]: z
-          .string()
-          .parse(process.env.REACT_APP_SUBGRAPH_FANTOM_MAINNET_API),
-        [ChainId.FANTOM_TESTNET_CHAIN_ID]: z
-          .string()
-          .parse(process.env.REACT_APP_SUBGRAPH_FANTOM_TESTNET_API),
-        [ChainId.ARBITRUM_GOERLI]: z
-          .string()
-          .parse(process.env.REACT_APP_SUBGRAPH_ARBITRUM_GOERLI_API),
-        [ChainId.ARBITRUM]: z
-          .string()
-          .parse(process.env.REACT_APP_SUBGRAPH_ARBITRUM_API),
-        [ChainId.FUJI]: z
-          .string()
-          .parse(process.env.REACT_APP_SUBGRAPH_FUJI_API),
-        [ChainId.AVALANCHE]: z
-          .string()
-          .parse(process.env.REACT_APP_SUBGRAPH_AVALANCHE_API),
-        [ChainId.POLYGON]: z
-          .string()
-          .parse(process.env.REACT_APP_SUBGRAPH_POLYGON_API),
-        [ChainId.POLYGON_MUMBAI]: z
-          .string()
-          .parse(process.env.REACT_APP_SUBGRAPH_POLYGON_MUMBAI_API),
-        [ChainId.ZKSYNC_ERA_TESTNET_CHAIN_ID]: z
-          .string()
-          .parse(process.env.REACT_APP_SUBGRAPH_ZKSYNC_TESTNET_API),
-        [ChainId.ZKSYNC_ERA_MAINNET_CHAIN_ID]: z
-          .string()
-          .parse(process.env.REACT_APP_SUBGRAPH_ZKSYNC_MAINNET_API),
-        [ChainId.BASE]: z
-          .string()
-          .parse(process.env.REACT_APP_SUBGRAPH_BASE_API),
-        [ChainId.SEPOLIA]: z
-          .string()
-          .parse(process.env.REACT_APP_SUBGRAPH_SEPOLIA_API),
-        [ChainId.SCROLL]: z
-          .string()
-          .parse(process.env.REACT_APP_SUBGRAPH_SCROLL_API),
+          .url()
+          .default("https://local-ipfs.dev")
+          .parse(process.env.REACT_APP_IPFS_BASE_URL),
       },
-      gsIndexerEndpoint: z
-        .string()
-        .url()
-        .default("http://localhost:4000")
-        .parse(process.env.REACT_APP_INDEXER_V2_API_URL),
-    },
-    pinata: {
-      jwt: z.string().min(1).parse(process.env.REACT_APP_PINATA_JWT),
-      baseUrl: z.string().url().parse(process.env.REACT_APP_PINATA_BASE_URL),
-    },
-    blockchain: {
-      chainsOverride: z
-        .string()
-        .optional()
-        .parse(process.env.REACT_APP_CHAINS_OVERRIDE),
-      alchemyId: z.string().optional().parse(process.env.REACT_APP_ALCHEMY_ID),
-      infuraId: z.string().optional().parse(process.env.REACT_APP_INFURA_ID),
-    },
-    explorer: {
-      disableEstimates: parseStringToBoolean(
-        z
+      dataLayer: {
+        searchServiceBaseUrl: z
+          .string()
+          .url()
+          .parse(process.env.REACT_APP_GRANTS_STACK_SEARCH_API_BASE_URL),
+        subgraphEndpoints: {
+          [ChainId.DEV1]: z
+            .string()
+            .parse(process.env.REACT_APP_SUBGRAPH_DEV1_API),
+          [ChainId.DEV2]: z
+            .string()
+            .parse(process.env.REACT_APP_SUBGRAPH_DEV2_API),
+          [ChainId.PGN]: z
+            .string()
+            .parse(process.env.REACT_APP_SUBGRAPH_PGN_API),
+          [ChainId.PGN_TESTNET]: z
+            .string()
+            .parse(process.env.REACT_APP_SUBGRAPH_PGN_TESTNET_API),
+          [ChainId.MAINNET]: z
+            .string()
+            .parse(process.env.REACT_APP_SUBGRAPH_MAINNET_API),
+          [ChainId.OPTIMISM_MAINNET_CHAIN_ID]: z
+            .string()
+            .parse(process.env.REACT_APP_SUBGRAPH_OPTIMISM_MAINNET_API),
+          [ChainId.FANTOM_MAINNET_CHAIN_ID]: z
+            .string()
+            .parse(process.env.REACT_APP_SUBGRAPH_FANTOM_MAINNET_API),
+          [ChainId.FANTOM_TESTNET_CHAIN_ID]: z
+            .string()
+            .parse(process.env.REACT_APP_SUBGRAPH_FANTOM_TESTNET_API),
+          [ChainId.ARBITRUM_GOERLI]: z
+            .string()
+            .parse(process.env.REACT_APP_SUBGRAPH_ARBITRUM_GOERLI_API),
+          [ChainId.ARBITRUM]: z
+            .string()
+            .parse(process.env.REACT_APP_SUBGRAPH_ARBITRUM_API),
+          [ChainId.FUJI]: z
+            .string()
+            .parse(process.env.REACT_APP_SUBGRAPH_FUJI_API),
+          [ChainId.AVALANCHE]: z
+            .string()
+            .parse(process.env.REACT_APP_SUBGRAPH_AVALANCHE_API),
+          [ChainId.POLYGON]: z
+            .string()
+            .parse(process.env.REACT_APP_SUBGRAPH_POLYGON_API),
+          [ChainId.POLYGON_MUMBAI]: z
+            .string()
+            .parse(process.env.REACT_APP_SUBGRAPH_POLYGON_MUMBAI_API),
+          [ChainId.ZKSYNC_ERA_TESTNET_CHAIN_ID]: z
+            .string()
+            .parse(process.env.REACT_APP_SUBGRAPH_ZKSYNC_TESTNET_API),
+          [ChainId.ZKSYNC_ERA_MAINNET_CHAIN_ID]: z
+            .string()
+            .parse(process.env.REACT_APP_SUBGRAPH_ZKSYNC_MAINNET_API),
+          [ChainId.BASE]: z
+            .string()
+            .parse(process.env.REACT_APP_SUBGRAPH_BASE_API),
+          [ChainId.SEPOLIA]: z
+            .string()
+            .parse(process.env.REACT_APP_SUBGRAPH_SEPOLIA_API),
+          [ChainId.SCROLL]: z
+            .string()
+            .parse(process.env.REACT_APP_SUBGRAPH_SCROLL_API),
+        },
+        gsIndexerEndpoint: z
+          .string()
+          .url()
+          .default("http://localhost:4000")
+          .parse(process.env.REACT_APP_INDEXER_V2_API_URL),
+      },
+      pinata: {
+        jwt: z.string().min(1).parse(process.env.REACT_APP_PINATA_JWT),
+        baseUrl: z.string().url().parse(process.env.REACT_APP_PINATA_BASE_URL),
+      },
+      blockchain: {
+        chainsOverride: z
           .string()
           .optional()
-          .default("false")
-          .parse(process.env.REACT_APP_EXPLORER_DISABLE_MATCHING_ESTIMATES)
-      ),
-    },
-    allo: {
-      version: z
-        .enum(["allo-v1", "allo-v2"])
-        .default("allo-v1")
-        .parse(hostnameAlloVersion ?? process.env.REACT_APP_ALLO_VERSION),
-    },
-    manager: {
-      disableDirectGrantsForAlloV2: config?.allo.version === "allo-v1",
-    },
-    passport: {
-      passportCommunityId: z
-        .string()
-        .parse(process.env.REACT_APP_PASSPORT_API_COMMUNITY_ID),
-      passportAPIKey: z.string().parse(process.env.REACT_APP_PASSPORT_API_KEY),
-      passportAvalancheCommunityId: z
-        .string()
-        .parse(process.env.REACT_APP_PASSPORT_API_COMMUNITY_ID_AVALANCHE),
-      passportAvalancheAPIKey: z
-        .string()
-        .parse(process.env.REACT_APP_PASSPORT_AVALANCHE_API_KEY),
-    },
-  };
+          .parse(process.env.REACT_APP_CHAINS_OVERRIDE),
+        alchemyId: z
+          .string()
+          .optional()
+          .parse(process.env.REACT_APP_ALCHEMY_ID),
+        infuraId: z.string().optional().parse(process.env.REACT_APP_INFURA_ID),
+      },
+      explorer: {
+        disableEstimates: parseStringToBoolean(
+          z
+            .string()
+            .optional()
+            .default("false")
+            .parse(process.env.REACT_APP_EXPLORER_DISABLE_MATCHING_ESTIMATES)
+        ),
+      },
+      allo: {
+        version: z
+          .enum(["allo-v1", "allo-v2"])
+          .default("allo-v1")
+          .parse(hostnameAlloVersion ?? process.env.REACT_APP_ALLO_VERSION),
+      },
+      manager: {
+        disableDirectGrantsForAlloV2: config?.allo.version === "allo-v1",
+      },
+      passport: {
+        passportCommunityId: z
+          .string()
+          .parse(process.env.REACT_APP_PASSPORT_API_COMMUNITY_ID),
+        passportAPIKey: z
+          .string()
+          .parse(process.env.REACT_APP_PASSPORT_API_KEY),
+        passportAvalancheCommunityId: z
+          .string()
+          .parse(process.env.REACT_APP_PASSPORT_API_COMMUNITY_ID_AVALANCHE),
+        passportAvalancheAPIKey: z
+          .string()
+          .parse(process.env.REACT_APP_PASSPORT_AVALANCHE_API_KEY),
+      },
+    };
+  } catch (e) {
+    console.error("Error parsing config");
+    throw e;
+  }
 
   config = overrideConfigFromLocalStorage(config);
 
