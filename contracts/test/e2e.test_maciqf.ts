@@ -292,6 +292,7 @@ describe("e2e", function test() {
         await recipient1.getAddress(),
         await recipient2.getAddress(),
       ],
+      roundId: 0,
     });
 
     console.log("Distribute Response", distributeResponse);

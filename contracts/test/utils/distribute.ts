@@ -12,13 +12,15 @@ export const distribute = async ({
   distributor,
   recipientTreeDepth,
   recipients,
+  roundId
 }: {
   outputDir: string;
   AlloContract: Allo;
   MACIQFStrategy: MACIQF;
   distributor: Signer;
   recipientTreeDepth: any;
-  recipients: string[];
+    recipients: string[];
+    roundId: number;
 }) => {
   const tallyFile = getTalyFilePath(outputDir);
 
@@ -29,8 +31,6 @@ export const distribute = async ({
   const bytesArray: string[] = [];
 
   const provider = distributor.provider!;
-
-  const pollId = 1;
 
   const recipientsBalances: {
     [key: string]: {
@@ -73,7 +73,7 @@ export const distribute = async ({
   const bytesArrayEncoded = AbiCoder.encode(bytesArrayTypes, [bytesArray]);
 
   const distributeFunds = await AlloContract.connect(distributor).distribute(
-    pollId,
+    roundId,
     [],
     bytesArrayEncoded
   );
