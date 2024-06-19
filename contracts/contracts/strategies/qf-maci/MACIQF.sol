@@ -484,7 +484,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         uint256 _totalSpentSalt,
         uint256 _newResultCommitment,
         uint256 _perVOSpentVoiceCreditsHash
-    ) external onlyPoolManager(msg.sender) onlyAfterAllocation {
+    ) external onlyCoordinator onlyAfterAllocation {
         (, Tally tally) = getMaciContracts();
 
         if (isFinalized) {
