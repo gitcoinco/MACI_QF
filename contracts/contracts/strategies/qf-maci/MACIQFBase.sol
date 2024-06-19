@@ -295,6 +295,9 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
             // If the recipient is not in review, skip the recipient
             // This is to prevent updating the status of a recipient that is not registered
             if (recipient.status == Status.None) {
+                unchecked {
+                    i++;
+                }
                 continue;
             }   
 
