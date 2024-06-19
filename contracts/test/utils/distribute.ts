@@ -18,7 +18,7 @@ export const distribute = async ({
   MACIQFStrategy: MACIQF;
   distributor: Signer;
   recipientTreeDepth: any;
-  recipients: Signer[];
+  recipients: string[];
 }) => {
   const tallyFile = getTalyFilePath(outputDir);
 
@@ -47,8 +47,7 @@ export const distribute = async ({
   // should get all the RecipientVotingOptionsAdded events
   let option = 0 
   // First pass to gather all required data
-  for (const recipient of recipients) {
-    const recipientAddress = await recipient.getAddress();
+  for (const recipientAddress of recipients) {
     const recipientIndex = option;
     option += 1;
 
@@ -74,7 +73,7 @@ export const distribute = async ({
   const bytesArrayEncoded = AbiCoder.encode(bytesArrayTypes, [bytesArray]);
 
   const distributeFunds = await AlloContract.connect(distributor).distribute(
-    pollId,
+    286,
     [],
     bytesArrayEncoded
   );
@@ -82,8 +81,7 @@ export const distribute = async ({
 
   let totalAmounts: bigint = 0n;
   // Second pass to update the balances after distribution
-  for (const recipient of recipients) {
-    const recipientAddress = await recipient.getAddress();
+  for (const recipientAddress of recipients) {
     recipientsBalances[recipientAddress].after = await provider.getBalance(
       recipientAddress
     );

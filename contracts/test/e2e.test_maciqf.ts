@@ -156,10 +156,10 @@ describe("e2e", function test() {
 
   it("Should allow the Contributors to vote", async () => {
     // create 1 vote message for the recipient1
-    const votingOption1 = 0n
+    const votingOption1 = 0n;
 
     // create 1 vote message for the recipient1
-    const votingOption2 = 1n
+    const votingOption2 = 1n;
 
     await publishBatch({
       messages: [
@@ -288,7 +288,10 @@ describe("e2e", function test() {
       MACIQFStrategy,
       distributor: Coordinator,
       recipientTreeDepth: voteOptionTreeDepth,
-      recipients: [recipient1, recipient2],
+      recipients: [
+        await recipient1.getAddress(),
+        await recipient2.getAddress(),
+      ],
     });
 
     console.log("Distribute Response", distributeResponse);

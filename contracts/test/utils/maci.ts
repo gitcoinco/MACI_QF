@@ -68,6 +68,8 @@ export async function mergeMaciSubtrees({
     quiet,
   } as MergeMessagesArgs);
 
+  console.log(`Merge MACI subtrees completed for poll ${pollId}`);
+
   await mergeSignups({
     pollId,
     maciAddress: maciAddress,
@@ -75,6 +77,8 @@ export async function mergeMaciSubtrees({
     signer,
     quiet,
   } as MergeSignupsArgs);
+
+  console.log("MACI subtrees merged and merged signups");
 }
 
 export const publishBatch = async ({
