@@ -43,6 +43,11 @@ module.exports = {
             type: "webassembly/async",
           },
           {
+            test: /\.cjs$/,
+            include: /node_modules/,
+            type: "javascript/auto",
+          },
+          {
             test: /\.tsx?$/,
             loader: "babel-loader",
             options: {

@@ -98,7 +98,10 @@
     "wagmi": "0.12.18",
     "web-vitals": "^2.1.0",
     "yup": "^0.32.11",
-    "zustand": "^4.4.0"
+    "zustand": "^4.4.0",
+    "maci-domainobjs": "1.2.5",
+    "maci-core": "1.2.5",
+    "maci-crypto": "1.2.5"
   },
   "jest": {
     "transformIgnorePatterns": [
@@ -126,8 +129,6 @@
     "@faker-js/faker": "^7.4.0",
     "@gitcoinco/passport-sdk-types": "^0.1.2",
     "@rsbuild/core": "^0.4.1",
-    "maci-domainobjs": "1.2.0",
-    "maci-core": "1.2.0",
     "crypto" : "1.0.0",
     "@rsbuild/plugin-react": "^0.3.11",
     "@rsbuild/plugin-svgr": "^0.3.11",

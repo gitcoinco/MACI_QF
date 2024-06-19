@@ -6,7 +6,7 @@ import {
 import { yupResolver } from "@hookform/resolvers/yup";
 import { classNames } from "common";
 import { Button, Input } from "common/src/styles";
-import _, { set } from "lodash";
+import _, { round, set } from "lodash";
 import moment from "moment";
 import { Fragment, useContext, useEffect, useState } from "react";
 import Datetime from "react-datetime";
@@ -42,7 +42,6 @@ export const RoundValidationSchema = yup.object().shape({
       .string()
       .required("This field is required.")
       .min(8, "Round name must be at least 8 characters."),
-    roundType: yup.string().required("You must select the round type."),
     support: yup.object({
       type: yup
         .string()
@@ -283,12 +282,10 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
                     disabled={coordinatorKeyPairCreated}
                     onClick={() => {
                       const keypair = new Keypair();
-                      const rawPrivKey = keypair.privKey.serialize();
-                      const KP = {
-                        coordinatorKey: rawPrivKey,
-                      };
+                      const KeyPairJson = keypair.toJSON();
+
                       // Convert the object to a JSON string
-                      const jsonString = JSON.stringify(KP, null, 2);
+                      const jsonString = JSON.stringify(KeyPairJson);
 
                       // Create a Blob from the JSON string
                       const blob = new Blob([jsonString], {
@@ -312,14 +309,14 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
 
                       // Clean up by removing the link
                       document.body.removeChild(link);
-                      const message = `Carefully store this private key. Without it the round cannot get finalized.\n\nNow it is in your Download folder please move it somewhere safe.\n\nPrivateKey: ${rawPrivKey}`;
+                  
 
-                      alert(message);
+                      const pubkey = keypair.pubKey.serialize();
 
-                      const  pubkey = keypair.pubKey.serialize();
+                      const pubk = PubKey.deserialize(pubkey);
+                      console.log(pubkey);
 
-                      const pubk = PubKey.deserialize(pubkey)
-                      console.log(pubkey)
+                      console.log("Is valid Serialized one ???   ",PubKey.isValidSerializedPubKey(pubkey));
 
                       // Saving the Coordinator Public Key in the form
                       setValue(
@@ -766,7 +763,7 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
               </>
             </div>
 
-            {/* Round Type */}
+            {/* Round Type
             <div className="p-6 bg-white">
               <div className="grid grid-rows-1 text-grey-400">
                 <p>
@@ -799,7 +796,7 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
                   {errors.roundMetadata?.roundType?.message}
                 </p>
               )}
-            </div>
+            </div> */}
 
             {/* Footer */}
             <div className="px-6 align-middle py-3.5 shadow-md">

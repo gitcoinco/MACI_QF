@@ -61,13 +61,8 @@ import Breadcrumb, { BreadcrumbItem } from "../common/Breadcrumb";
 const builderURL = process.env.REACT_APP_BUILDER_URL;
 import CartNotification from "../common/CartNotification";
 import { useCartStorage } from "../../store";
-import { useAccount, useToken, useWalletClient } from "wagmi";
-import {
-  encodeAbiParameters,
-  getAddress,
-  parseAbi,
-  parseAbiParameters,
-} from "viem";
+import { useAccount, useToken } from "wagmi";
+import { getAddress } from "viem";
 import { getAlloVersion } from "common/src/config";
 import { ExclamationCircleIcon } from "@heroicons/react/24/solid";
 import { DefaultLayout } from "../common/DefaultLayout";
@@ -81,15 +76,6 @@ import {
 } from "@heroicons/react/24/outline";
 import { Box, Tab, Tabs } from "@chakra-ui/react";
 import GenericModal from "../common/GenericModal";
-import { String, chain, get } from "lodash";
-import { WalletClient, getPublicClient, signMessage } from "@wagmi/core";
-import { ethers } from "ethers";
-
-// NEW CODE
-import { getContributorMessages } from "../api/voting";
-import { generatePubKey, generatePubKeyWithSeed } from "../../checkoutStore";
-import { poll } from "ethers/lib/utils.js";
-import { PubKey } from "maci-domainobjs";
 
 export default function ViewRound() {
   datadogLogs.logger.info("====> Route: /round/:chainId/:roundId");
@@ -226,7 +212,6 @@ function AfterRoundStart(props: {
   const [projects, setProjects] = useState<Project[]>();
   const [randomizedProjects, setRandomizedProjects] = useState<Project[]>();
   const { address: walletAddress } = useAccount();
-  const { data: walletClient } = useWalletClient();
   const isSybilDefenseEnabled =
     round.roundMetadata?.quadraticFundingConfig?.sybilDefense === true;
 
@@ -239,9 +224,6 @@ function AfterRoundStart(props: {
   const disableAddToCartButton =
     (alloVersion === "allo-v2" && roundId.startsWith("0x")) ||
     props.isAfterRoundEndDate;
-
-  // NEW CODE
-  const [alreadyContributed, setAlreadyContributed] = useState(false);
 
   useEffect(() => {
     if (showCartNotification) {
@@ -365,74 +347,6 @@ function AfterRoundStart(props: {
     setSelectedTab(tabIndex);
   };
 
-  async function getMaciAddress() {
-    const publicClient = getPublicClient({
-      chainId,
-    });
-
-    const abi = parseAbi([
-      "function getPool(uint256) view returns ((bytes32 profileId, address strategy, address token, (uint256,string) metadata, bytes32 managerRole, bytes32 adminRole))",
-      "function _maci() public view returns (address)",
-      "function _pollContracts() public view returns ((address,address,address,address))",
-      "function coordinatorPubKey() public view returns ((uint256,uint256))",
-    ]);
-
-    const alloContractAddress = "0x1133ea7af70876e64665ecd07c0a0476d09465a1";
-
-    const [Pool] = await Promise.all([
-      publicClient.readContract({
-        abi: abi,
-        address: alloContractAddress,
-        functionName: "getPool",
-        args: [BigInt(roundId)],
-      }),
-    ]);
-
-    const pool = Pool as {
-      profileId: string;
-      strategy: string;
-      token: string;
-      metadata: [bigint, string];
-      managerRole: string;
-      adminRole: string;
-    };
-    const [pollContracts, maci] = await Promise.all([
-      publicClient.readContract({
-        abi: abi,
-        address: pool.strategy as `0x${string}`,
-        functionName: "_pollContracts",
-      }),
-      publicClient.readContract({
-        abi: abi,
-        address: pool.strategy as `0x${string}`,
-        functionName: "_maci",
-      }),
-    ]);
-
-    const _coordinatorPubKey = await publicClient.readContract({
-      abi: abi,
-      address: pollContracts[0] as `0x${string}`,
-      functionName: "coordinatorPubKey",
-    });
-
-    const coordinatorPubKey = new PubKey([
-      BigInt(_coordinatorPubKey[0]),
-      BigInt(_coordinatorPubKey[1]),
-    ]);
-
-    console.log("pool", pool.strategy);
-
-    return {
-      maci: maci,
-      pollContracts: pollContracts,
-      strategy: pool.strategy,
-      coordinatorPubKey: coordinatorPubKey,
-      roundId: roundId,
-    };
-  }
-
-  const dataLayer = useDataLayer();
-
   const projectDetailsTabs = useMemo(() => {
     const projectsTab = {
       name: isDirectRound(round)
@@ -450,7 +364,6 @@ function AfterRoundStart(props: {
             chainId={chainId}
             setCurrentProjectAddedToCart={setCurrentProjectAddedToCart}
             setShowCartNotification={setShowCartNotification}
-            alreadyContributed={alreadyContributed}
           />
         </>
       ),
@@ -698,7 +611,6 @@ const ProjectList = (props: {
   isProjectsLoading: boolean;
   setCurrentProjectAddedToCart: React.Dispatch<React.SetStateAction<Project>>;
   setShowCartNotification: React.Dispatch<React.SetStateAction<boolean>>;
-  alreadyContributed?: boolean;
 }): JSX.Element => {
   const { projects, roundRoutePath, chainId, roundId } = props;
   const dataLayer = useDataLayer();
@@ -764,7 +676,6 @@ const ProjectList = (props: {
                       project.projectRegistryId
                     )?.uniqueDonorsCount ?? 0
                   }
-                  alreadyContributed={props.alreadyContributed}
                 />
               );
             })}
@@ -788,7 +699,6 @@ function ProjectCard(props: {
   setShowCartNotification: React.Dispatch<React.SetStateAction<boolean>>;
   crowdfundedUSD: number;
   uniqueContributorsCount: number;
-  alreadyContributed?: boolean;
 }) {
   const { project, roundRoutePath, round } = props;
   const projectRecipient =
@@ -824,7 +734,7 @@ function ProjectCard(props: {
         </CardHeader>
 
         <CardContent className="px-2 relative">
-          {project.projectMetadata.logoImg && (
+          {project.projectMetadata?.logoImg && (
             <ProjectLogo
               imageCid={project.projectMetadata.logoImg}
               size={48}
@@ -876,9 +786,6 @@ function ProjectCard(props: {
                     remove(cartProject);
                   }}
                   addToCart={() => {
-                    props.alreadyContributed
-                      ? () => {}
-                      : console.log("already ? : ", props.alreadyContributed);
                     add(cartProject);
                   }}
                   setCurrentProjectAddedToCart={

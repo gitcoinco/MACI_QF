@@ -57,7 +57,7 @@ async function main() {
     };
 
     deployments.write(DeployedContracts);
-    await verifyContract(vkRegistryContractAddress, []);
+    // await verifyContract(vkRegistryContractAddress, []);
   } else {
     console.log(
       "Reusing VkRegistry at :",
@@ -78,7 +78,7 @@ async function main() {
       verifierContractAddress: verifierContractAddress,
     };
     deployments.write(DeployedContracts);
-    await verifyContract(verifierContractAddress, []);
+    // await verifyContract(verifierContractAddress, []);
   } else {
     console.log(
       "Reusing Verifier at :",
@@ -129,10 +129,10 @@ async function main() {
     ];
     deployments.write(DeployedContracts);
     try {
-      await verifyContract(poseidonAddrs.poseidonT3, []);
-      await verifyContract(poseidonAddrs.poseidonT4, []);
-      await verifyContract(poseidonAddrs.poseidonT5, []);
-      await verifyContract(poseidonAddrs.poseidonT6, []);
+      // await verifyContract(poseidonAddrs.poseidonT3, []);
+      // await verifyContract(poseidonAddrs.poseidonT4, []);
+      // await verifyContract(poseidonAddrs.poseidonT5, []);
+      // await verifyContract(poseidonAddrs.poseidonT6, []);
     } catch (e) {
       console.log("Error verifying Poseidon contracts", e);
     }
@@ -252,7 +252,7 @@ async function main() {
     };
     deployments.write(DeployedContracts);
 
-    await verifyContract(pollAddress, []);
+    // await verifyContract(pollAddress, []);
   } else {
     console.log(
       "Reusing PollFactory:",
@@ -278,7 +278,7 @@ async function main() {
     };
     deployments.write(DeployedContracts);
 
-    await verifyContract(mpAddr, []);
+    // await verifyContract(mpAddr, []);
   } else {
     console.log(
       "Reusing MessageProcessorFactory:",
@@ -306,7 +306,7 @@ async function main() {
 
     deployments.write(DeployedContracts);
 
-    await verifyContract(tallyAddr, []);
+    // await verifyContract(tallyAddr, []);
   } else {
     console.log(
       "Reusing TallyFactory:",
@@ -334,7 +334,7 @@ async function main() {
     };
     deployments.write(DeployedContracts);
 
-    await verifyContract(ClonableMACIAddress, []);
+    // await verifyContract(ClonableMACIAddress, []);
   } else {
     console.log(
       "Reusing ClonableMACI:",
@@ -367,12 +367,12 @@ async function main() {
     };
     deployments.write(DeployedContracts);
 
-    await verifyContract(ClonableMACIFactoryAddress, [
-      DeployedContracts.ClonableMACI.ClonableMACIAddress,
-      DeployedContracts.PollFactory.pollAddress,
-      DeployedContracts.TallyFactory.tallyAddr,
-      DeployedContracts.MessageProcessorFactory.mpAddr,
-    ]);
+    // await verifyContract(ClonableMACIFactoryAddress, [
+    //   DeployedContracts.ClonableMACI.ClonableMACIAddress,
+    //   DeployedContracts.PollFactory.pollAddress,
+    //   DeployedContracts.TallyFactory.tallyAddr,
+    //   DeployedContracts.MessageProcessorFactory.mpAddr,
+    // ]);
 
     const setMaciParameters = await ClonableMACIFactory.setMaciSettings(
       0,
@@ -381,6 +381,13 @@ async function main() {
         deployParams.stateTreeDepth,
         DeployedContracts.Verifier.verifierContractAddress,
         DeployedContracts.VkRegistry.vkRegistryContractAddress,
+        [
+          4904028317433377177773123885584230878115556059208431880161186712332781831975n,
+          344732312350052944041104345325295111408747975338908491763817872057138864163n,
+          19445814455012978799483892811950396383084183210860279923207176682490489907069n,
+          10621810780690303482827422143389858049829670222244900617652404672125492013328n,
+          17077690379337026179438044602068085690662043464643511544329656140997390498741n,
+        ],
       ],
       {
         gasLimit: 1000000,
@@ -404,9 +411,11 @@ async function main() {
   if (!MACIDeployments?.MACIQFStrategy?.MACIQFStrategyAddress) {
     const MACIQFStrategyFactory = await ethers.getContractFactory("MACIQF");
 
+    const alloDeployments = new Deployments(chainId, "allo");
+
     let Allo;
     try {
-      Allo = deployments.getAllo();
+      Allo = alloDeployments.getAllo();
     } catch (e) {
       Allo = "";
     }
@@ -444,14 +453,15 @@ async function main() {
           RegistryAddress: registryAddress,
         };
       }
-    } else {
-      Allo = MACIDeployments.Allo.AlloAddress;
-    }
+    } 
 
     console.log("Deploying MACIQFStrategy...");
     console.log("Allo address:", Allo);
 
-    const MACIQFStrategy = await MACIQFStrategyFactory.deploy(Allo, "MACIQF");
+    const MACIQFStrategy = await MACIQFStrategyFactory.deploy(
+      Allo,
+      "MACIQF_TEST"
+    );
 
     const MACIQFStrategyAddress = await MACIQFStrategy.getAddress();
 
@@ -463,7 +473,7 @@ async function main() {
     };
     deployments.write(DeployedContracts);
 
-    await verifyContract(MACIQFStrategyAddress, [Allo, "MACIQF"]);
+    // await verifyContract(MACIQFStrategyAddress, [Allo, "MACIQF"]);
   } else {
     console.log(
       "Reusing MACIQFStrategy:",

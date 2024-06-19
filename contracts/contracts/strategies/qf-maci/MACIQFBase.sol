@@ -40,11 +40,12 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @notice The details of a recipient in the pool
     struct Recipient {
         bool useRegistryAnchor;
-        address recipientAddress;
-        Metadata metadata;
-        uint256 totalVotesReceived;
         bool tallyVerified;
         Status status;
+        address recipientAddress;
+        uint256 totalVotesReceived;
+        Metadata metadata;
+        bool acceptedOnce;
     }
 
     /// ======================
@@ -72,6 +73,12 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         address sender,
         IStrategy.Status status
     );
+    
+    /// @notice Emitted when a recipient is added
+    /// @param recipientId ID of the recipient
+    /// @param recipientIndex ID of the recipient"s MACI voting option
+    event RecipientVotingOptionAdded(address recipientId, uint256 recipientIndex);
+
 
     /// @notice Emitted when the pool timestamps are updated
     /// @param registrationStartTime The start time for the registration
@@ -165,11 +172,6 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @notice Mapping from vote index to recipient address
     mapping(uint256 => address) public recipientVoteIndexToAddress;
 
-    /// @notice Mapping from recipient address to vote index
-    // This is used to get the MACI vote index for a recipient in the front end
-    // Maybe we can use the event logs to get this information TODO 
-    mapping(address => uint256) public recipientToVoteIndex;
-
     /// @notice Mapping to track if the recipient has been paid out
     mapping(address => bool) public paidOut;
 
@@ -203,6 +205,12 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         _;
     }
 
+    // @notice Ensures the allocation period is active
+    modifier onlyActiveAllocation() {
+        _checkOnlyActiveAllocation();
+        _;
+    }
+
     /// @notice Ensures the allocation period has not ended
     modifier onlyBeforeAllocationEnds() {
         _checkOnlyBeforeAllocationEnds();
@@ -233,7 +241,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         if (address(pool.token) == NATIVE) {
             tokenDecimals = 10 ** 18;
         } else {
-            tokenDecimals = ERC20(pool.token).decimals();
+            tokenDecimals = 10 ** ERC20(pool.token).decimals();
         }
         // Calculate the voice credit factor
         voiceCreditFactor = (MAX_CONTRIBUTION_AMOUNT * tokenDecimals) / MAX_VOICE_CREDITS;
@@ -294,16 +302,22 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
             // If the recipient is not in review, skip the recipient
             // This is to prevent updating the status of a recipient that is not registered
             if (recipient.status == Status.None) {
+                unchecked {
+                    i++;
+                }
                 continue;
             }   
 
             // If the recipient is accepted, add them to the accepted recipients list
-            // If the recipient is already accepted, do not add them again
+            // If the recipient is already accepted or status changed after acceptance but accepted once
+            // update his status without adding a new VotingOptionIndex, reuse the previous one
             // This is to prevent adding the same recipient multiple times as a vote option
-            if (_statuses[i] == Status.Accepted && recipient.status != Status.Accepted) {
+            if (_statuses[i] == Status.Accepted && recipient.status != Status.Accepted && !recipient.acceptedOnce) {
                 recipientVoteIndexToAddress[acceptedRecipientsCounter] = recipientId;
 
-                recipientToVoteIndex[recipientId] = acceptedRecipientsCounter;
+                recipient.acceptedOnce = true;
+
+                emit RecipientVotingOptionAdded(recipientId, acceptedRecipientsCounter);
 
                 unchecked {
                     acceptedRecipientsCounter++;
@@ -374,8 +388,6 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     ) internal pure {
         if (
             _registrationStartTime > _registrationEndTime ||
-            _registrationStartTime > _allocationStartTime ||
-            _registrationEndTime > _allocationEndTime ||
             _allocationStartTime > _allocationEndTime ||
             // Added condition to ensure registrationEndTime cannot be greater than allocationStartTime
             // This is to prevent accepting a recipient after the allocation has started
@@ -455,6 +467,8 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
             // If the recipient is rejected, the recipient can appeal
             if (recipientStatus == Status.Rejected) {
                 recipient.status = Status.Appealed;
+            }else if (recipientStatus == Status.Accepted) {
+                recipient.status = Status.InReview;
             }
             emit UpdatedRegistration(recipientId, _data, _sender, recipient.status);
         }
@@ -493,13 +507,6 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         return _getRecipientStatus(recipientId) == Status.Accepted;
     }
 
-    /// @notice Checks if an allocator is valid
-    /// @param _allocator The allocator address
-    /// @return True if the allocator is valid, otherwise false
-    function _isValidAllocator(address _allocator) internal view override returns (bool) {
-        return contributorCredits[_allocator] > 0;
-    }
-
     /// @notice Returns the status of a recipient
     /// @param _recipientId The ID of the recipient
     /// @return The status of the recipient
@@ -511,6 +518,13 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     function _checkOnlyActiveRegistration() internal view {
         if (registrationStartTime > block.timestamp || block.timestamp > registrationEndTime) {
             revert REGISTRATION_NOT_ACTIVE();
+        }
+    }
+
+    // @notice Ensures the allocation period is active
+    function _checkOnlyActiveAllocation() internal view {
+        if (allocationStartTime > block.timestamp || block.timestamp > allocationEndTime) {
+            revert ALLOCATION_NOT_ACTIVE();
         }
     }
 
@@ -535,20 +549,6 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         address _recipientId,
         bytes memory data
     ) internal view override returns (PayoutSummary memory _payoutSummary) {}
-
-    /// @notice Returns the voice credits for a given address
-    /// @param _data Encoded address of a user
-    /// @return The amount of voice credits
-    function getVoiceCredits(
-        address /* _caller */,
-        bytes memory _data
-    ) external view returns (uint256) {
-        address _allocator = abi.decode(_data, (address));
-        if (!_isValidAllocator(_allocator)) {
-            return 0;
-        }
-        return contributorCredits[_allocator];
-    }
 
     /// @notice Ensures the pool amount can be increased
     function _beforeIncreasePoolAmount(uint256) internal view override {

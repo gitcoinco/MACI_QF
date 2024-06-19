@@ -169,70 +169,9 @@ export default function QuadraticFundingForm(props: QuadraticFundingFormProps) {
               </div>
             </div>
 
-            {/* Matching Cap */}
-            <div className="p-6 bg-white">
-              <p className="text-grey-400 mb-4 mt-4">Matching Cap</p>
-              <div className="grid grid-cols-6 gap-6">
-                <MatchingCap
-                  errors={errors}
-                  registerMatchingCapAmount={register(
-                    "roundMetadata.quadraticFundingConfig.matchingCapAmount",
-                    {
-                      valueAsNumber: true,
-                    }
-                  )}
-                  control={control}
-                  token={watch("token")}
-                  payoutTokenOptions={payoutTokenOptions}
-                />
-              </div>
-            </div>
-
-            {/* Minimum Donation Threshold */}
-            <div className="p-6 bg-white">
-              <p className="text-grey-400 mb-4 mt-4">
-                Minimum Donation Threshold
-              </p>
-              <div className="grid grid-cols-6 gap-6">
-                <MinDonationThreshold
-                  errors={errors}
-                  registerMinDonationThreshold={register(
-                    "roundMetadata.quadraticFundingConfig.minDonationThresholdAmount",
-                    {
-                      valueAsNumber: true,
-                    }
-                  )}
-                  control={control}
-                />
-              </div>
-            </div>
-
             {/* Sybil Defense */}
             <div className="p-6 bg-white">
-              <div className="grid grid-rows-1 grid-cols-2">
-                <div>
-                  <p className="text-grey-400">Sybil Defense</p>
-                </div>
-                <div>
-                  <p className="text-sm justify-end">
-                    <span className="text-right text-violet-400 float-right text-xs mt-3">
-                      *Required
-                    </span>
-                  </p>
-                </div>
-                <ReactTooltip
-                  id="matching-cap-tooltip"
-                  place="bottom"
-                  type="dark"
-                  effect="solid"
-                >
-                  <p className="text-xs">
-                    This will cap the percentage <br />
-                    of your overall matching pool <br />
-                    that a single grantee can receive.
-                  </p>
-                </ReactTooltip>
-              </div>
+            
               <p className="text-grey-400 mb-2 mt-1 text-sm">
                 Ensure that project supporters are not bots or sybil with
                 Gitcoin Passport. Learn more about Gitcoin Passport{" "}

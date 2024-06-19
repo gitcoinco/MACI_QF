@@ -43,8 +43,8 @@
     "viem": "^1.5.3",
     "wagmi": "0.12.19",
     "zod": "^3.22.4",
-    "maci-domainobjs": "1.2.0",
-    "maci-core": "1.2.0"
+    "maci-domainobjs": "1.2.5",
+    "maci-core": "1.2.5"
   },
   "devDependencies": {
     "@types/dompurify": "^2.4.0",

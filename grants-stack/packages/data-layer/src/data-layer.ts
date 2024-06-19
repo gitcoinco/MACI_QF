@@ -51,6 +51,9 @@ import {
   getDonationsByDonorAddress,
   getApplicationsForExplorer,
   getContributionsByAddressAndId,
+  getContributionsByAddress,
+  getVoiceCreditsByChainIdAndRoundId,
+  getVoiceCreditsByChainIdsAndRoundIds,
 } from "./queries";
 import { mergeCanonicalAndLinkedProjects } from "./utils";
 
@@ -869,4 +872,89 @@ export class DataLayer {
 
     return response.contributions ?? [];
   }
+
+  /**
+   * getContributionsByAddress() returns a list of MACI contributions (Encrypted messages) by address.
+   * @param contributorAddress
+   */
+  async getContributionsByAddress({
+    contributorAddress,
+  }: {
+    contributorAddress: string;
+  }): Promise<MACIContribution[]> {
+    const requestVariables = {
+      contributorAddress: contributorAddress,
+    };
+
+    const response: { contributions: MACIContribution[] } = await request(
+      this.gsIndexerEndpoint,
+      getContributionsByAddress,
+      requestVariables,
+    );
+
+    return response.contributions ?? [];
+  }
+
+  async getContributionsByChainIdAndRoundID({
+    contributorAddress,
+    chainId,
+    roundId,
+  }: {
+    contributorAddress: string;
+    chainId: number;
+    roundId: string;
+  }): Promise<string> {
+    const requestVariables = {
+      contributorAddress: contributorAddress,
+      chainId: chainId,
+      roundId: roundId,
+    };
+
+    const response: {
+      contributions: {
+        voiceCreditBalance: string;
+      }[];
+    } = await request(
+      this.gsIndexerEndpoint,
+      getVoiceCreditsByChainIdAndRoundId,
+      requestVariables,
+    );
+
+    return response.contributions[0].voiceCreditBalance;
+  }
+
+  async getVoiceCreditsByChainIdAndRoundId({
+    contributorAddress,
+  }: {
+    contributorAddress: string;
+  }): Promise<{ [chainId: number]: { [roundId: string]: string } }> {
+    const requestVariables = {
+      contributorAddress: contributorAddress,
+    };
+
+    const response: {
+      contributions: {
+        chainId: number;
+        roundId: string;
+        voiceCreditBalance: string;
+      }[];
+    } = await request(
+      this.gsIndexerEndpoint,
+      getVoiceCreditsByChainIdsAndRoundIds,
+      requestVariables,
+    );
+
+    const result: { [chainId: number]: { [roundId: string]: string } } = {};
+
+    response.contributions.forEach((contribution) => {
+      const { chainId, roundId, voiceCreditBalance } = contribution;
+      if (!result[chainId]) {
+        result[chainId] = {};
+      }
+      result[chainId][roundId] = voiceCreditBalance;
+    });
+
+    return result;
+  }
 }
+

@@ -102,11 +102,11 @@ export function AboutProject(props: {
         <span className="flex items-center mt-4 gap-1">
           <img src={TwitterLogo} className="h-4" alt="Twitter Logo" />
           <a
+            aria-label="ds"
             href={`https://twitter.com/${projectTwitter}`}
             target="_blank"
             rel="noreferrer"
             className="text-base font-normal text-black"
-            aria-label="Twitter"
           >
             <DetailSummary
               text={projectTwitter}
@@ -121,11 +121,11 @@ export function AboutProject(props: {
         <span className="flex items-center mt-4 gap-2">
           <img src={GithubLogo} className="h-4" alt="GitHub Logo" />
           <a
+            aria-label="git"
             href={`https://github.com/${userGithub}`}
             target="_blank"
             rel="noreferrer"
             className="text-base font-normal text-black"
-            aria-label="GitHub"
           >
             <DetailSummary
               text={`${userGithub}`}
@@ -140,11 +140,11 @@ export function AboutProject(props: {
         <span className="flex items-center mt-4 gap-1">
           <img src={GithubLogo} className="h-4" alt="GitHub Logo" />
           <a
+            aria-label="proj-git"
             href={`https://github.com/${projectGithub}`}
             target="_blank"
             rel="noreferrer"
             className="text-base font-normal text-black"
-            aria-label="GitHub"
           >
             <DetailSummary
               text={`${projectGithub}`}

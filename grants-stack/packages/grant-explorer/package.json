@@ -124,7 +124,10 @@
     "@pcd/zk-eddsa-event-ticket-pcd": "^0.2.1",
     "@pcd/zuauth": "^1.2.0",
     
-    "zustand": "^4.1.2"
+    "zustand": "^4.1.2",
+    "maci-domainobjs": "1.2.5",
+    "maci-core": "1.2.5",
+    "maci-crypto": "1.2.5"
   },
   "devDependencies": {
     "@babel/core": "^7.20.12",
@@ -159,10 +162,7 @@
     "vite": "^4.4.9",
     "vitest": "^0.34.2",
     "vitest-fetch-mock": "^0.2.2",
-    "@types/json-bigint": "^1.0.4",
-    "maci-domainobjs": "1.2.0",
-    "maci-core": "1.2.0",
-    "maci-crypto": "1.2.0"
+    "@types/json-bigint": "^1.0.4"
   },
   "engines": {
     "node": ">=18",

@@ -1,12 +1,23 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { CartProject } from "../../api/types";
 import DefaultLogoImage from "../../../assets/default_logo.png";
 import { Link } from "react-router-dom";
 import { EyeIcon } from "@heroicons/react/24/solid";
 import { TrashIcon } from "@heroicons/react/24/outline";
 import { renderToPlainText, VotingToken } from "common";
-import { Input } from "common/src/styles";
 import { useCartStorage } from "../../../store";
+import {
+  Box,
+  Flex,
+  Image,
+  Text,
+  Input,
+  InputGroup,
+  InputRightElement,
+  Alert,
+  AlertIcon,
+} from "@chakra-ui/react";
+import { groupProjectsInCart } from "../../api/utils";
 
 export function ProjectInCart(
   props: React.ComponentProps<"div"> & {
@@ -17,121 +28,164 @@ export function ProjectInCart(
     last?: boolean;
     selectedPayoutToken: VotingToken;
     payoutTokenPrice: number;
+    totalAmount: number;
     removeProjectFromCart: (project: CartProject) => void;
-    showMatchingEstimate: boolean;
-    matchingEstimateUSD: number | undefined;
   }
 ) {
-  const { project, roundRoutePath } = props;
-
-  const focusedElement = document?.activeElement?.id;
-  const inputID = "input-" + props.index;
+  const {
+    project,
+    index,
+    projects,
+    roundRoutePath,
+    totalAmount,
+    removeProjectFromCart,
+  } = props;
 
   const store = useCartStorage();
 
+  const groupedProjects = groupProjectsInCart(projects);
+  const roundProjects = groupedProjects[project.chainId][project.roundId];
+
+  const [percentage, setPercentage] = useState<string>(
+    ((Number(project.amount) / totalAmount) * 100).toFixed(10)
+  );
+  const [showAlert, setShowAlert] = useState(false);
+
+  const handlePercentageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPercentage = e.target.value;
+    if (parseFloat(newPercentage) > 100 || parseFloat(newPercentage) < 0) {
+      setShowAlert(true);
+      return;
+    }
+    updateProjectAmount(index, parseFloat(newPercentage));
+  };
+
+  const updateProjectAmount = (currentIndex: number, newPercentage: number) => {
+    const newAmount = (totalAmount * newPercentage) / 100;
+    const newAmounts = [...roundProjects];
+    newAmounts[currentIndex].amount = newAmount.toFixed(10);
+
+    store.updateDonationAmount(
+      newAmounts[currentIndex].chainId,
+      newAmounts[currentIndex].roundId,
+      newAmounts[currentIndex].grantApplicationId,
+      newAmounts[currentIndex].amount
+    );
+    setPercentage(newPercentage.toFixed(10));
+  };
+
   return (
-    <div data-testid="cart-project">
-      <div className="mb-4 flex flex-col lg:flex-row justify-between sm:px-2 px-2 py-4 rounded-md">
-        <div className="flex">
-          <div className="relative overflow-hidden bg-no-repeat bg-cover  min-w-[64px] w-16 max-h-[64px] mt-auto mb-auto">
-            <img
-              className="inline-block rounded-full"
+    <Box
+      data-testid="cart-project"
+      mb={4}
+      p={4}
+      borderWidth={1}
+      borderRadius="md"
+    >
+      {showAlert && (
+        <Alert status="error" mb={4}>
+          <AlertIcon />
+          Percentage cannot exceed 100%
+        </Alert>
+      )}
+      <Flex justify="space-between" align="center">
+        <Flex>
+          <Box
+            position="relative"
+            w="64px"
+            h="64px"
+            overflow="hidden"
+            borderRadius="full"
+          >
+            <Image
+              boxSize="64px"
               src={
-                props.project.projectMetadata.logoImg
-                  ? `https://${process.env.REACT_APP_PINATA_GATEWAY}/ipfs/${props.project.projectMetadata.logoImg}`
+                project.projectMetadata?.logoImg
+                  ? `https://${process.env.REACT_APP_PINATA_GATEWAY}/ipfs/${project.projectMetadata?.logoImg}`
                   : DefaultLogoImage
               }
               alt={"Project Logo"}
+              borderRadius="full"
             />
             <Link to={`${roundRoutePath}/${project.grantApplicationId}`}>
-              <div className="min-w-[64px] rounded-full w-16 max-h-[64px] absolute top-0 right-0 bottom-0 left-0 overflow-hidden bg-fixed opacity-0 hover:opacity-70 transition duration-300 ease-in-out bg-gray-500 justify-center flex items-center">
+              <Flex
+                position="absolute"
+                top={0}
+                right={0}
+                bottom={0}
+                left={0}
+                justifyContent="center"
+                alignItems="center"
+                bg="gray.500"
+                opacity={0}
+                _hover={{ opacity: 0.7 }}
+                transition="opacity 0.3s"
+                borderRadius="full"
+              >
                 <EyeIcon
-                  className="fill-gray-200 w-6 h-6 cursor-pointer rounded-full"
+                  className="fill-gray-200 w-6 h-6 cursor-pointer"
                   data-testid={`${project.projectRegistryId}-project-link`}
                 />
-              </div>
+              </Flex>
             </Link>
-          </div>
-
-          <div className="pl-6 mt-1 flex flex-col">
+          </Box>
+          <Box pl={6}>
             <Link
               to={`${roundRoutePath}/${project.grantApplicationId}`}
               data-testid={"cart-project-link"}
             >
-              <p className="font-semibold text-lg mb-2 text-ellipsis line-clamp-1 max-w-[400px] 2xl:max-w-none">
-                {props.project.projectMetadata.title}
-              </p>
+              <Text
+                fontWeight="semibold"
+                fontSize="lg"
+                mb={2}
+                isTruncated
+                maxW="400px"
+              >
+                {project.projectMetadata?.title}
+              </Text>
             </Link>
-            <p className="text-sm text-ellipsis line-clamp-3 max-w-[400px] 2xl:max-w-none">
+            <Text fontSize="sm" isTruncated maxW="400px">
               {renderToPlainText(
-                props.project.projectMetadata.description
+                project.projectMetadata?.description ?? ""
               ).substring(0, 130)}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex sm:space-x-4 space-x-2 h-16 sm:pl-4 pt-3 justify-center">
-          <div className="md:hidden sm:w-12"></div>
-          <Input
-            aria-label={
-              "Donation amount for project " +
-              props.project.projectMetadata.title
-            }
-            id={inputID}
-            key={inputID}
-            {...(focusedElement === inputID ? { autoFocus: true } : {})}
-            min="0"
-            value={
-              props.projects.find(
-                (project) =>
-                  project.projectRegistryId === props.project.projectRegistryId
-              )?.amount ?? "0"
-            }
-            type="number"
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              store.updateDonationAmount(
-                props.project.chainId,
-                props.project.roundId,
-                props.project.grantApplicationId,
-                e.target.value
-              );
-            }}
-            className="w-[100px] sm:w-[80px] text-center border border-black"
-          />
-          <p className="m-auto">{props.selectedPayoutToken.name}</p>
+            </Text>
+          </Box>
+        </Flex>
+        <Flex align="center">
+          <Box>
+            <InputGroup size="sm">
+              <Input
+                aria-label={`Donation percentage for project ${project.projectMetadata?.title}`}
+                value={Number(percentage).toFixed(0)}
+                onChange={handlePercentageChange}
+                min={0}
+                max={100}
+                type="number"
+                width="80px"
+                textAlign="center"
+              />
+              <InputRightElement width="2.5rem" children="%" />
+            </InputGroup>
+          </Box>
+          <Text ml={2}>{props.selectedPayoutToken?.name}</Text>
           {props.payoutTokenPrice && (
-            <div className="m-auto px-2 min-w-max flex flex-col">
-              <span className="text-sm text-grey-400 ">
+            <Box ml={2}>
+              <Text fontSize="sm" color="gray.400">
                 ${" "}
-                {(
-                  Number(
-                    props.projects.find(
-                      (project) =>
-                        project.projectRegistryId ===
-                        props.project.projectRegistryId
-                    )?.amount || 0
-                  ) * props.payoutTokenPrice
-                ).toFixed(2)}
-              </span>
-              { props.showMatchingEstimate && 
-                <span className="text-teal-500 italic text-sm">
-                  ~{props.matchingEstimateUSD?.toFixed(2) || 0} USD
-                </span>
-              }
-            </div>
+                {(parseFloat(project.amount) * props.payoutTokenPrice).toFixed(
+                  2
+                )}
+              </Text>
+            </Box>
           )}
           <TrashIcon
             data-testid="remove-from-cart"
-            onClick={() => {
-              props.removeProjectFromCart(props.project);
-            }}
-            className="w-5 h-5 m-auto cursor-pointer mb-4"
+            onClick={() => removeProjectFromCart(project)}
+            className="w-5 h-5 ml-2 cursor-pointer"
           />
-        </div>
-      </div>
-      {!props.last && 
-        <hr className="border-b-[2px] border-grey-100 mx-4" />
-      }
-    </div>
+        </Flex>
+      </Flex>
+      {!props.last && <Box as="hr" borderColor="gray.100" mt={4} />}
+    </Box>
   );
 }

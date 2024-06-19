@@ -12,6 +12,7 @@ import {IMACI} from "maci-contracts/contracts/interfaces/IMACI.sol";
 import {Params} from "maci-contracts/contracts/utilities/Params.sol";
 import {Utilities} from "maci-contracts/contracts/utilities/Utilities.sol";
 import {ClonableMACIFactory} from "./ClonableMACIFactory.sol";
+import { CurveBabyJubJub } from "maci-contracts/contracts/crypto/BabyJubJub.sol";
 
 /// @title MACI - Minimum Anti-Collusion Infrastructure Version 1
 /// @notice A contract which allows users to sign up, and deploy new polls
@@ -99,7 +100,7 @@ contract ClonableMACI is IMACI, Params, Utilities, Initializable, OwnableUpgrade
     error CallerMustBePoll(address _caller);
     error PoseidonHashLibrariesNotLinked();
     error TooManySignups();
-    error MaciPubKeyLargerThanSnarkFieldSize();
+    error InvalidPubKey();
     error PreviousPollNotCompleted(uint256 pollId);
     error PollDoesNotExist(uint256 pollId);
     error SignupTemporaryBlocked();
@@ -171,8 +172,8 @@ contract ClonableMACI is IMACI, Params, Utilities, Initializable, OwnableUpgrade
         // ensure we do not have more signups than what the circuits support
         if (numSignUps >= uint256(TREE_ARITY) ** uint256(stateTreeDepth)) revert TooManySignups();
 
-        if (_pubKey.x >= SNARK_SCALAR_FIELD || _pubKey.y >= SNARK_SCALAR_FIELD) {
-            revert MaciPubKeyLargerThanSnarkFieldSize();
+        if (!CurveBabyJubJub.isOnCurve(_pubKey.x, _pubKey.y)) {
+            revert InvalidPubKey();
         }
 
         // Increment the number of signups
@@ -184,11 +185,11 @@ contract ClonableMACI is IMACI, Params, Utilities, Initializable, OwnableUpgrade
 
         // Register the user via the sign-up gatekeeper. This function should
         // throw if the user has already registered or if ineligible to do so.
-        signUpGatekeeper.register(msg.sender, _signUpGatekeeperData);
+        signUpGatekeeper.register(address(this), _signUpGatekeeperData);
 
         // Get the user's voice credit balance.
         uint256 voiceCreditBalance = initialVoiceCreditProxy.getVoiceCredits(
-            msg.sender,
+            address(this),
             _initialVoiceCreditProxyData
         );
 
@@ -208,7 +209,8 @@ contract ClonableMACI is IMACI, Params, Utilities, Initializable, OwnableUpgrade
     function deployPoll(
         uint256 _duration,
         PubKey memory _coordinatorPubKey,
-        Mode _mode
+        Mode _mode,
+        uint8 _maciId
     ) public virtual onlyOwner returns (PollContracts memory pollAddr) {
         // cache the poll to a local variable so we can increment it
         uint256 pollId = nextPollId;
@@ -221,6 +223,11 @@ contract ClonableMACI is IMACI, Params, Utilities, Initializable, OwnableUpgrade
 
         if (pollId > 0) {
             if (!stateAq.treeMerged()) revert PreviousPollNotCompleted(pollId);
+        }
+
+        // check that the coordinator public key is valid
+        if (!CurveBabyJubJub.isOnCurve(_coordinatorPubKey.x, _coordinatorPubKey.y)) {
+            revert InvalidPubKey();
         }
 
         MaxValues memory maxValues = MaxValues({
@@ -236,7 +243,8 @@ contract ClonableMACI is IMACI, Params, Utilities, Initializable, OwnableUpgrade
             treeDepths,
             _coordinatorPubKey,
             address(this),
-            _owner
+            _owner,
+            _maciId
         );
 
         address mp = maciFactory.deployMessageProcessor(verifier, vkRegistry, p, _owner, _mode);

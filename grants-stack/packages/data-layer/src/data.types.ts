@@ -769,6 +769,9 @@ export type MACIContribution = {
   contributorAddress: string;
   stateIndex: string;
   maciId: string;
+  chainId: string;
+  voiceCreditBalance: string; 
+  roundId: string;
   id: string;
   messages: Message[];
 };

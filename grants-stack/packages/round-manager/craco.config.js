@@ -40,6 +40,11 @@ module.exports = {
             test: /\.wasm$/,
             type: "webassembly/async",
           },
+          {
+            test: /\.cjs$/,
+            include: /node_modules/,
+            type: "javascript/auto",
+          },
         ],
       },
       resolve: {
@@ -89,10 +94,10 @@ module.exports = {
         skipEsbuildJest: true,
         esbuildLoaderOptions: {
           loader: "tsx", // Set the value to 'tsx' if you use typescript
-          target: "es2021",
+          target: "es2022",
         },
         esbuildMinimizerOptions: {
-          target: "es2021",
+          target: "es2022",
         },
       },
     },

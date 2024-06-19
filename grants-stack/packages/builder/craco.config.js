@@ -44,6 +44,11 @@ module.exports = {
             test: /\.wasm$/,
             type: "webassembly/async",
           },
+          {
+            test: /\.cjs$/,
+            include: /node_modules/,
+            type: "javascript/auto",
+          },
         ],
       },
       resolve: {

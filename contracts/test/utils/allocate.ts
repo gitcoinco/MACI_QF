@@ -1,7 +1,5 @@
-import { Signer } from "ethers";
-import {
-  Allo
-} from "../../typechain-types";
+import { AbiCoder, BytesLike, Signer } from "ethers";
+import { Allo, ClonableMACI } from "../../typechain-types";
 
 import { Keypair } from "maci-domainobjs";
 import { prepareAllocationData } from "./maci";
@@ -32,16 +30,17 @@ export const allocate = async ({
     pubSignals: dt._pubSignals.map((x) => BigInt(x)),
   };
 
-  const contributeEncodedData1 = (await prepareAllocationData({
+  const contributeEncodedData = (await prepareAllocationData({
     publicKey: keypair.pubKey.serialize(),
     amount: contributionAmount,
     proof: emptyProof,
   })) as string;
+
   // signup2
 
   const SignUpTx = await AlloContract.connect(allocator).allocate(
     1n,
-    contributeEncodedData1,
+    contributeEncodedData,
     { value: contributionAmount.toString() }
   );
   await SignUpTx.wait();

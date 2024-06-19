@@ -8,12 +8,14 @@ type SummaryProps = {
   totalDonation: bigint;
   selectedPayoutToken: VotingToken;
   chainId: ChainId;
+  alreadyContributed: boolean;
 };
 
 export function Summary({
   selectedPayoutToken,
   totalDonation,
   chainId,
+  alreadyContributed,
 }: SummaryProps) {
   const { data: payoutTokenPrice } = useTokenPrice(
     selectedPayoutToken.redstoneTokenId
@@ -68,7 +70,7 @@ export function Summary({
           )}
         </div>
       </div>
-      {insufficientFunds && (
+      {insufficientFunds && !alreadyContributed && (
         <p
           data-testid="insufficientBalance"
           className="rounded-md bg-red-50 font-medium p-2 text-pink-500 flex justify-start items-center mt-2 mb-6 text-sm"

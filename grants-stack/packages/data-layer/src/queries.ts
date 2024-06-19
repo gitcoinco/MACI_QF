@@ -659,17 +659,59 @@ export const getContributionsByAddressAndId = gql`
         id: { equalTo: $contributionId }
       }
     ) {
-      contributorAddress
-      stateIndex
-      maciId
       id
+      contributorAddress
+      chainId
+      roundId
+      voiceCreditBalance
+    }
+  }
+`;
+
+export const getContributionsByAddress = gql`
+  query getContributionsByAddress($contributorAddress: String!) {
+    contributions(
+      filter: { contributorAddress: { equalTo: $contributorAddress } }
+    ) {
+      stateIndex
+      contributorAddress
+      chainId
+      roundId
+      maciId
       messages {
         message
-        messageId
-        pollId
-        createdByAddress
-        contributionId
       }
+      voiceCreditBalance
+    }
+  }
+`;
+
+export const getVoiceCreditsByChainIdAndRoundId = gql`
+  query getContributionsByAddress(
+    $contributorAddress: String!
+    $chainId: Int!
+    $roundId: String!
+  ) {
+    contributions(
+      filter: {
+        contributorAddress: { equalTo: $contributorAddress }
+        chainId: { equalTo: $chainId }
+        roundId: { equalTo: $roundId }
+      }
+    ) {
+      voiceCreditBalance
+    }
+  }
+`;
+
+export const getVoiceCreditsByChainIdsAndRoundIds = gql`
+  query getContributionsByAddress($contributorAddress: String!) {
+    contributions(
+      filter: { contributorAddress: { equalTo: $contributorAddress } }
+    ) {
+      chainId
+      roundId
+      voiceCreditBalance
     }
   }
 `;

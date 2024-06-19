@@ -10,15 +10,40 @@ import { RoundInCart } from "./RoundInCart";
 import { ChainId, useTokenPrice, VotingToken } from "common";
 import { Button, Input } from "common/src/styles";
 import { useCartStorage } from "../../../store";
+import {
+  GroupedCreditsByRoundId,
+  MACIContributionsByRoundId,
+  MACIDecryptedContributionsByRoundId,
+} from "../../api/types";
+import { group } from "console";
 
 type Props = {
   cart: GroupedCartProjectsByRoundId;
+  maciContributions: MACIContributionsByRoundId | null;
+  decryptedContributions: MACIDecryptedContributionsByRoundId | null;
   chainId: ChainId;
+  needsSignature: {
+    [roundId: string]: boolean;
+  } | null;
+  groupedCredits: GroupedCreditsByRoundId;
+  handleDecrypt: () => Promise<void>;
 };
 
-export function CartWithProjects({ cart, chainId }: Props) {
+export function CartWithProjects({
+  cart,
+  chainId,
+  maciContributions,
+  decryptedContributions,
+  needsSignature,
+  groupedCredits,
+  handleDecrypt,
+}: Props) {
   const chain = CHAINS[chainId];
   const cartByRound = Object.values(cart);
+
+  const roundIds = Object.keys(cart);
+
+  console.log("cartByRound", cartByRound);
 
   const store = useCartStorage();
 
@@ -102,14 +127,32 @@ export function CartWithProjects({ cart, chainId }: Props) {
           </div>
         </div>
       </div>
+
       {cartByRound.map((roundcart, key) => (
         <div key={key}>
           <RoundInCart
             key={key}
             roundCart={roundcart}
+            maciContributions={
+              maciContributions && maciContributions[roundIds[key]]
+                ? maciContributions[roundIds[key]]
+                : null
+            }
+            decryptedContributions={
+              decryptedContributions && decryptedContributions[roundIds[key]]
+                ? decryptedContributions[roundIds[key]]
+                : null
+            }
+            voiceCredits={groupedCredits[roundIds[key]]}
             handleRemoveProjectFromCart={store.remove}
             selectedPayoutToken={selectedPayoutToken}
             payoutTokenPrice={payoutTokenPrice ?? 0}
+            chainId={chainId}
+            roundId={roundIds[key]}
+            needsSignature={
+              needsSignature ? needsSignature[roundIds[key]] : null
+            }
+            handleDecrypt={handleDecrypt}
           />
         </div>
       ))}
