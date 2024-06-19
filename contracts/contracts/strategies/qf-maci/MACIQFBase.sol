@@ -40,11 +40,12 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @notice The details of a recipient in the pool
     struct Recipient {
         bool useRegistryAnchor;
-        address recipientAddress;
-        Metadata metadata;
-        uint256 totalVotesReceived;
         bool tallyVerified;
         Status status;
+        address recipientAddress;
+        uint256 totalVotesReceived;
+        Metadata metadata;
+        bool acceptedOnce;
     }
 
     /// ======================
@@ -204,6 +205,12 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         _;
     }
 
+    // @notice Ensures the allocation period is active
+    modifier onlyActiveAllocation() {
+        _checkOnlyActiveAllocation();
+        _;
+    }
+
     /// @notice Ensures the allocation period has not ended
     modifier onlyBeforeAllocationEnds() {
         _checkOnlyBeforeAllocationEnds();
@@ -302,10 +309,13 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
             }   
 
             // If the recipient is accepted, add them to the accepted recipients list
-            // If the recipient is already accepted, do not add them again
+            // If the recipient is already accepted or status changed after acceptance but accepted once
+            // update his status without adding a new VotingOptionIndex, reuse the previous one
             // This is to prevent adding the same recipient multiple times as a vote option
-            if (_statuses[i] == Status.Accepted && recipient.status != Status.Accepted) {
+            if (_statuses[i] == Status.Accepted && recipient.status != Status.Accepted && !recipient.acceptedOnce) {
                 recipientVoteIndexToAddress[acceptedRecipientsCounter] = recipientId;
+
+                recipient.acceptedOnce = true;
 
                 emit RecipientVotingOptionAdded(recipientId, acceptedRecipientsCounter);
 
@@ -457,6 +467,8 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
             // If the recipient is rejected, the recipient can appeal
             if (recipientStatus == Status.Rejected) {
                 recipient.status = Status.Appealed;
+            }else if (recipientStatus == Status.Accepted) {
+                recipient.status = Status.InReview;
             }
             emit UpdatedRegistration(recipientId, _data, _sender, recipient.status);
         }
@@ -506,6 +518,13 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     function _checkOnlyActiveRegistration() internal view {
         if (registrationStartTime > block.timestamp || block.timestamp > registrationEndTime) {
             revert REGISTRATION_NOT_ACTIVE();
+        }
+    }
+
+    // @notice Ensures the allocation period is active
+    function _checkOnlyActiveAllocation() internal view {
+        if (allocationStartTime > block.timestamp || block.timestamp > allocationEndTime) {
+            revert ALLOCATION_NOT_ACTIVE();
         }
     }
 

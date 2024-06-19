@@ -257,8 +257,6 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
 
   await setMaciParameters.wait();
 
-  console.log("ClonableMACIFactory settings:", await ClonableMACIFactory.maciSettings(0));
-
   const QVMODE = 0n
 
   await vkRegistryContract.setVerifyingKeys(

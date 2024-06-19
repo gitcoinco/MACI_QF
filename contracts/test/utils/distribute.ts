@@ -73,7 +73,7 @@ export const distribute = async ({
   const bytesArrayEncoded = AbiCoder.encode(bytesArrayTypes, [bytesArray]);
 
   const distributeFunds = await AlloContract.connect(distributor).distribute(
-    286,
+    pollId,
     [],
     bytesArrayEncoded
   );

@@ -220,7 +220,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
     /// @notice Allocate votes to a recipient
     /// @param _data The data containing allocation details
     /// @param _sender The sender of the transaction
-    function _allocate(bytes memory _data, address _sender) internal override {
+    function _allocate(bytes memory _data, address _sender) internal override onlyActiveAllocation {
         (
             PubKey memory pubKey,
             uint256 amount,
@@ -426,12 +426,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
             revert IncorrectTallyResult();
         }
 
-        totalRecipientVotes += _tallyResult;
-        totalVotesSquares = totalVotesSquares + (_tallyResult * _tallyResult);
-
         _tallyRecipientVotes(_voteOptionIndex, _tallyResult);
-
-        emit TallyResultsAdded(_voteOptionIndex, _tallyResult);
     }
 
     /// @notice Tally votes for a recipient
@@ -448,10 +443,15 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
             return;
         }
 
+        if (!_isAcceptedRecipient(recipientId)) return;
+
+        if (_voiceCreditsToAllocate == 0) return;
+
         recipient.tallyVerified = true;
 
-        if (!_isAcceptedRecipient(recipientId)) return;
-        if (_voiceCreditsToAllocate == 0) return;
+        totalRecipientVotes += _voiceCreditsToAllocate;
+
+        totalVotesSquares = totalVotesSquares + (_voiceCreditsToAllocate * _voiceCreditsToAllocate);
 
         recipient.totalVotesReceived = _voiceCreditsToAllocate;
 
