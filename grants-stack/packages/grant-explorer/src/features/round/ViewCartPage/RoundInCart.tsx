@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { CartProject, MACIContributions } from "../../api/types";
 import { useRoundById } from "../../../context/RoundContext";
 import { ProjectInCart } from "./ProjectInCart";
-import { formatUnits } from "viem";
+import { formatUnits, parseUnits } from "viem";
 import { useAccount } from "wagmi";
 
 import {
@@ -17,10 +17,8 @@ import {
   ModalFooter,
 } from "@chakra-ui/react";
 import { VotingToken } from "common";
-import { getMACIKeys } from "../../api/keys";
 import { PCommand } from "maci-domainobjs";
 import { SummaryContainer } from "./SummaryContainer";
-import { WalletClient, getWalletClient } from "@wagmi/core";
 import { Switch } from "@headlessui/react";
 import { zuAuthPopup } from "@pcd/zuauth";
 import { ZUAUTH_CONFIG, fieldsToReveal } from "../../api/pcd";
@@ -34,7 +32,10 @@ export function RoundInCart(
     maciContributions: MACIContributions | null;
     decryptedContributions: PCommand[] | null;
     selectedPayoutToken: VotingToken;
-    handleRemoveProjectFromCart: (project: CartProject) => void;
+    handleRemoveProjectFromCart: (
+      project: CartProject,
+      walletAddress: string
+    ) => void;
     voiceCredits: string | null;
     payoutTokenPrice: number;
     chainId: number;
@@ -43,7 +44,10 @@ export function RoundInCart(
     handleDecrypt: () => Promise<void>;
   }
 ) {
-  const round = useRoundById(props.chainId, props.roundId).round;
+  const chainId = props.chainId;
+  const roundId = props.roundId;
+
+  const round = useRoundById(chainId, roundId).round;
 
   const { address } = useAccount();
 
@@ -51,9 +55,29 @@ export function RoundInCart(
 
   const alreadyContributed = voiceCreditBalance ? true : false;
 
-  const donatedCredits = BigInt(voiceCreditBalance ?? 0n);
+  const votingToken = props.selectedPayoutToken;
 
-  const donatedAmount = donatedCredits * 10n ** 13n;
+  const filteredProjects = props.roundCart.filter(
+    (project) => project.chainId === chainId && project.roundId === roundId
+  );
+
+  const donatedAmount = voiceCreditBalance
+    ? BigInt(voiceCreditBalance) * 10n ** 13n
+    : filteredProjects.length > 0
+      ? filteredProjects.reduce(
+          (acc, project) =>
+            acc +
+            parseUnits(
+              project.amount === ""
+                ? "0"
+                : isNaN(Number(project.amount))
+                  ? "0"
+                  : project.amount,
+              votingToken.decimal
+            ),
+          0n
+        )
+      : 0n;
 
   const currentTime = new Date();
 
@@ -63,7 +87,7 @@ export function RoundInCart(
   const maxContributionNonAllowlisted = "0.1";
 
   const [donationInput, setDonationInput] = useState(
-    alreadyContributed ? formatUnits(donatedAmount, 18) : "0.0"
+    formatUnits(donatedAmount, 18)
   );
 
   const donationValue = isNaN(parseFloat(donationInput))
@@ -73,9 +97,9 @@ export function RoundInCart(
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     let value = event.target.value;
     value =
-      pcdFetched === true && Number(value) > Number(maxContributionAllowlisted)
+      pcdFetched === true && Number(value) >= Number(maxContributionAllowlisted)
         ? maxContributionAllowlisted
-        : Number(value) > Number(maxContributionNonAllowlisted)
+        : Number(value) >= Number(maxContributionNonAllowlisted)
           ? maxContributionNonAllowlisted
           : value;
     value = value === "" ? "0.0" : value;
@@ -106,6 +130,12 @@ export function RoundInCart(
       setPcdFetched(true);
     }
   }, [address]);
+
+  useEffect(() => {}, [
+    props.roundCart,
+    alreadyContributed,
+    props.decryptedContributions,
+  ]);
 
   if (!isActiveRound) {
     return null;
@@ -150,8 +180,7 @@ export function RoundInCart(
                     ) : (
                       <p className="text-sm pt-2 italic mb-5 mr-2">
                         You successfuly proved your Zuzalu commitment you can
-                        now contribute up to {maxContributionAllowlisted}{" "}
-                        ETH.
+                        now contribute up to {maxContributionAllowlisted} ETH.
                       </p>
                     )}
                   </div>
@@ -165,7 +194,7 @@ export function RoundInCart(
                 </p>
               )}
             </div>
-            {!alreadyContributed && (
+            {!alreadyContributed && !props.decryptedContributions && (
               <div className="flex items-center pt-2  mb-5 mr-2">
                 <label
                   htmlFor="totalDonationETH"
@@ -201,6 +230,7 @@ export function RoundInCart(
                     last={key === props.roundCart.length - 1}
                     payoutTokenPrice={props.payoutTokenPrice}
                     alreadyContributed={alreadyContributed}
+                    walletAddress={address as `0x${string}`}
                   />
                 </div>
               );
@@ -235,6 +265,7 @@ export function RoundInCart(
           maciMessages={props.maciContributions ?? null}
           roundId={props.roundId}
           chainId={props.chainId}
+          walletAddress={address as `0x${string}`}
           pcd={pcdFetched ? pcd : undefined}
         />
       </div>

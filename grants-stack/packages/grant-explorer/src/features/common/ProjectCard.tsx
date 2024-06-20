@@ -71,7 +71,6 @@ export function ProjectCard(props: {
   return (
     <BasicCard className="w-full hover:opacity-90 transition hover:shadow-none">
       <a
-        target="_blank"
         href={applicationPath({
           chainId: application.chainId,
           roundId,

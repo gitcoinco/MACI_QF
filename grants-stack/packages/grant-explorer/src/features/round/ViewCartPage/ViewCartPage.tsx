@@ -31,10 +31,12 @@ export default function ViewCart() {
   const [initialLoading, setInitialLoading] = useState(true); // Added initial loading state
   const [groupedCredits, setGroupedCredits] = useState<GroupedCredits>({}); // Added groupedCredits state
 
-  console.log("groupedCredits", groupedCredits);
-
-  const { projects, setCart } = useCartStorage();
+  const { userProjects, setUserCart } = useCartStorage();
   const { address: walletAddress } = useAccount();
+
+  const projects = walletAddress ? userProjects[walletAddress] ?? [] : [];
+
+  console.log("projects", projects);
 
   const dataLayer = useDataLayer();
 
@@ -87,8 +89,9 @@ export default function ViewCart() {
   const getCartProjects = useCallback(async () => {
     await setContributed(
       projects,
+      walletAddress as string,
       dataLayer,
-      setCart,
+      setUserCart,
       applications,
       maciContributions?.groupedMaciContributions,
       DecryptedContributions?.decryptedMessagesByRound
@@ -129,13 +132,6 @@ export default function ViewCart() {
       getCartProjects();
     }
   }, [DecryptedContributions, signaturesReady, getCartProjects]);
-
-  // Clear cart when wallet address changes
-  useEffect(() => {
-    setSignaturesRequested(false);
-    setCart([]);
-    setInitialLoading(true); // Set initial loading to true when wallet address changes
-  }, [walletAddress]);
 
   const breadCrumbs: BreadcrumbItem[] = [
     {

@@ -19,6 +19,7 @@ import { CollectionDetails } from "../collections/CollectionDetails";
 import { FilterDropdown, FilterDropdownOption } from "../common/FilterDropdown";
 import { getEnabledChains } from "../../app/chainConfig";
 import { useIpfsCollection } from "../collections/hooks/useCollections";
+import { useAccount } from "wagmi";
 
 const FILTER_OPTIONS: FilterDropdownOption<Filter>[] = [
   {
@@ -126,7 +127,10 @@ export function ExploreProjectsPage(): JSX.Element {
     (item) => item.searchType === "semantic"
   );
 
-  const { projects, add, remove } = useCartStorage();
+  const { userProjects, addUserProject, removeUserProject } = useCartStorage();
+  const { address: walletAddress } = useAccount();
+
+  const projects = userProjects[walletAddress as string];
 
   const applicationIdsInCart = useMemo(() => {
     return new Set(
@@ -138,12 +142,12 @@ export function ExploreProjectsPage(): JSX.Element {
 
   function addApplicationToCart(application: ApplicationSummary) {
     const cartProject = createCartProjectFromApplication(application);
-    add(cartProject);
+    addUserProject(cartProject, walletAddress as string);
   }
 
   function removeApplicationFromCart(application: ApplicationSummary) {
     const cartProject = createCartProjectFromApplication(application);
-    remove(cartProject);
+    removeUserProject(cartProject, walletAddress as string);
   }
 
   function applicationExistsInCart(application: ApplicationSummary) {

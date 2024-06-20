@@ -78,11 +78,12 @@ export default function ThankYou() {
 
   /** Cleanup */
   useEffect(() => {
-    cart.projects
-      .filter((proj) => checkedOutChains.includes(proj.chainId))
-      .forEach((proj) => {
-        cart.remove(proj);
-      });
+    address &&
+      cart.userProjects[address]
+        .filter((proj) => checkedOutChains.includes(proj.chainId))
+        .forEach((proj) => {
+          cart.removeUserProject(proj, address);
+        });
 
     checkoutStore.setChainsToCheckout([]);
 

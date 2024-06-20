@@ -93,7 +93,7 @@ export function CartWithProjects({
                 : null
             }
             voiceCredits={groupedCredits[roundIds[key]]}
-            handleRemoveProjectFromCart={store.remove}
+            handleRemoveProjectFromCart={store.removeUserProject}
             selectedPayoutToken={selectedPayoutToken}
             payoutTokenPrice={payoutTokenPrice ?? 0}
             chainId={chainId}

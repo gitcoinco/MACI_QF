@@ -29,7 +29,11 @@ export function ProjectInCart(
     selectedPayoutToken: VotingToken;
     payoutTokenPrice: number;
     totalAmount: number;
-    removeProjectFromCart: (project: CartProject) => void;
+    removeProjectFromCart: (
+      project: CartProject,
+      walletAddress: string
+    ) => void;
+    walletAddress: string;
     alreadyContributed: boolean;
   }
 ) {
@@ -66,11 +70,12 @@ export function ProjectInCart(
     const newAmounts = [...roundProjects];
     newAmounts[currentIndex].amount = newAmount.toFixed(10);
 
-    store.updateDonationAmount(
+    store.updateUserDonationAmount(
       newAmounts[currentIndex].chainId,
       newAmounts[currentIndex].roundId,
       newAmounts[currentIndex].grantApplicationId,
-      newAmounts[currentIndex].amount
+      newAmounts[currentIndex].amount,
+      props.walletAddress
     );
     setPercentage(newPercentage.toFixed(10));
   };
@@ -182,7 +187,9 @@ export function ProjectInCart(
           {!props.alreadyContributed && (
             <TrashIcon
               data-testid="remove-from-cart"
-              onClick={() => removeProjectFromCart(project)}
+              onClick={() =>
+                removeProjectFromCart(project, props.walletAddress)
+              }
               className="w-5 h-5 ml-2 cursor-pointer"
             />
           )}

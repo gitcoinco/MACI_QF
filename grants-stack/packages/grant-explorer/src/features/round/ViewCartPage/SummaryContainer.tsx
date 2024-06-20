@@ -36,19 +36,22 @@ export function SummaryContainer(props: {
   chainId: number;
   roundId: string;
   pcd: string | undefined;
+  walletAddress: string;
 }) {
   const { data: walletClient } = useWalletClient();
   const { address, isConnected } = useAccount();
   const {
-    projects,
+    userProjects,
     getVotingTokenForChain,
-    remove: removeProjectFromCart,
+    removeUserProject: removeProjectFromCart,
   } = useCartStorage();
   const { checkoutMaci, changeDonations } = useCheckoutStore();
   const dataLayer = useDataLayer();
   const { openConnectModal } = useConnectModal();
   const allo = useAllo();
   const navigate = useNavigate();
+
+  const projects = userProjects[props.walletAddress];
 
   const maciChainId = props.chainId;
   const maciRoundId = props.roundId;
@@ -63,7 +66,15 @@ export function SummaryContainer(props: {
 
   const totalDonations = filteredProjects.reduce(
     (acc, project) =>
-      acc + parseUnits(project.amount || "0", votingToken.decimal),
+      acc +
+      parseUnits(
+        project.amount === ""
+          ? "0"
+          : isNaN(Number(project.amount))
+            ? "0"
+            : project.amount,
+        votingToken.decimal
+      ),
     0n
   );
 
@@ -96,10 +107,10 @@ export function SummaryContainer(props: {
     if (!round) return;
     if (round.roundEndTime.getTime() < Date.now()) {
       filteredProjects.forEach((project) => {
-        removeProjectFromCart(project);
+        removeProjectFromCart(project, props.walletAddress);
       });
     }
-  }, [filteredProjects, removeProjectFromCart, round]);
+  }, [filteredProjects, removeProjectFromCart, round, props.walletAddress]);
 
   const handleConfirmation = async () => {
     if (
