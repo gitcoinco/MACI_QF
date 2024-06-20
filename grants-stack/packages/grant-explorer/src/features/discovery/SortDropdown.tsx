@@ -51,10 +51,12 @@ export const SORT_OPTIONS: RoundSortUiOption[] = [
   {
     label: "Matching funds: high to low",
     orderBy: "MATCH_AMOUNT_IN_USD_DESC",
+    type: "allov2.MACIQF",
   },
   {
     label: "Matching funds: low to high",
     orderBy: "MATCH_AMOUNT_IN_USD_ASC",
+    type: "allov2.MACIQF",
   },
 ];
 

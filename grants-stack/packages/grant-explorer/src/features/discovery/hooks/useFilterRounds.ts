@@ -13,17 +13,7 @@ import { useMemo } from "react";
 import { AlloVersion } from "data-layer/dist/data-layer.types";
 import { getAlloVersion } from "common/src/config";
 
-export type StrategyName =
-  | ""
-  | "allov1.QF"
-  | "allov1.Direct"
-  | "MERKLE"
-  | "allov2.DonationVotingMerkleDistributionDirectTransferStrategy"
-  | "allov2.MicroGrantsStrategy"
-  | "allov2.MicroGrantsGovStrategy"
-  | "allov2.SQFSuperFluidStrategy"
-  | "allov2.DirectGrantsSimpleStrategy"
-  | "allov2.MACIQF";
+export type StrategyName = "" | "allov2.MACIQF";
 
 export type RoundFilterParams = {
   type: string;
@@ -40,6 +30,7 @@ export type RoundSelectionParams = RoundSortParams & RoundFilterParams;
 export type RoundSortUiOption = {
   label: string;
   orderBy: OrderByRounds;
+  type?: StrategyName;
 };
 
 export type RoundFilterUiOption = {
@@ -59,7 +50,7 @@ export enum RoundStatus {
 export const ACTIVE_ROUNDS_FILTER: RoundSelectionParams = {
   orderBy: "MATCH_AMOUNT_IN_USD_DESC",
   status: RoundStatus.active,
-  type: "allov2.DonationVotingMerkleDistributionDirectTransferStrategy,allov1.QF",
+  type: "allov2.MACIQF",
   network: "",
 };
 
@@ -68,7 +59,7 @@ export const ROUNDS_ENDING_SOON_FILTER: RoundSelectionParams & {
 } = {
   first: 3,
   orderBy: "DONATIONS_END_TIME_ASC",
-  type: "",
+  type: "allov2.MACIQF",
   network: "",
   status: RoundStatus.ending_soon,
 };
