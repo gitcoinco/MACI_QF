@@ -7,62 +7,18 @@ import {
   walletConnectWallet,
   metaMaskWallet,
 } from "@rainbow-me/rainbowkit/wallets";
-import { createClient, configureChains } from "wagmi";
-import {
-  fantom,
-  fantomTestnet,
-  mainnet,
-  optimism,
-  Chain,
-  arbitrum,
-  arbitrumGoerli,
-  avalancheFuji,
-  avalanche,
-  polygon,
-  polygonMumbai,
-} from "wagmi/chains";
-
-import {
-  pgn,
-  pgnTestnet,
-  base,
-  scroll,
-  zkSyncEraMainnet,
-  zkSyncEraTestnet,
-  sepolia,
-  seiDevnet,
-} from "common/src/chains";
+import { createClient, configureChains, Chain } from "wagmi";
+import { scroll, sepolia } from "common/src/chains";
 import { publicProvider } from "wagmi/providers/public";
 import { infuraProvider } from "wagmi/providers/infura";
 import { alchemyProvider } from "wagmi/providers/alchemy";
 
 const testnetChains = () => {
-  return [
-    { ...fantomTestnet, iconUrl: "/logos/fantom-logo.svg" },
-    zkSyncEraTestnet,
-    pgnTestnet,
-    arbitrumGoerli,
-    polygonMumbai,
-    avalancheFuji,
-    sepolia,
-    seiDevnet,
-  ];
+  return [scroll, sepolia];
 };
 
 const mainnetChains = () => {
-  return [
-    mainnet,
-    optimism,
-    pgn,
-    arbitrum,
-    avalanche,
-    polygon,
-    zkSyncEraMainnet,
-    base,
-    scroll,
-    { ...fantom, iconUrl: "/logos/fantom-logo.svg" },
-    seiDevnet,
-  ];
+  return [scroll, sepolia];
 };
 
 const allChains: Chain[] =
