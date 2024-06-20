@@ -7,9 +7,13 @@ import { zeroAddress } from "viem";
 
 interface CartState {
   projects: CartProject[];
-  add: (project: CartProject) => void;
+  userProjects: Record<string, CartProject[]>;
+  add: (project: CartProject) => void; // add project to cart
+  addUserProject: (project: CartProject, walletAddress: string) => void; // add project to userCart
   clear: () => void;
+  clearUserProjects: (walletAddress: string) => void;
   remove: (project: CartProject) => void;
+  removeUserProject: (project: CartProject, walletAddress: string) => void;
   updateDonationsForChain: (chainId: ChainId, amount: string) => void;
   updateDonationAmount: (
     chainId: ChainId,
@@ -18,6 +22,7 @@ interface CartState {
     amount: string
   ) => void;
   setCart: (projects: CartProject[]) => void;
+  setUserCart: (projects: CartProject[], walletAddress: string) => void;
   chainToVotingToken: Record<ChainId, VotingToken>;
   getVotingTokenForChain: (chainId: ChainId) => VotingToken;
   setVotingTokenForChain: (chainId: ChainId, votingToken: VotingToken) => void;
@@ -92,6 +97,9 @@ export const useCartStorage = create<CartState>()(
   persist(
     (set, get) => ({
       projects: [],
+      userProjects: {
+        // walletAddress: [projects]
+      },
 
       setCart: (projects: CartProject[]) => {
         set({
@@ -123,6 +131,53 @@ export const useCartStorage = create<CartState>()(
           projects: [],
         });
       },
+
+      addUserProject: (newProject: CartProject, walletAddress: string) => {
+        const currentUsersProjects = get().userProjects[walletAddress] ?? [];
+        set({
+          userProjects: {
+            ...get().userProjects,
+            [walletAddress]: updateOrInsertCartProject(
+              currentUsersProjects,
+              newProject
+            ),
+          },
+        });
+      },
+
+      setUserCart: (projects: CartProject[], walletAddress: string) => {
+        set({
+          userProjects: {
+            ...get().userProjects,
+            [walletAddress]: projects,
+          },
+        });
+      },
+
+      removeUserProject: (projectToRemove, walletAddress) => {
+        set({
+          userProjects: {
+            ...get().userProjects,
+            [walletAddress]: get().userProjects[walletAddress].filter(
+              (proj) =>
+                proj.grantApplicationId !==
+                  projectToRemove.grantApplicationId ||
+                proj.chainId !== projectToRemove.chainId ||
+                proj.roundId !== projectToRemove.roundId
+            ),
+          },
+        });
+      },
+
+      clearUserProjects: (walletAddress) => {
+        set({
+          userProjects: {
+            ...get().userProjects,
+            [walletAddress]: [],
+          },
+        });
+      },
+
       updateDonationsForChain: (chainId: ChainId, amount: string) => {
         const newState = get().projects.map((project) => ({
           ...project,
