@@ -34,7 +34,7 @@ export function MRCProgressModalBody({
     maciKeyStatus,
     contributionStatus,
     isDonationOrChangeDonationInProgress,
-    changeDonationsStatus
+    changeDonationsStatus,
   } = useCheckoutStore();
 
   const progressSteps = useMemo(() => {
@@ -54,7 +54,7 @@ export function MRCProgressModalBody({
       },
       {
         name: "Contribute",
-        description: "Contribute to the pool",
+        description: "Contribute to the funding pool",
         status:
           chainSwitchStatus[chainId] !== ProgressStatus.IS_SUCCESS
             ? ProgressStatus.NOT_STARTED
@@ -62,9 +62,9 @@ export function MRCProgressModalBody({
       },
       {
         name: "Submit",
-        description: "Finalize your private funding",
+        description: "Finalize donation",
         status:
-          permitStatus[chainId] !== ProgressStatus.IS_SUCCESS
+          chainSwitchStatus[chainId] !== ProgressStatus.IS_SUCCESS
             ? ProgressStatus.NOT_STARTED
             : voteStatus[chainId],
       },

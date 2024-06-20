@@ -132,12 +132,9 @@ export default function ViewCart() {
 
   // Clear cart when wallet address changes
   useEffect(() => {
-    
-      setSignaturesRequested(false);
-      setCart([]);
-      setInitialLoading(true); // Set initial loading to true when wallet address changes
-    
-    
+    setSignaturesRequested(false);
+    setCart([]);
+    setInitialLoading(true); // Set initial loading to true when wallet address changes
   }, [walletAddress]);
 
   const breadCrumbs: BreadcrumbItem[] = [

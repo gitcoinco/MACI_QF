@@ -83,7 +83,7 @@ interface CheckoutState {
     walletClient: WalletClient,
     publicClient: PublicClient,
     pcd?: string
-  ) => Promise<void>;
+  ) => Promise<boolean>;
 
   changeDonations: (
     chainId: ChainId,
@@ -91,7 +91,7 @@ interface CheckoutState {
     walletClient: WalletClient,
     previousMessages: PCommand[],
     stateIndex: bigint
-  ) => Promise<void>;
+  ) => Promise<boolean>;
 
   getCheckedOutProjects: () => CartProject[];
   checkedOutProjects: CartProject[];
@@ -197,7 +197,7 @@ export const useCheckoutStore = create<CheckoutState>()(
       walletClient: WalletClient,
       publicClient: PublicClient,
       pcd?: string
-    ) => {
+    ): Promise<boolean> => {
       const chainIdsToCheckOut = [chainId];
       get().setChainsToCheckout(
         uniq([...get().chainsToCheckout, ...chainIdsToCheckOut])
@@ -342,21 +342,18 @@ export const useCheckoutStore = create<CheckoutState>()(
 
         get().setContributionStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
 
+        get().setVoteStatusForChain(chainId, ProgressStatus.IN_PROGRESS);
+
         // Publish the batch of messages
         await publishBatch(PublishBatchArgs);
 
-        // donations.forEach((donation) => {
-        //   useCartStorage.getState().remove(donation);
-        // });
-        set((oldState) => ({
-          voteStatus: {
-            ...oldState.voteStatus,
-            [chainId]: ProgressStatus.IS_SUCCESS,
-          },
-        }));
+        get().setVoteStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
+
         set({
           checkedOutProjects: [...get().checkedOutProjects, ...donations],
         });
+
+        return true;
       } catch (error) {
         let context: Record<string, unknown> = {
           chainId,
@@ -377,7 +374,7 @@ export const useCheckoutStore = create<CheckoutState>()(
         }
 
         get().setVoteStatusForChain(chainId, ProgressStatus.IS_ERROR);
-        throw error;
+        return false;
       }
     },
 
@@ -390,7 +387,7 @@ export const useCheckoutStore = create<CheckoutState>()(
       walletClient: WalletClient,
       previousMessages: PCommand[],
       stateIndex: bigint
-    ) => {
+    ): Promise<boolean> => {
       const chainIdsToCheckOut = [chainId];
       get().setChainsToCheckout(
         uniq([...get().chainsToCheckout, ...chainIdsToCheckOut])
@@ -568,8 +565,6 @@ export const useCheckoutStore = create<CheckoutState>()(
             useCartStorage.getState().remove(donation);
           }
         });
-        // // reload the page
-        // window.location.reload();
 
         get().setChangeDonationsStatusForChain(
           chainId,
@@ -585,6 +580,8 @@ export const useCheckoutStore = create<CheckoutState>()(
         set({
           checkedOutProjects: [...get().checkedOutProjects, ...donations],
         });
+
+        return true;
       } catch (error) {
         let context: Record<string, unknown> = {
           chainId,
@@ -605,7 +602,7 @@ export const useCheckoutStore = create<CheckoutState>()(
         }
 
         get().setVoteStatusForChain(chainId, ProgressStatus.IS_ERROR);
-        throw error;
+        return false;
       }
     },
     checkedOutProjects: [],
@@ -786,12 +783,7 @@ export const publishBatch = async ({
 
   const userMaciPrivKey = privateKey;
 
-  const [maxValues, coordinatorPubKeyResult] = await Promise.all([
-    publicClient.readContract({
-      abi: abi,
-      address: Poll as Hex,
-      functionName: "maxValues",
-    }),
+  const [coordinatorPubKeyResult] = await Promise.all([
     publicClient.readContract({
       abi: abi,
       address: Poll as Hex,
@@ -799,9 +791,7 @@ export const publishBatch = async ({
     }),
   ]);
 
-  const maxoptions = maxValues as bigint;
-
-  const maxVoteOptions = Number(maxoptions);
+  const maxVoteOptions = 125;
 
   // validate the vote options index against the max leaf index on-chain
   messages.forEach(({ stateIndex, voteOptionIndex, nonce }) => {

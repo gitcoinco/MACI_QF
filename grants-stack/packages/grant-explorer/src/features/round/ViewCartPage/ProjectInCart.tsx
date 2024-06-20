@@ -30,6 +30,7 @@ export function ProjectInCart(
     payoutTokenPrice: number;
     totalAmount: number;
     removeProjectFromCart: (project: CartProject) => void;
+    alreadyContributed: boolean;
   }
 ) {
   const {
@@ -178,11 +179,13 @@ export function ProjectInCart(
               </Text>
             </Box>
           )}
-          <TrashIcon
-            data-testid="remove-from-cart"
-            onClick={() => removeProjectFromCart(project)}
-            className="w-5 h-5 ml-2 cursor-pointer"
-          />
+          {!props.alreadyContributed && (
+            <TrashIcon
+              data-testid="remove-from-cart"
+              onClick={() => removeProjectFromCart(project)}
+              className="w-5 h-5 ml-2 cursor-pointer"
+            />
+          )}
         </Flex>
       </Flex>
       {!props.last && <Box as="hr" borderColor="gray.100" mt={4} />}
