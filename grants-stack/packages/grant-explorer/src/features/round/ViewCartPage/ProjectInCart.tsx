@@ -29,7 +29,11 @@ export function ProjectInCart(
     selectedPayoutToken: VotingToken;
     payoutTokenPrice: number;
     totalAmount: number;
-    removeProjectFromCart: (project: CartProject) => void;
+    removeProjectFromCart: (
+      project: CartProject,
+      walletAddress: string
+    ) => void;
+    walletAddress: string;
   }
 ) {
   const {
@@ -180,7 +184,7 @@ export function ProjectInCart(
           )}
           <TrashIcon
             data-testid="remove-from-cart"
-            onClick={() => removeProjectFromCart(project)}
+            onClick={() => removeProjectFromCart(project, props.walletAddress)}
             className="w-5 h-5 ml-2 cursor-pointer"
           />
         </Flex>

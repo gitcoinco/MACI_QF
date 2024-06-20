@@ -15,7 +15,6 @@ import {
   MACIContributionsByRoundId,
   MACIDecryptedContributionsByRoundId,
 } from "../../api/types";
-import { group } from "console";
 
 type Props = {
   cart: GroupedCartProjectsByRoundId;
@@ -144,7 +143,7 @@ export function CartWithProjects({
                 : null
             }
             voiceCredits={groupedCredits[roundIds[key]]}
-            handleRemoveProjectFromCart={store.remove}
+            handleRemoveProjectFromCart={store.removeUserProject}
             selectedPayoutToken={selectedPayoutToken}
             payoutTokenPrice={payoutTokenPrice ?? 0}
             chainId={chainId}

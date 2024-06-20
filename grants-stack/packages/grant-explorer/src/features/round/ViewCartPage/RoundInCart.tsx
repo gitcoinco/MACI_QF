@@ -19,7 +19,10 @@ export function RoundInCart(
     maciContributions: MACIContributions | null;
     decryptedContributions: PCommand[] | null;
     selectedPayoutToken: VotingToken;
-    handleRemoveProjectFromCart: (project: CartProject) => void;
+    handleRemoveProjectFromCart: (
+      project: CartProject,
+      walletAddress: string
+    ) => void;
     voiceCredits: string | null;
     payoutTokenPrice: number;
     chainId: number;
@@ -67,7 +70,6 @@ export function RoundInCart(
       setDonationInput(value);
     }
   };
-
 
   return (
     <div className="my-4 flex w-full">
@@ -134,6 +136,7 @@ export function RoundInCart(
                         roundRoutePath={`/round/${props.chainId}/${props.roundCart[0].roundId}`}
                         last={key === props.roundCart.length - 1}
                         payoutTokenPrice={props.payoutTokenPrice}
+                        walletAddress={address as string}
                       />
                     </div>
                   );
@@ -189,6 +192,7 @@ export function RoundInCart(
               maciMessages={props.maciContributions ?? null}
               roundId={props.roundId}
               chainId={props.chainId}
+              walletAddress={address as string}
             />
           </div>
         </div>

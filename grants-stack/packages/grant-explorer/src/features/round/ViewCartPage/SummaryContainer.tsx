@@ -43,18 +43,21 @@ export function SummaryContainer(props: {
   stateIndex: bigint;
   chainId: number;
   roundId: string;
+  walletAddress: string;
 }) {
   const { data: walletClient } = useWalletClient();
   const { address, isConnected } = useAccount();
   const {
-    projects,
+    userProjects,
     getVotingTokenForChain,
-    remove: removeProjectFromCart,
+    removeUserProject: removeProjectFromCart,
   } = useCartStorage();
   const { checkoutMaci, changeDonations } = useCheckoutStore();
   const dataLayer = useDataLayer();
   const { openConnectModal } = useConnectModal();
   const allo = useAllo();
+
+  const projects = userProjects[props.walletAddress];
 
   const maciChainId = props.chainId;
   const maciRoundId = props.roundId;
@@ -102,10 +105,10 @@ export function SummaryContainer(props: {
     if (!round) return;
     if (round.roundEndTime.getTime() < Date.now()) {
       filteredProjects.forEach((project) => {
-        removeProjectFromCart(project);
+        removeProjectFromCart(project, props.walletAddress);
       });
     }
-  }, [filteredProjects, removeProjectFromCart, round]);
+  }, [filteredProjects, removeProjectFromCart, round, props.walletAddress]);
 
   const [pcd, setPcd] = useState<string | undefined>(undefined);
   const [pcdFetched, setPcdFetched] = useState(false);
@@ -254,7 +257,6 @@ export function SummaryContainer(props: {
       );
     }
   };
-
 
   if (filteredProjects.length === 0) {
     return null;
