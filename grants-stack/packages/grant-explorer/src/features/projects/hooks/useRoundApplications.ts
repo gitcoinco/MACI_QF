@@ -1,7 +1,6 @@
 import useSWR from "swr";
 import { Application, DataLayer } from "data-layer";
 
-
 type Params = {
   chainId?: number;
   roundId?: string;

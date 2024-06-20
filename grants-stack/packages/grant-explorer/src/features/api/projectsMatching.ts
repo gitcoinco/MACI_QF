@@ -2,6 +2,14 @@ import { getPublicClient } from "@wagmi/core";
 import { parseAbi } from "viem";
 import { Application } from "data-layer";
 
+const abi = parseAbi([
+  "function recipientToVoteIndex(address) public view returns (uint256)",
+  "function getPool(uint256) public view returns ((bytes32, address, address, (uint256,string), bytes32, bytes32))",
+]);
+
+const alloContractAddress =
+  "0x1133eA7Af70876e64665ecD07C0A0476d09465a1" as `0x${string}`;
+
 export const getVoteIdMap = async (
   applications: Application[]
 ): Promise<{
@@ -39,10 +47,8 @@ export const getVoteIdMap = async (
       chainId: Number(app.chainId),
     })
       .readContract({
-        address: "0x1133eA7Af70876e64665ecD07C0A0476d09465a1" as `0x${string}`,
-        abi: parseAbi([
-          "function getPool(uint256) public view returns ((bytes32, address, address, (uint256,string), bytes32, bytes32))",
-        ]),
+        address: alloContractAddress,
+        abi: abi,
         functionName: "getPool",
         args: [BigInt(app.roundId)],
       })
@@ -50,9 +56,7 @@ export const getVoteIdMap = async (
 
     const ID = await client.readContract({
       address: strategyAddress as `0x${string}`,
-      abi: parseAbi([
-        "function recipientToVoteIndex(address) public view returns (uint256)",
-      ]),
+      abi: abi,
       functionName: "recipientToVoteIndex",
       args: [app.id as `0x${string}`],
     });

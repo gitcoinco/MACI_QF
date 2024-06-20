@@ -132,20 +132,11 @@ export default function ViewCart() {
 
   // Clear cart when wallet address changes
   useEffect(() => {
-    const prevAddress = localStorage.getItem("prevAddress");
-    if (prevAddress !== null && prevAddress.toLowerCase() !== walletAddress?.toLowerCase()) {
-      setCart([]);
-      localStorage.setItem("prevAddress", walletAddress as string);
-    } else if (prevAddress === null) {
-      localStorage.setItem("prevAddress", walletAddress as string);
-      setSignaturesRequested(false);
-
-      setInitialLoading(true); // Set initial loading to true when wallet address changes
-    } else {
+    
       setSignaturesRequested(false);
       setCart([]);
       setInitialLoading(true); // Set initial loading to true when wallet address changes
-    }
+    
     
   }, [walletAddress]);
 
