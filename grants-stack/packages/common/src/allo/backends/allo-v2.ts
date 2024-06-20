@@ -42,34 +42,24 @@ import Erc20ABI from "../abis/erc20";
 import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
 import { buildUpdatedRowsOfApplicationStatuses } from "../application";
 import { generateMerkleTree } from "./allo-v1";
-import { BigNumber, utils } from "ethers";
+import { BigNumber, ethers, utils } from "ethers";
 
 import { Keypair, PubKey } from "maci-domainobjs";
 
 function getStrategyAddress(strategy: RoundCategory, chainId: ChainId): string {
   let strategyAddresses;
   switch (chainId) {
-    case ChainId.ZKSYNC_ERA_MAINNET_CHAIN_ID:
-      throw new Error("ZkSync era mainnet is not supported");
-    case ChainId.ZKSYNC_ERA_TESTNET_CHAIN_ID:
-      throw new Error("ZkSync era testnet is not supported");
-
-    case ChainId.SEI_DEVNET:
+    case ChainId.SEPOLIA:
       strategyAddresses = {
         [RoundCategory.QuadraticFunding]:
-          "0x029dFAf686DfA0efdace5132ba422e9279D50b5b",
-        [RoundCategory.Direct]: "0x45181C4fD52d4d350380B3D42091b80065c702Ef",
-        [RoundCategory.Maci]: "0xAD93f0AAf57E40531e14d65bb62D3006480121D4",
+          "0x000000000000000000000000000000000000000",
+        [RoundCategory.Direct]: "0x000000000000000000000000000000000000000",
+        [RoundCategory.Maci]: "0x931761803458a041030fc032dA57dcC4823Fbaeb",
       };
       break;
 
     default:
-      strategyAddresses = {
-        [RoundCategory.QuadraticFunding]:
-          "0x787eC93Dd71a90563979417879F5a3298389227f",
-        [RoundCategory.Direct]: "0x8564d522b19836b7F5B4324E7Ee8Cb41810E9F9e",
-        [RoundCategory.Maci]: "0xAD93f0AAf57E40531e14d65bb62D3006480121D4",
-      };
+      throw new Error(`Unsupported chain ID ${chainId}`);
       break;
   }
   return strategyAddresses[strategy];
@@ -504,17 +494,24 @@ export class AlloV2 implements Allo {
 
         console.log("address", address);
 
+        const eventIDs = ["192993346581360151154216832563903227660"];
+
+        let encodedEventIDs = new ethers.utils.AbiCoder().encode(
+          ["uint256[]"],
+          [eventIDs]
+        );
+
         let MaciParams = [
           // coordinator:
           address,
           // coordinatorPubKey:
           [BigInt(pubk.asContractParam().x), BigInt(pubk.asContractParam().y)],
           "0x2e7c021Ed995960E6eB31C5675a5e5119f4787d9",
-          "0x068d780E21b439214B89C990D7DBEE7Bde1B6CB6",
+          "0x5b498551F04FA6Bb411aA488e5250A4caC43324B",
           // maci_id
           0n,
           // VALID_EVENT_IDS
-          [192993346581360151154216832563903227660n],
+          encodedEventIDs,
           // maxContributionAmountForZupass
           10n ** 18n * 100n,
           // maxContributionAmountForNonZupass
@@ -526,7 +523,7 @@ export class AlloV2 implements Allo {
         console.log("initStruct", initStruct);
 
         let types = parseAbiParameters(
-          "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,uint8,uint256[],uint256,uint256))"
+          "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,uint8,bytes,uint256,uint256))"
         );
 
         console.log("types", types);
@@ -562,6 +559,8 @@ export class AlloV2 implements Allo {
         metadata: { protocol: 1n, pointer: roundIpfsResult.value },
         managers: args.roundData.roundOperators ?? [],
       };
+
+      console.log("createPoolArgs", createPoolArgs);
 
       const txData = this.allo.createPool(createPoolArgs);
 
