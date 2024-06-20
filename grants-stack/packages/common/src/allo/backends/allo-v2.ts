@@ -54,7 +54,7 @@ function getStrategyAddress(strategy: RoundCategory, chainId: ChainId): string {
         [RoundCategory.QuadraticFunding]:
           "0x000000000000000000000000000000000000000",
         [RoundCategory.Direct]: "0x000000000000000000000000000000000000000",
-        [RoundCategory.Maci]: "0x931761803458a041030fc032dA57dcC4823Fbaeb",
+        [RoundCategory.Maci]: "0x8A81103524b1c006BcD9a7239375A818D7F7492f",
       };
       break;
 
@@ -64,6 +64,9 @@ function getStrategyAddress(strategy: RoundCategory, chainId: ChainId): string {
   }
   return strategyAddresses[strategy];
 }
+
+const ClonableMACIFactoryAddress = "0x1E2F10C546e8Bf24adB3C927b582eE7F91DB4E5c";
+const ZuPassRegistryAddress = "0xB9B19aF74CC70c8F9Ea6d782C94C058235d7d3bD";
 
 function applicationStatusToNumber(status: ApplicationStatus) {
   switch (status) {
@@ -506,8 +509,8 @@ export class AlloV2 implements Allo {
           address,
           // coordinatorPubKey:
           [BigInt(pubk.asContractParam().x), BigInt(pubk.asContractParam().y)],
-          "0x2e7c021Ed995960E6eB31C5675a5e5119f4787d9",
-          "0x5b498551F04FA6Bb411aA488e5250A4caC43324B",
+          ClonableMACIFactoryAddress,
+          ZuPassRegistryAddress,
           // maci_id
           0n,
           // VALID_EVENT_IDS
