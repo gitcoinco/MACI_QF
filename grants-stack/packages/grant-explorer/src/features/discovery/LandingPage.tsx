@@ -45,14 +45,14 @@ const LandingPage = () => {
   return (
     <GradientLayout showWalletInteraction showAlloVersionBanner={false}>
       <LandingHero />
-
+      {/* 
       {getAlloVersion() === "allo-v2" && (
         <LandingSection title="Community collections">
           {collections.data !== undefined && (
             <CollectionsGrid data={collections.data} />
           )}
         </LandingSection>
-      )}
+      )} */}
 
       <LandingSection
         title="Donate now"
