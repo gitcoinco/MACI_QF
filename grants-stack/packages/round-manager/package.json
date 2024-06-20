@@ -99,6 +99,7 @@
     "web-vitals": "^2.1.0",
     "yup": "^0.32.11",
     "zustand": "^4.4.0",
+    "@pcd/util": "^0.2.0",
     "maci-domainobjs": "1.2.5",
     "maci-core": "1.2.5",
     "maci-crypto": "1.2.5"
