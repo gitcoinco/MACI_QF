@@ -12,15 +12,15 @@ export const distribute = async ({
   distributor,
   recipientTreeDepth,
   recipients,
-  roundId
+  roundId,
 }: {
   outputDir: string;
   AlloContract: Allo;
   MACIQFStrategy: MACIQF;
   distributor: Signer;
   recipientTreeDepth: any;
-    recipients: string[];
-    roundId: number;
+  recipients: string[];
+  roundId: number;
 }) => {
   const tallyFile = getTalyFilePath(outputDir);
 
@@ -43,9 +43,9 @@ export const distribute = async ({
     await MACIQFStrategy.getAddress()
   );
 
-  // Temp Fix for testing later on we 
+  // Temp Fix for testing later on we
   // should get all the RecipientVotingOptionsAdded events
-  let option = 0 
+  let option = 0;
   // First pass to gather all required data
   for (const recipientAddress of recipients) {
     const recipientIndex = option;
@@ -71,6 +71,9 @@ export const distribute = async ({
 
   const bytesArrayTypes = ["bytes[]"];
   const bytesArrayEncoded = AbiCoder.encode(bytesArrayTypes, [bytesArray]);
+
+  const Pool = await AlloContract.connect(distributor).getPool(0);
+  console.log("Pool", Pool);
 
   const distributeFunds = await AlloContract.connect(distributor).distribute(
     roundId,

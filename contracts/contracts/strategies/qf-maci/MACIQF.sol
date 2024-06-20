@@ -319,7 +319,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         paidOut[recipientId] = true;
         IAllo.Pool memory pool = allo.getPool(poolId);
 
-        _transferAmount(pool.token, recipientId, amount);
+        _transferAmount(pool.token, recipient.recipientAddress, amount);
 
         emit FundsDistributed(amount, recipient.recipientAddress, pool.token, recipientId);
     }

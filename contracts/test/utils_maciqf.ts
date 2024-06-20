@@ -78,7 +78,7 @@ export const deployAlloContracts = async () => {
     0,
     0,
   ]);
-
+  // 0xd90FBbE044D9775CF77513dCF122699a41f1aeC4
   const alloAddress = await Allo.getAddress();
 
   const ALLO = await ethers.getContractAt("Allo", alloAddress);
@@ -386,6 +386,8 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
   const deployTime = block!.timestamp;
 
   const poolAddress = (await AlloContracts.Allo.getPool(1)).strategy;
+
+  console.log("Pool Address : ", poolAddress);
 
   const MACIQF_STRATEGY = await ethers.getContractAt("MACIQF", poolAddress);
 

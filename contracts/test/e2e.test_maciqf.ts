@@ -116,23 +116,6 @@ describe("e2e", function test() {
     }
   });
 
-  it("Should allow the contribution to gain tokens and allocate", async () => {
-    // Donate to the pool without proof
-    await allocate({
-      AlloContract: AlloContract,
-      allocator: allocator,
-      keypair: keypair,
-      contributionAmount: CONTRIBUTION_AMOUNT1,
-    });
-    // Another donation to the pool without proof
-    await allocate({
-      AlloContract: AlloContract,
-      allocator: recipient1,
-      keypair: keypair2,
-      contributionAmount: CONTRIBUTION_AMOUNT2,
-    });
-  });
-
   it("Should Register Recipients", async () => {
     // Register recipients
     await register({
@@ -152,6 +135,28 @@ describe("e2e", function test() {
     ).reviewRecipients([recipient1, recipient2], [2, 2]);
 
     await reviewRecipientsTx.wait();
+  });
+
+  it("Should allow the contribution to gain tokens and allocate", async () => {
+
+    // Time travel to the allocation period
+    await timeTravel(Coordinator.provider as unknown as EthereumProvider, 210);
+
+
+    // Donate to the pool without proof
+    await allocate({
+      AlloContract: AlloContract,
+      allocator: allocator,
+      keypair: keypair,
+      contributionAmount: CONTRIBUTION_AMOUNT1,
+    });
+    // Another donation to the pool without proof
+    await allocate({
+      AlloContract: AlloContract,
+      allocator: recipient1,
+      keypair: keypair2,
+      contributionAmount: CONTRIBUTION_AMOUNT2,
+    });
   });
 
   it("Should allow the Contributors to vote", async () => {
@@ -292,7 +297,7 @@ describe("e2e", function test() {
         await recipient1.getAddress(),
         await recipient2.getAddress(),
       ],
-      roundId: 0,
+      roundId: 1,
     });
 
     console.log("Distribute Response", distributeResponse);
