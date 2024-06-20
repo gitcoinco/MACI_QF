@@ -174,7 +174,11 @@ export const getApplicationsByProjectIds = gql`
   ) {
     applications(
       first: 1000
-      filter: { projectId: { in: $projectIds }, chainId: { in: $chainIds } }
+      filter: {
+        projectId: { in: $projectIds }
+        chainId: { in: $chainIds }
+        round: { strategyName: { equalTo: "allov2.MACIQF" } }
+      }
     ) {
       id
       projectId
