@@ -122,6 +122,9 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @notice Flag to indicate whether metadata is required or not.
     bool public metadataRequired;
 
+    // @notice Flag to indicate if registration is paused
+    bool public isRegistrationPaused;
+
     /// @notice The registry contract instance
     IRegistry private _registry;
 
@@ -406,6 +409,10 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         return _recipients[_recipientId];
     }
 
+    function toggleRegistrationPausedStatus() external onlyPoolManager(msg.sender) {
+        isRegistrationPaused = !isRegistrationPaused;
+    }
+
     /// @notice Registers a recipient
     /// @param _data The data to be decoded
     /// @param _sender The sender of the transaction
@@ -414,7 +421,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         bytes memory _data,
         address _sender
     ) internal override onlyActiveRegistration returns (address) {
-        if (msg.value != 0) {
+        if (msg.value != 0 || isRegistrationPaused) {
             revert INVALID();
         }
 

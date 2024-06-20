@@ -72,9 +72,6 @@ export const distribute = async ({
   const bytesArrayTypes = ["bytes[]"];
   const bytesArrayEncoded = AbiCoder.encode(bytesArrayTypes, [bytesArray]);
 
-  const Pool = await AlloContract.connect(distributor).getPool(0);
-  console.log("Pool", Pool);
-
   const distributeFunds = await AlloContract.connect(distributor).distribute(
     roundId,
     [],
