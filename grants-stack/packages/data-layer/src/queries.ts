@@ -551,7 +551,7 @@ export const getRoundForManager = gql`
   query getRoundForManager($roundId: String!, $chainId: Int!) {
     rounds(
       first: 1
-      filter: { id: { equalTo: $roundId }, chainId: { equalTo: $chainId } }
+      filter: { id: { equalTo: $roundId }, chainId: { equalTo: $chainId }, strategyName: { equalTo: "allov2.MACIQF" } }
     ) {
       ${getRoundForManagerFields}
     }
@@ -565,6 +565,7 @@ export const getRoundsForManager = gql`
       filter: {
         chainId: { equalTo: $chainId }
         projectId: { equalTo: $programId }
+        strategyName: {equalTo: "allov2.MACIQF"}
       }
     ) {
       ${getRoundForManagerFields}
@@ -576,7 +577,11 @@ export const getRoundForExplorer = gql`
   query getRoundForExplorer($roundId: String!, $chainId: Int!) {
     rounds(
       first: 1
-      filter: { id: { equalTo: $roundId }, chainId: { equalTo: $chainId } }
+      filter: {
+        id: { equalTo: $roundId }
+        chainId: { equalTo: $chainId }
+        strategyName: { equalTo: "allov2.MACIQF" }
+      }
     ) {
       id
       chainId
@@ -646,7 +651,7 @@ export const getDonationsByDonorAddress = gql`
   }
 `;
 
-// NEW CODE 
+// NEW CODE
 
 export const getContributionsByAddressAndId = gql`
   query getContributionsByAddressAndId(

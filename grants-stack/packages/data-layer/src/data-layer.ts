@@ -156,10 +156,11 @@ export class DataLayer {
     chainId: number;
     tags: string[];
   }): Promise<{ programs: Program[] }> {
+    console.log("tags", tags);
     const requestVariables = {
       userAddress: address.toLowerCase(),
       chainId,
-      tags: ["program", ...tags],
+      tags: ["program", "allo-v2", ...tags],
     };
 
     const response: { projects: Program[] } = await request(

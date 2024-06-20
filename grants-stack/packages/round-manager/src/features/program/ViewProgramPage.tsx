@@ -274,8 +274,7 @@ export default function ViewProgram() {
                           : "border-grey-100"
                       } h-[24px] w-[24px]`}
                       style={{
-                        borderWidth:
-                          grantType === "MACI-QF" ? "6px" : "2px",
+                        borderWidth: grantType === "MACI-QF" ? "6px" : "2px",
                       }}
                     ></div>
                   </div>
@@ -295,83 +294,10 @@ export default function ViewProgram() {
                     className="object-cover pl-6 pr-4"
                   />
                 </button>
-
-                <button
-                  onClick={() => setGrantType("quadraticFunding")}
-                  className={`flex w-full mb-4 rounded border  ${
-                    grantType === "quadraticFunding"
-                      ? "border-violet-400 shadow-lg"
-                      : "border-grey-100"
-                  } bg-white p-6 cursor-pointer`}
-                >
-                  <div className="flex pr-6 m-auto">
-                    <div
-                      className={`rounded-full border ${
-                        grantType === "quadraticFunding"
-                          ? "border-violet-400"
-                          : "border-grey-100"
-                      } h-[24px] w-[24px]`}
-                      style={{
-                        borderWidth:
-                          grantType === "quadraticFunding" ? "6px" : "2px",
-                      }}
-                    ></div>
-                  </div>
-                  <div className="pr-6 flex-grow text-left mt-auto mb-auto">
-                    <h3 className="text-xl mb-2">Quadratic Funding</h3>
-                    <p
-                      className="text-grey-400 text-sm pr-4"
-                      data-testid="program-details-intro"
-                    >
-                      Choose this type of round for individual donors to
-                      determine how matching funds should be allocated.
-                    </p>
-                  </div>
-                  <img
-                    src={QuadraticFundingSVG}
-                    alt="Quadratic Funding"
-                    className="object-cover pl-6 pr-4"
-                  />
-                </button>
               </div>
             )}
             {getAlloVersion() === "allo-v1" && (
-              <button
-                onClick={() => setGrantType("directGrant")}
-                className={`flex w-full rounded border  ${
-                  grantType === "directGrant"
-                    ? "border-violet-400 shadow-lg"
-                    : "border-grey-100"
-                } bg-white p-6 cursor-pointer`}
-              >
-                <div className="flex pr-6 m-auto">
-                  <div
-                    className={`rounded-full border ${
-                      grantType === "directGrant"
-                        ? "border-violet-400"
-                        : "border-grey-100"
-                    } h-[24px] w-[24px]`}
-                    style={{
-                      borderWidth: grantType === "directGrant" ? "6px" : "2px",
-                    }}
-                  />
-                </div>
-                <div className="pr-6 flex-grow text-left mt-auto mb-auto">
-                  <h3 className="text-xl mb-2">Direct Grants</h3>
-                  <p
-                    className="text-grey-400 text-sm pr-4"
-                    data-testid="program-details-intro"
-                  >
-                    Choose this type of round to directly allocate funds to
-                    selected projects yourself.
-                  </p>
-                </div>
-                <img
-                  src={DirectGrants}
-                  alt="Direct Grants"
-                  className="object-cover pl-6 pr-4"
-                />
-              </button>
+              <p>MACI is not available on allo-v1. Please switch to allo-v2</p>
             )}
           </div>
           <div className="w-full px-12">
@@ -400,7 +326,7 @@ export default function ViewProgram() {
                 </Button>
               </Link>
             )}
-            {grantType ===  "MACI-QF" && (
+            {grantType === "MACI-QF" && (
               <Link
                 to={`/round/create?programId=${programToRender?.id}&roundCategory=MACI-QF`}
               >
