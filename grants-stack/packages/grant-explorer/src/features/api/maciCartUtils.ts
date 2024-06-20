@@ -121,7 +121,7 @@ const getContributed = async (
         ? applications[chainId]?.[roundID] || []
         : [];
 
-      const voteIdMap = await getVoteIdMap(applicationsForChainRound);
+      const voteIdMap = await getVoteIdMap(applicationsForChainRound,dataLayer);
       const contributed = await getApplicationsByVoteOptionIndex(
         applicationsForChainRound,
         decryptedMessages,

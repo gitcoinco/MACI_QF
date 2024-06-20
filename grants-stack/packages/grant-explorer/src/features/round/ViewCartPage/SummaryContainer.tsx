@@ -19,9 +19,6 @@ import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { parseChainId } from "common/src/chains";
 import { fetchBalance, getPublicClient } from "@wagmi/core";
 import { useAllo } from "../../api/AlloWrapper";
-import { Switch } from "@headlessui/react";
-import { zuAuthPopup } from "@pcd/zuauth";
-import { ZUAUTH_CONFIG, fieldsToReveal } from "../../api/pcd";
 import { useDataLayer } from "data-layer";
 import { PCommand } from "maci-domainobjs";
 import { NATIVE } from "common";
@@ -187,7 +184,9 @@ export function SummaryContainer(props: {
         maciRoundId,
         walletClient,
         props.decryptedMessages ?? [],
-        props.stateIndex
+        props.stateIndex,
+        dataLayer,
+        address as string
       );
       if (isSuccess) {
         setOpenMRCProgressModal(false);
@@ -200,6 +199,8 @@ export function SummaryContainer(props: {
         getPublicClient({
           chainId: Number(maciChainId),
         }),
+        dataLayer,
+        address as string,
         props.pcd
       );
       if (isSuccess) {
@@ -288,8 +289,4 @@ export function SummaryContainer(props: {
       <PayoutModals />
     </div>
   );
-}
-
-function classNames(...classes: string[]) {
-  return classes.filter(Boolean).join(" ");
 }

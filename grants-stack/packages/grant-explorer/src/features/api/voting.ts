@@ -214,7 +214,6 @@ export function encodedQFAllocation(
   return encodedData;
 }
 
-
 export function bnSqrt(val: bigint) {
   // Take square root from a bigint
   // https://stackoverflow.com/a/52468569/1868395
@@ -269,20 +268,66 @@ export const prepareAllocationData = ({
   // uint[2][2] memory _pB,
   // uint[2] memory _pC,
   // uint[38] memory _pubSignals
-  const types = "(uint256,uint256),uint256,uint[2],uint[2][2],uint[2],uint[38]";
+  const types = "(uint256,uint256),uint256,bytes";
 
   console.log("amount", amount);
-  let dt: ProofArgs;
+  let dt: ProofArgs | null = null;
   if (proof) {
     dt = generateWitness(JSON.parse(proof));
-  } else {
-    dt = {
-      _pA: new Array(2).fill("0"),
-      _pB: [new Array(2).fill("0"), new Array(2).fill("0")],
-      _pC: new Array(2).fill("0"),
-      _pubSignals: new Array(38).fill("0"),
-    };
   }
+
+  const proofTypes = "uint[2],uint[2][2],uint[2],uint[38]";
+  const proofData = dt
+    ? encodeAbiParameters(parseAbiParameters(proofTypes), [
+        dt._pA.map((str) => BigInt(str)) as [bigint, bigint],
+        dt._pB.map((pair) => pair.map((num) => BigInt(num))) as [
+          [bigint, bigint],
+          [bigint, bigint],
+        ],
+        dt._pC.map((str) => BigInt(str)) as [bigint, bigint],
+        // add 38 bigint in the as [bigint, bigint, ...] format
+        dt._pubSignals as [
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+        ],
+      ])
+    : "0x";
 
   const pubKey = [
     publicKey.asContractParam().x,
@@ -291,58 +336,11 @@ export const prepareAllocationData = ({
   const data = encodeAbiParameters(parseAbiParameters(types), [
     pubKey,
     amount as bigint,
-    dt._pA.map((str) => BigInt(str)) as [bigint, bigint],
-    dt._pB.map((pair) => pair.map((num) => BigInt(num))) as [
-      [bigint, bigint],
-      [bigint, bigint],
-    ],
-    dt._pC.map((str) => BigInt(str)) as [bigint, bigint],
-    // add 38 bigint in the as [bigint, bigint, ...] format
-    dt._pubSignals as [
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-    ],
+    proofData,
   ]);
 
   return data;
 };
-
 
 import { utils } from "ethers";
 import {
@@ -404,7 +402,6 @@ export async function getContributorMessages({
     return command;
   });
 }
-
 
 /**
  * Derives the MACI private key from the users signature hash

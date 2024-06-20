@@ -1,17 +1,10 @@
 import { getPublicClient } from "@wagmi/core";
-import { parseAbi } from "viem";
-import { Application } from "data-layer";
+import { Application, DataLayer } from "data-layer";
 
-const abi = parseAbi([
-  "function recipientToVoteIndex(address) public view returns (uint256)",
-  "function getPool(uint256) public view returns ((bytes32, address, address, (uint256,string), bytes32, bytes32))",
-]);
-
-const alloContractAddress =
-  "0x1133eA7Af70876e64665ecD07C0A0476d09465a1" as `0x${string}`;
 
 export const getVoteIdMap = async (
-  applications: Application[]
+  applications: Application[],
+  dataLayer: DataLayer
 ): Promise<{
   [chainId: number]: {
     [roundId: string]: {
@@ -43,23 +36,19 @@ export const getVoteIdMap = async (
   } = {};
 
   for (const app of applications) {
-    const strategyAddress = await getPublicClient({
-      chainId: Number(app.chainId),
-    })
-      .readContract({
-        address: alloContractAddress,
-        abi: abi,
-        functionName: "getPool",
-        args: [BigInt(app.roundId)],
-      })
-      .then((res) => res[1]);
+    const chainID = Number(app.chainId);
 
-    const ID = await client.readContract({
-      address: strategyAddress as `0x${string}`,
-      abi: abi,
-      functionName: "recipientToVoteIndex",
-      args: [app.id as `0x${string}`],
-    });
+    const ID = (await dataLayer.getVoteOptionIndexByChainIdAndRoundId({
+      chainId: chainID,
+      roundId: app.roundId,
+      recipientId: app.anchorAddress ?? ("" as string),
+    })) as {
+      votingIndexOptions: { optionIndex: bigint }[];
+    };
+
+    console.log("ID", ID);
+
+    const voteOption = ID?.votingIndexOptions[0].optionIndex;
 
     const chainId = Number(app.chainId);
 
@@ -73,7 +62,7 @@ export const getVoteIdMap = async (
 
     // Store the ID with the maximum nonce found
     voteIdMap[chainId][app.roundId][app.id] = {
-      id: ID,
+      id: voteOption,
       maxNonce: undefined,
       newVoteWeight: undefined,
       isNew: false,

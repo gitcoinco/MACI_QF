@@ -36,6 +36,7 @@ import { decodeAbiParameters, parseAbiParameters } from "viem";
 // NEW CODE
 import { Keypair, PCommand, PubKey, PrivKey } from "maci-domainobjs";
 import { genRandomSalt } from "maci-crypto";
+import { DataLayer } from "data-layer";
 
 type ChainMap<T> = Record<ChainId, T>;
 
@@ -82,6 +83,8 @@ interface CheckoutState {
     roundId: string,
     walletClient: WalletClient,
     publicClient: PublicClient,
+    dataLayer: DataLayer,
+    walletAddress: string,
     pcd?: string
   ) => Promise<boolean>;
 
@@ -90,7 +93,9 @@ interface CheckoutState {
     roundId: string,
     walletClient: WalletClient,
     previousMessages: PCommand[],
-    stateIndex: bigint
+    stateIndex: bigint,
+    dataLayer: DataLayer,
+    walletAddress: string
   ) => Promise<boolean>;
 
   getCheckedOutProjects: () => CartProject[];
@@ -114,9 +119,6 @@ const abi = parseAbi([
   "function publishMessageBatch((uint256 msgType,uint256[10] data)[] _messages,(uint256 x,uint256 y)[] _pubKeys)",
   "function maxValues() view returns (uint256 maxVoteOptions)",
   "function coordinatorPubKey() view returns ((uint256, uint256))",
-
-  // TODO replace by getting this value from the indexer directly new contracts don't have this function
-  "function recipientToVoteIndex(address) public view returns (uint256)",
 ]);
 
 const alloContractAddress =
@@ -196,6 +198,8 @@ export const useCheckoutStore = create<CheckoutState>()(
       roundId: string,
       walletClient: WalletClient,
       publicClient: PublicClient,
+      dataLayer: DataLayer,
+      walletAddress: string,
       pcd?: string
     ): Promise<boolean> => {
       const chainIdsToCheckOut = [chainId];
@@ -207,10 +211,9 @@ export const useCheckoutStore = create<CheckoutState>()(
 
       const projectsToCheckOut = useCartStorage
         .getState()
-        .projects.filter(
-          (project) =>
-            project.chainId === chainId && project.roundId === roundId
-        );
+        .userProjects[
+          walletAddress
+        ].filter((project) => project.chainId === chainId && project.roundId === roundId);
 
       const projectsByChain = { [chainId]: projectsToCheckOut };
 
@@ -271,14 +274,19 @@ export const useCheckoutStore = create<CheckoutState>()(
           args: [BigInt(roundId)],
         })) as PoolInfo;
         for (const app of groupedDonations[roundId]) {
-          const ID = await publicClient.readContract({
-            address: pool.strategy as `0x${string}`,
-            abi: abi,
-            functionName: "recipientToVoteIndex",
-            args: [app.anchorAddress as `0x${string}`],
-          });
+          const ID = (await dataLayer.getVoteOptionIndexByChainIdAndRoundId({
+            chainId: chainId,
+            roundId: roundId,
+            recipientId: app.anchorAddress ?? ("" as string),
+          })) as {
+            votingIndexOptions: { optionIndex: bigint }[];
+          };
 
-          voteIdMap[app.anchorAddress ?? ""] = ID;
+          console.log("ID", ID);
+
+          const voteOption = ID?.votingIndexOptions[0].optionIndex;
+
+          voteIdMap[app.anchorAddress ?? ""] = voteOption;
         }
 
         // Process each donation
@@ -386,7 +394,9 @@ export const useCheckoutStore = create<CheckoutState>()(
       roundId: string,
       walletClient: WalletClient,
       previousMessages: PCommand[],
-      stateIndex: bigint
+      stateIndex: bigint,
+      dataLayer: DataLayer,
+      walletAddress: string
     ): Promise<boolean> => {
       const chainIdsToCheckOut = [chainId];
       get().setChainsToCheckout(
@@ -397,10 +407,9 @@ export const useCheckoutStore = create<CheckoutState>()(
 
       const projectsToCheckOut = useCartStorage
         .getState()
-        .projects.filter(
-          (project) =>
-            project.chainId === chainId && project.roundId === roundId
-        );
+        .userProjects[
+          walletAddress
+        ].filter((project) => project.chainId === chainId && project.roundId === roundId);
 
       const projectsByChain = { [chainId]: projectsToCheckOut };
 
@@ -445,14 +454,19 @@ export const useCheckoutStore = create<CheckoutState>()(
 
         const pool = Pool as PoolInfo;
         for (const app of groupedDonations[roundId]) {
-          const ID = await publicClient.readContract({
-            address: pool.strategy as `0x${string}`,
-            abi: abi,
-            functionName: "recipientToVoteIndex",
-            args: [app.anchorAddress as `0x${string}`],
-          });
+          const ID = (await dataLayer.getVoteOptionIndexByChainIdAndRoundId({
+            chainId: chainId,
+            roundId: roundId,
+            recipientId: app.anchorAddress ?? ("" as string),
+          })) as {
+            votingIndexOptions: { optionIndex: bigint }[];
+          };
 
-          voteIdMap[app.anchorAddress ?? ""] = ID;
+          console.log("ID", ID);
+
+          const voteOption = ID?.votingIndexOptions[0].optionIndex;
+
+          voteIdMap[app.anchorAddress ?? ""] = voteOption;
         }
 
         get().setMaciKeyStatusForChain(chainId, ProgressStatus.IN_PROGRESS);

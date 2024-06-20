@@ -724,3 +724,20 @@ export const getVoiceCreditsByChainIdsAndRoundIds = gql`
     }
   }
 `;
+
+export const getVoteOptionIndexByChainIdAndRoundId = gql`
+  query ($chainId: Int!, $roundId: String!, $recipientId: String!) {
+    votingIndexOptions(
+      filter: {
+        chainId: { equalTo: $chainId }
+        roundId: { equalTo: $roundId }
+        recipientId: { equalTo: $recipientId }
+      }
+    ) {
+      chainId
+      id
+      optionIndex
+      recipientId
+    }
+  }
+`;
