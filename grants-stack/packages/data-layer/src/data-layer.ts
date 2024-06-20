@@ -814,6 +814,9 @@ export class DataLayer {
     orderDirection?: "asc" | "desc";
     filter?: RoundsQueryVariables["filter"];
   }): Promise<{ rounds: RoundGetRound[] }> {
+    console.log("===> Filter");
+    console.log(JSON.stringify(filter));
+
     return await request(this.gsIndexerEndpoint, getRoundsQuery, {
       orderBy: orderBy ?? "NATURAL",
       chainIds,
