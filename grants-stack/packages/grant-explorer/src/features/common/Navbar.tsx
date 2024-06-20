@@ -150,7 +150,7 @@ export default function Navbar(props: NavbarProps) {
                     <UserCircleIcon className="h-8 w-8 ph-no-capture" />
                   </Link>
                 </div>
-                <NavbarCart cart={store.userProjects[walletAddress]} />
+                <NavbarCart cart={store.userProjects[walletAddress] ?? []} />
               </>
             )}
           </div>
