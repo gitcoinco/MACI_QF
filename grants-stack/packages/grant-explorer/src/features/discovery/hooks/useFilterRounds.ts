@@ -30,6 +30,7 @@ export type RoundSelectionParams = RoundSortParams & RoundFilterParams;
 export type RoundSortUiOption = {
   label: string;
   orderBy: OrderByRounds;
+  type?: StrategyName;
 };
 
 export type RoundFilterUiOption = {
