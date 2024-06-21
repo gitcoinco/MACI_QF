@@ -537,7 +537,7 @@ export default function ViewRoundSettings(props: { id?: string }) {
                     </div>
                   )}
                 </Tab>
-                <Tab
+                {/* <Tab
                   className={({ selected }) => horizontalTabStyles(selected)}
                 >
                   {({ selected }) => (
@@ -547,7 +547,7 @@ export default function ViewRoundSettings(props: { id?: string }) {
                         : "Round Period"}
                     </div>
                   )}
-                </Tab>
+                </Tab> */}
                 {!isDirectRound(round) && (
                   <Tab
                     className={({ selected }) => horizontalTabStyles(selected)}
@@ -577,7 +577,7 @@ export default function ViewRoundSettings(props: { id?: string }) {
                   }}
                 />
               </Tab.Panel>
-              <Tab.Panel>
+              {/* <Tab.Panel>
                 <RoundApplicationPeriod
                   setValue={setValue}
                   editMode={editMode}
@@ -590,7 +590,7 @@ export default function ViewRoundSettings(props: { id?: string }) {
                   register={register}
                   errors={errors}
                 />
-              </Tab.Panel>
+              </Tab.Panel> */}
               <Tab.Panel>
                 <Funding
                   editMode={editMode}
@@ -1280,7 +1280,6 @@ function RoundApplicationPeriod(props: {
     return current.isAfter(applicationStartDate);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const disableBeforeApplicationEndDate = (current: moment.Moment) => {
     return current.isAfter(applicationEndDate);
   };
@@ -1430,7 +1429,7 @@ function RoundApplicationPeriod(props: {
                       </div>
                     </div>
                   )}
-                  <div className="flex items-center mt-2">
+                  <div className="flex items-center mt-2 hidden">
                     <input
                       id="rollingApplications"
                       name="rollingApplications"
@@ -1646,9 +1645,7 @@ function RoundApplicationPeriod(props: {
                           utc={true}
                           dateFormat={"YYYY/MM/DD"}
                           timeFormat={"HH:mm UTC"}
-                          isValidDate={
-                            isV2 ? (current: Moment) => true : disablePastDate
-                          }
+                          isValidDate={disableBeforeApplicationEndDate}
                           inputProps={{
                             id: "roundStartTime",
                             placeholder: "",
