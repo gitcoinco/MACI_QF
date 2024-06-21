@@ -62,6 +62,7 @@ export function ProjectInCart(
       setShowAlert(true);
       return;
     }
+    setShowAlert(false);
     updateProjectAmount(index, parseFloat(newPercentage));
   };
 
