@@ -537,7 +537,7 @@ export default function ViewRoundSettings(props: { id?: string }) {
                     </div>
                   )}
                 </Tab>
-                <Tab
+                {/* <Tab
                   className={({ selected }) => horizontalTabStyles(selected)}
                 >
                   {({ selected }) => (
@@ -547,7 +547,7 @@ export default function ViewRoundSettings(props: { id?: string }) {
                         : "Round Period"}
                     </div>
                   )}
-                </Tab>
+                </Tab> */}
                 {!isDirectRound(round) && (
                   <Tab
                     className={({ selected }) => horizontalTabStyles(selected)}
@@ -577,7 +577,7 @@ export default function ViewRoundSettings(props: { id?: string }) {
                   }}
                 />
               </Tab.Panel>
-              <Tab.Panel>
+              {/* <Tab.Panel>
                 <RoundApplicationPeriod
                   setValue={setValue}
                   editMode={editMode}
@@ -590,7 +590,7 @@ export default function ViewRoundSettings(props: { id?: string }) {
                   register={register}
                   errors={errors}
                 />
-              </Tab.Panel>
+              </Tab.Panel> */}
               <Tab.Panel>
                 <Funding
                   editMode={editMode}
