@@ -3,9 +3,7 @@ import { Tab, Tabs } from "../common/styles";
 import { toQueryString } from "./RoundsFilter";
 import { RoundStatus } from "./hooks/useFilterRounds";
 import { useMediaQuery } from "@chakra-ui/react";
-import {
-  useAlloVersion,
-} from "common/src/components/AlloVersionSwitcher";
+import { useAlloVersion } from "common/src/components/AlloVersionSwitcher";
 
 type TabType = {
   to: string;
@@ -41,12 +39,6 @@ export default function LandingTabs() {
       activeRegExp: /^\/rounds/,
       children: isDesktop ? "Explore rounds" : "Rounds",
       tabName: "home-rounds-tab",
-    },
-    {
-      to: "/projects",
-      activeRegExp: /^\/projects/,
-      children: isDesktop ? "Explore projects" : "Projects",
-      tabName: "home-projects-tab",
     },
   ];
 

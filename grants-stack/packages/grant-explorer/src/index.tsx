@@ -1,16 +1,11 @@
 import "./browserPatches";
 
 import { RainbowKitProvider, Theme, lightTheme } from "@rainbow-me/rainbowkit";
-import { ExploreProjectsPage } from "./features/discovery/ExploreProjectsPage";
 import { getConfig } from "common/src/config";
 import { DataLayer, DataLayerProvider } from "data-layer";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import {
-  HashRouter,
-  Route,
-  Routes,
-} from "react-router-dom";
+import { HashRouter, Route, Routes } from "react-router-dom";
 import { WagmiConfig } from "wagmi";
 import { chains, config } from "./app/wagmi";
 import { RoundProvider } from "./context/RoundContext";
@@ -96,10 +91,6 @@ root.render(
                       <Route path="/" element={<LandingPage />} />
 
                       <Route path="/rounds" element={<ExploreRoundsPage />} />
-                      <Route
-                        path="/projects"
-                        element={<ExploreProjectsPage />}
-                      />
 
                       {/* Round Routes */}
                       <Route
@@ -122,11 +113,6 @@ root.render(
 
                       {/* Access Denied */}
                       <Route path="/access-denied" element={<AccessDenied />} />
-                      <Route
-                        path="/collections/:collectionCid"
-                        element={<ExploreProjectsPage />}
-                      />
-
 
                       {/* 404 */}
                       <Route path="*" element={<NotFound />} />
