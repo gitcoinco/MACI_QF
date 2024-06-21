@@ -54,6 +54,7 @@ import {
   getContributionsByAddress,
   getVoiceCreditsByChainIdAndRoundId,
   getVoiceCreditsByChainIdsAndRoundIds,
+  getVoteOptionIndexByChainIdAndRoundId,
 } from "./queries";
 import { mergeCanonicalAndLinkedProjects } from "./utils";
 
@@ -924,6 +925,30 @@ export class DataLayer {
     return response.contributions[0].voiceCreditBalance;
   }
 
+  async getVoteOptionIndexByChainIdAndRoundId({
+    chainId,
+    roundId,
+    recipientId,
+  }: {
+    chainId: number;
+    roundId: string;
+    recipientId: string;
+  }) {
+    const requestVariables = {
+      chainId: chainId,
+      roundId: roundId,
+      recipientId: recipientId,
+    };
+
+    const response = await request(
+      this.gsIndexerEndpoint,
+      getVoteOptionIndexByChainIdAndRoundId,
+      requestVariables,
+    );
+
+    return response;
+  }
+
   async getVoiceCreditsByChainIdAndRoundId({
     contributorAddress,
   }: {
@@ -958,4 +983,3 @@ export class DataLayer {
     return result;
   }
 }
-

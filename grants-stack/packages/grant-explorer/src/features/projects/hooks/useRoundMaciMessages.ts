@@ -1,75 +1,12 @@
 import useSWR from "swr";
-import { Application, DataLayer, MACIContribution, Message } from "data-layer";
-import { getPublicClient, WalletClient } from "@wagmi/core";
-import { encodeAbiParameters, parseAbi, parseAbiParameters } from "viem";
-import { ethers } from "ethers";
+import { DataLayer, Message } from "data-layer";
+import { getPublicClient } from "@wagmi/core";
+import { parseAbi } from "viem";
 import { PCommand, PubKey } from "maci-domainobjs";
 import { generatePubKeyWithSeed } from "../../../checkoutStore";
-import { getMACIKey, getMACIKeys } from "../../api/keys";
+import { getMACIKey } from "../../api/keys";
 import { getContributorMessages } from "../../api/voting";
-import { formatAmount } from "../../api/formatAmount";
 import { GroupedMaciContributions, MACIContributions } from "../../api/types";
-
-type Params = {
-  chainId?: number;
-  roundId?: string;
-  address: string;
-}[];
-
-export function useRoundMaciMessages(params: Params, dataLayer: DataLayer) {
-  const shouldFetch = Object.values(params).every(Boolean);
-  return useSWR(
-    shouldFetch ? ["allApprovedApplications", params] : null,
-    async () => {
-      const response = [];
-
-      for (const param of params) {
-        if (param.chainId === undefined || param.roundId === undefined) {
-          return null;
-        }
-
-        response.push(
-          await getContributed(
-            param.chainId,
-            param.roundId,
-            param.address,
-            dataLayer
-          )
-        );
-      }
-      return response;
-    }
-  );
-}
-
-export function useRoundsMaciMessages(params: Params, dataLayer: DataLayer) {
-  const shouldFetch = Object.values(params).every(Boolean);
-  return useSWR(
-    shouldFetch ? ["allApprovedApplications", params] : null,
-    async () => {
-      const response: {
-        [chainId: number]: { [roundId: string]: MACIContributions };
-      } = {};
-      for (const param of params) {
-        if (param.chainId === undefined || param.roundId === undefined) {
-          return null;
-        }
-
-        if (!response[param.chainId]) {
-          response[param.chainId] = {};
-        }
-
-        response[param.chainId][param.roundId] = await getContributed(
-          param.chainId,
-          param.roundId,
-          param.address,
-          dataLayer
-        );
-      }
-      return response;
-    }
-  );
-}
 
 export function useMACIContributions(address: string, dataLayer: DataLayer) {
   return useSWR(["allContributions", address], async () => {
@@ -185,62 +122,6 @@ export const useDecryptMessages = (
   };
 };
 
-export const useVoiceCreditsByRoundIdAndChainId = (
-  chainId: number,
-  roundId: string,
-  address: string,
-  dataLayer: DataLayer
-) => {
-  return useSWR(["voiceCredits", chainId, roundId, address], async () => {
-    const response = await dataLayer.getContributionsByChainIdAndRoundID({
-      chainId,
-      roundId,
-      contributorAddress: address.toLowerCase(),
-    });
-
-    return response;
-  });
-};
-
-export const useGetMultiVoiceCreditsByRoundIdAndChainId = (
-  pairs: { chainId: number; roundId: string }[],
-  address: string,
-  dataLayer: DataLayer
-) => {
-  return useSWR(
-    ["voiceCredits", pairs, address],
-    async () => {
-      const fetchPromises = pairs.map(({ chainId, roundId }) =>
-        dataLayer
-          .getContributionsByChainIdAndRoundID({
-            chainId,
-            roundId,
-            contributorAddress: address.toLowerCase(),
-          })
-          .then((response) => ({ chainId, roundId, response }))
-      );
-
-      const responses = await Promise.all(fetchPromises);
-
-      const result: { [chainId: number]: { [roundId: string]: string } } = {};
-
-      responses.forEach(({ chainId, roundId, response }) => {
-        if (!result[chainId]) {
-          result[chainId] = {};
-        }
-        result[chainId][roundId] = response;
-      });
-
-      return result;
-    },
-    {
-      refreshInterval: 30000, // Set this to a desired value for automatic refresh
-      revalidateOnFocus: true, // Revalidate data on window focus
-    }
-  );
-};
-
-
 async function getMaciAddress(chainID: number, roundID: string) {
   const publicClient = getPublicClient({ chainId: chainID });
 
@@ -303,32 +184,6 @@ async function getMaciAddress(chainID: number, roundID: string) {
     roundId: roundID,
   };
 }
-
-
-const getContributed = async (
-  chainID: number,
-  roundID: string,
-  walletAddress: string,
-  dataLayer: DataLayer
-): Promise<MACIContributions> => {
-  const maciContracts = await getMaciAddress(chainID, roundID);
-  const maciAddress = maciContracts.maci as `0x${string}`;
-
-  const types = "uint256,address,address";
-  const bytes = encodeAbiParameters(parseAbiParameters(types), [
-    BigInt(chainID),
-    maciAddress,
-    walletAddress as `0x${string}`,
-  ]);
-
-  const id = ethers.utils.solidityKeccak256(["bytes"], [bytes]);
-  const resp = await dataLayer.getContributionsByAddressAndId({
-    contributorAddress: walletAddress.toLowerCase() as `0x${string}`,
-    contributionId: id.toLowerCase() as `0x${string}`,
-  });
-
-  return { encrypted: resp[0], maciInfo: maciContracts };
-};
 
 const getContributions = async (
   walletAddress: string,

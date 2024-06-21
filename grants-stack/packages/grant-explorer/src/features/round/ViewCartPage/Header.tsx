@@ -26,10 +26,9 @@ export function Header(props: { projects: CartProject[] }) {
         </div> */}
       </div>
 
-      <p className="mt-6 leading-6">Cross-Round, Cross-Network Giving 🌐 🛒</p>
+      <p className="mt-6 leading-6">Your donations are secured and anonymous with MACI(Minimal Anti-Collusion Infrastructure). With MACI, your donations are encrypted and kept private ensuring secure transactions 🔒🌐 🛒</p>
       <p className="mt-2 mb-5 leading-6">
-        Donate seamlessly across multiple rounds and networks. Add projects to
-        your cart and make a difference.
+        You have full control over how your donation is distributed among various projects, and you can adjust your donation distribution anytime before the round ends.
       </p>
     </div>
   );

@@ -30,12 +30,12 @@ const config: HardhatUserConfig = {
     scrollsepolia: {
       chainId: 534351,
       url: `https://scroll-sepolia.drpc.org	`,
-      accounts: [process.env.SEPOLIA_KEY!],
+      accounts: [process.env.COORDINATOR_PRIVATE_KEY!],
     },
     sepolia: {
       chainId: 11155111,
       url: `https://eth-sepolia.g.alchemy.com/v2/w07A2I5WCXg65VfLx_lHcVBkh2LN7E7z`,
-      accounts: [process.env.SEPOLIA_KEY!],
+      accounts: [process.env.COORDINATOR_PRIVATE_KEY!],
     },
     localhost: {
       url: "http://127.0.0.1:8545",

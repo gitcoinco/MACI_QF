@@ -168,6 +168,8 @@ export interface Round {
     maciParameters?: {
       coordinatorKeyPair: string;
       validEventIDs: { eventID: string }[];
+      maxContributionAmountAllowlisted: number;
+      maxContributionAmountNonAllowlisted: number;
     };
     quadraticFundingConfig: {
       matchingFundsAvailable: number;

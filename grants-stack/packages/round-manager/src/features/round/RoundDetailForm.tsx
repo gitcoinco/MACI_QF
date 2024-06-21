@@ -34,7 +34,6 @@ import { FormContext } from "../common/FormWizard";
 import { Keypair, PubKey } from "maci-domainobjs";
 import { useSearchParams } from "react-router-dom";
 
-import TagsInput from "react-tagsinput";
 
 export const RoundValidationSchema = yup.object().shape({
   roundMetadata: yup.object({
@@ -309,14 +308,8 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
 
                       // Clean up by removing the link
                       document.body.removeChild(link);
-                  
 
                       const pubkey = keypair.pubKey.serialize();
-
-                      const pubk = PubKey.deserialize(pubkey);
-                      console.log(pubkey);
-
-                      console.log("Is valid Serialized one ???   ",PubKey.isValidSerializedPubKey(pubkey));
 
                       // Saving the Coordinator Public Key in the form
                       setValue(
@@ -328,9 +321,6 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
                   >
                     Generate Coordinator Key Pair
                   </Button>
-
-                 
-                   
                 </>
               )}
 
@@ -843,8 +833,6 @@ function RoundName(props: {
   );
 }
 
-
-
 export function ProgramChain(props: { program: Program }) {
   const { program } = props;
   return (
@@ -1220,5 +1208,3 @@ function RoundType(props: {
     </>
   );
 }
-
-

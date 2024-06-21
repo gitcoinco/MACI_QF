@@ -171,7 +171,6 @@ export default function QuadraticFundingForm(props: QuadraticFundingFormProps) {
 
             {/* Sybil Defense */}
             <div className="p-6 bg-white">
-            
               <p className="text-grey-400 mb-2 mt-1 text-sm">
                 Ensure that project supporters are not bots or sybil with
                 Gitcoin Passport. Learn more about Gitcoin Passport{" "}
@@ -458,366 +457,10 @@ function MatchingFundsAvailable(props: {
   );
 }
 
-function MatchingCap(props: {
-  registerMatchingCapAmount: UseFormRegisterReturn<string>;
-  errors: FieldErrors<Round>;
-  control?: Control<Round>;
-  token: string;
-  payoutTokenOptions: PayoutToken[];
-}) {
-  const { field: matchingCapField } = useController({
-    name: "roundMetadata.quadraticFundingConfig.matchingCap",
-    defaultValue: false,
-    control: props.control,
-    rules: {
-      required: true,
-    },
-  });
-  const { value: isMatchingCap } = matchingCapField;
-  // get matching cap amount from form
 
-  const amt = useWatch({
-    name: "roundMetadata.quadraticFundingConfig.matchingCapAmount",
-    control: props.control,
-  });
-
-  const [matchingCapAmount, setMatchingCapAmount] = useState<
-    string | undefined
-  >(amt?.toString());
-
-  const matchingFunds = useWatch({
-    name: "roundMetadata.quadraticFundingConfig.matchingFundsAvailable",
-    control: props.control,
-  });
-
-  const matchingValueNumber = (Number(matchingCapAmount) / 100) * matchingFunds;
-  const matchingValue =
-    matchingValueNumber % 1 !== 0
-      ? matchingValueNumber.toFixed(2)
-      : matchingValueNumber.toFixed(0);
-
-  return (
-    <>
-      <div className="col-span-6 sm:col-span-3">
-        <RadioGroup {...matchingCapField} data-testid="matching-cap-selection">
-          <RadioGroup.Label className="block text-sm">
-            <p className="text-sm">
-              <span>Do you want a matching cap for projects?</span>
-              <span className="text-right text-violet-400 float-right text-xs mt-1">
-                *Required
-              </span>
-              <InformationCircleIcon
-                data-tip
-                data-background-color="#0E0333"
-                data-for="matching-cap-tooltip"
-                className="inline h-4 w-4 ml-2 mr-3 mb-1"
-                data-testid={"matching-cap-tooltip"}
-              />
-            </p>
-            <ReactTooltip
-              id="matching-cap-tooltip"
-              place="bottom"
-              type="dark"
-              effect="solid"
-            >
-              <p className="text-xs">
-                This will cap the percentage <br />
-                of your overall matching pool <br />
-                that a single grantee can receive.
-              </p>
-            </ReactTooltip>
-          </RadioGroup.Label>
-          <div className="flex flex-row gap-4 mt-3">
-            <RadioGroup.Option value={true}>
-              {({ checked, active }) => (
-                <span className="flex items-center text-sm">
-                  <span
-                    className={classNames(
-                      checked
-                        ? "bg-indigo-600 border-transparent"
-                        : "bg-white border-gray-300",
-                      active ? "ring-2 ring-offset-2 ring-indigo-500" : "",
-                      "h-4 w-4 rounded-full border flex items-center justify-center"
-                    )}
-                    aria-hidden="true"
-                  >
-                    <span className="rounded-full bg-white w-1.5 h-1.5" />
-                  </span>
-                  <RadioGroup.Label
-                    as="span"
-                    className="ml-3 block text-sm text-gray-700"
-                    data-testid="matching-cap-true"
-                  >
-                    Yes
-                  </RadioGroup.Label>
-                </span>
-              )}
-            </RadioGroup.Option>
-            <RadioGroup.Option value={false}>
-              {({ checked, active }) => (
-                <span className="flex items-center text-sm">
-                  <span
-                    className={classNames(
-                      checked
-                        ? "bg-indigo-600 border-transparent"
-                        : "bg-white border-gray-300",
-                      active ? "ring-2 ring-offset-2 ring-indigo-500" : "",
-                      "h-4 w-4 rounded-full border flex items-center justify-center"
-                    )}
-                    aria-hidden="true"
-                  >
-                    <span className="rounded-full bg-white w-1.5 h-1.5" />
-                  </span>
-                  <RadioGroup.Label
-                    as="span"
-                    className="ml-3 block text-sm text-gray-700"
-                    data-testid="matching-cap-false"
-                  >
-                    No
-                  </RadioGroup.Label>
-                </span>
-              )}
-            </RadioGroup.Option>
-          </div>
-        </RadioGroup>
-      </div>
-      <div className="col-span-6 sm:col-span-3">
-        <label htmlFor="matchingCapAmount" className="block text-sm">
-          <p className="text-sm">
-            <span>If so, how much?</span>
-            <span className="text-right text-violet-400 float-right text-xs mt-1">
-              *Required
-            </span>
-          </p>
-        </label>
-        <div className="relative mt-1 rounded-md shadow-sm">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <span className="text-gray-400 sm:text-sm">%</span>
-          </div>
-          <Input
-            className={
-              "block w-full rounded-md border-gray-300 pl-10 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 h-10"
-            }
-            {...props.registerMatchingCapAmount}
-            $hasError={
-              isMatchingCap &&
-              props.errors?.roundMetadata?.quadraticFundingConfig
-                ?.matchingCapAmount
-            }
-            type="number"
-            id={"matchingCapAmount"}
-            disabled={!isMatchingCap}
-            placeholder="Enter matching cap in form of percentage."
-            data-testid="matching-cap-percent"
-            aria-describedby="percentage-symbol"
-            max="100"
-            step="any"
-            onKeyUp={(e) =>
-              e.currentTarget.value !== ""
-                ? setMatchingCapAmount(e.currentTarget.value)
-                : setMatchingCapAmount(undefined)
-            }
-          />
-        </div>
-        {isMatchingCap &&
-          props.errors?.roundMetadata?.quadraticFundingConfig
-            ?.matchingCapAmount && (
-            <p
-              className="text-xs text-pink-500"
-              data-testid="matching-cap-error"
-            >
-              {
-                props.errors.roundMetadata?.quadraticFundingConfig
-                  ?.matchingCapAmount?.message
-              }
-            </p>
-          )}
-      </div>
-      <div
-        className="col-span-6 rounded text-sm bg-gray-50 p-2 text-gray-500"
-        hidden={!isMatchingCap}
-      >
-        A single project can only receive a maximum of {matchingCapAmount} % of
-        the matching fund (=
-        {matchingValue}{" "}
-        {
-          props.payoutTokenOptions.find(
-            (token) => token.address === props.token
-          )?.name
-        }
-        )
-      </div>
-    </>
-  );
-}
-
-function MinDonationThreshold(props: {
-  registerMinDonationThreshold: UseFormRegisterReturn<string>; // TODO: add type
-  errors: FieldErrors<Round>;
-  control?: Control<Round>;
-}) {
-  const { field: minDonationThresholdField } = useController({
-    name: "roundMetadata.quadraticFundingConfig.minDonationThreshold",
-    defaultValue: false,
-    control: props.control,
-    rules: {
-      required: true,
-    },
-  });
-  const { value: isMinDonation } = minDonationThresholdField;
-
-  // watch for minDonationAmount
-  const amt = useWatch({
-    name: "roundMetadata.quadraticFundingConfig.minDonationThresholdAmount",
-    control: props.control,
-  });
-  const [minDonationAmount, setMinDonationAmount] = useState(amt);
-
-  return (
-    <>
-      <div className="col-span-6 sm:col-span-3">
-        <RadioGroup
-          {...minDonationThresholdField}
-          data-testid="min-donation-selection"
-        >
-          <RadioGroup.Label className="block text-sm">
-            <p className="text-sm">
-              <span>
-                Do you want a minimum donation <br /> threshold for projects?
-              </span>
-              <span className="text-right text-violet-400 float-right text-xs mt-1">
-                *Required
-              </span>
-              <InformationCircleIcon
-                data-tip
-                data-background-color="#0E0333"
-                data-for="min-donation-tooltip"
-                className="inline h-4 w-4 ml-2 mr-3 mb-1"
-                data-testid="min-donation-tooltip"
-              />
-            </p>
-            <ReactTooltip
-              id="min-donation-tooltip"
-              place="bottom"
-              type="dark"
-              effect="solid"
-            >
-              <p className="text-xs">
-                Set a minimum amount for each <br />
-                donation to be eligible for matching.
-              </p>
-            </ReactTooltip>
-          </RadioGroup.Label>
-          <div className="flex flex-row gap-4 mt-3">
-            <RadioGroup.Option value={true}>
-              {({ checked, active }) => (
-                <span className="flex items-center text-sm">
-                  <span
-                    className={classNames(
-                      checked
-                        ? "bg-indigo-600 border-transparent"
-                        : "bg-white border-gray-300",
-                      active ? "ring-2 ring-offset-2 ring-indigo-500" : "",
-                      "h-4 w-4 rounded-full border flex items-center justify-center"
-                    )}
-                    aria-hidden="true"
-                  >
-                    <span className="rounded-full bg-white w-1.5 h-1.5" />
-                  </span>
-                  <RadioGroup.Label
-                    as="span"
-                    className="ml-3 block text-sm text-gray-700"
-                    data-testid="min-donation-true"
-                  >
-                    Yes
-                  </RadioGroup.Label>
-                </span>
-              )}
-            </RadioGroup.Option>
-            <RadioGroup.Option value={false}>
-              {({ checked, active }) => (
-                <span className="flex items-center text-sm">
-                  <span
-                    className={classNames(
-                      checked
-                        ? "bg-indigo-600 border-transparent"
-                        : "bg-white border-gray-300",
-                      active ? "ring-2 ring-offset-2 ring-indigo-500" : "",
-                      "h-4 w-4 rounded-full border flex items-center justify-center"
-                    )}
-                    aria-hidden="true"
-                  >
-                    <span className="rounded-full bg-white w-1.5 h-1.5" />
-                  </span>
-                  <RadioGroup.Label
-                    as="span"
-                    className="ml-3 block text-sm text-gray-700"
-                    data-testid="min-donation-false"
-                  >
-                    No
-                  </RadioGroup.Label>
-                </span>
-              )}
-            </RadioGroup.Option>
-          </div>
-        </RadioGroup>
-      </div>
-      <div className="col-span-6 sm:col-span-3">
-        <label htmlFor="minDonationAmount" className="block text-sm">
-          <p className="text-sm">
-            <span>If so, how much?</span>
-            <span className="text-right text-violet-400 float-right text-xs mt-1">
-              *Required
-            </span>
-          </p>
-        </label>
-        <div className="relative mt-1 rounded-md shadow-sm">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <span className="text-gray-400 sm:text-sm">USD</span>
-          </div>
-          <Input
-            className={
-              "block w-full rounded-md border-gray-300 pl-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 h-10"
-            }
-            {...props.registerMinDonationThreshold}
-            $hasError={
-              isMinDonation &&
-              props.errors?.roundMetadata?.quadraticFundingConfig
-                ?.matchingCapAmount
-            }
-            type="number"
-            id={"minDonationAmount"}
-            disabled={!isMinDonation}
-            placeholder="Enter minimum donation amount"
-            data-testid="min-donation-amount"
-            aria-describedby="dollar-symbol"
-            step="any"
-            onKeyUp={(e) => {
-              setMinDonationAmount(Number(e.currentTarget.value));
-            }}
-          />
-        </div>
-        {isMinDonation &&
-          props.errors?.roundMetadata?.quadraticFundingConfig
-            ?.minDonationThresholdAmount && (
-            <p className="text-xs text-pink-500">
-              {
-                props.errors.roundMetadata?.quadraticFundingConfig
-                  ?.minDonationThresholdAmount?.message
-              }
-            </p>
-          )}
-      </div>
-      <div
-        className="col-span-6 rounded text-sm bg-gray-50 p-2 text-gray-500"
-        hidden={!isMinDonation}
-      >
-        Each donation has to be a minimum of ${minDonationAmount} USD equivalent
-        for it to be eligible for matching.
-      </div>
-    </>
-  );
-}
+import "react-tagsinput/react-tagsinput.css";
+import { ZuzaluEvents } from "../../constants";
+import { uuidToBigInt } from "@pcd/util";
 
 function SybilDefense(props: {
   registerMatchingCapAmount: UseFormRegisterReturn<string>;
@@ -833,86 +476,121 @@ function SybilDefense(props: {
     },
   });
 
-  const [categories, setCategories] = useState({ tags: [] });
-  const [searchParams] = useSearchParams();
-  const roundCategoryParam = searchParams.get("roundCategory");
-    useState<boolean>(false);
+  const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
 
-  function setValue(arg0: string, tags: never[]) {
-    throw new Error("Function not implemented.");
-  }
+  // const handleEventSelection = (event) => {
+  //   const eventId = event.target.value;
+  //   if (eventId && !selectedEvents.includes(eventId)) {
+  //     const updatedEvents = [...selectedEvents, eventId];
+  //     setSelectedEvents(updatedEvents);
+  //     setValue(
+  //       "roundMetadata.maciParameters.validEventIDs",
+  //       updatedEvents.map(uuidToBigInt)
+  //     );
+  //   }
+  // };
+
+  // const removeEvent = (eventId) => {
+  //   const updatedEvents = selectedEvents.filter((id) => id !== eventId);
+  //   setSelectedEvents(updatedEvents);
+  //   setValue(
+  //     "roundMetadata.maciParameters.validEventIDs",
+  //     updatedEvents.map(uuidToBigInt)
+  //   );
+  // };
 
   return (
-    <>
-      {" "}
-      <div className="col-span-6 sm:col-span-3">
-        {/* Allowlist Details */}
-        {roundCategoryParam === "MACI-QF" && (
-          <>
-            {/* Valid Events explanation */}
-            <div className="mt-6 mb-3 text-sm text-grey-400">
-              <div className="text-base">
-                Valid Events for MACI are required to prevent spam and fraud
-                {/* <ApplicationDatesInformation /> */}
-              </div>
-              <p className="text-sm mt-0.5">
-                Valid Events are used to create an allowlist of previladged
-                voters
-              </p>
-            </div>
-
-            <p className="text-sm mb-2">
-              <span>Define valid zuzalu events</span>
-              <span className="text-right text-violet-400 float-right text-xs mt-1">
-                *Required
-              </span>
-            </p>
-            <div className="mx-auto mb-3 rounded-full">
-              <TagsInput
-                inputProps={{ placeholder: "Add Event" }}
-                onlyUnique={true}
-                value={categories.tags}
-                onChange={(tags) => {
-                  setCategories({ tags });
-                  setValue("roundMetadata.maciParameters.validEventIDs", tags);
-                }}
-              />
-            </div>
-            <p className="text-sm mb-2">
-              <span>Allowlist Details</span>
-              <span className="text-right text-violet-400 float-right text-xs mt-1">
-                *Required
-              </span>
-            </p>
-
-            <div className="grid grid-cols-6 gap-6 mb-1">
-              {/* Application start date */}
-              <div className="col-span-6 sm:col-span-3">
-                <div className="relative border rounded-md px-3 py-2 mb-2 shadow-sm focus-within:ring-1">
-                  <label className="block text-[10px]">
-                    Max Contribution Amount (Allowlisted Users)
-                  </label>
-                </div>
-              </div>
-              <div className="col-span-6 sm:col-span-3">
-                <div className="relative border rounded-md px-3 py-2 mb-2 shadow-sm focus-within:ring-1">
-                  <label className="block text-[10px]">
-                    Max Contribution Amount (Non Allowlisted Users)
-                  </label>
-                </div>
-              </div>
-              {/* Application end date */}
-              <div className="col-span-6 sm:col-span-3">
-                <div className="relative border rounded-md px-3 py-2 mb-2 shadow-sm focus-within:ring-1">
-                  <label className="block text-[10px]">
-                    Required Valid Events
-                  </label>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
+    <div className="col-span-6 sm:col-span-3">
+      <div className="mt-6 mb-3 text-sm text-grey-400">
+        <div className="text-base">
+          Valid Events for MACI are required to prevent spam and fraud
+        </div>
+        <p className="text-sm mt-0.5">
+          Valid Events are used to create an allowlist of privileged voters
+        </p>
       </div>
-    </>
+
+      <p className="text-sm mb-2">
+        <span>Define valid Zuzalu events</span>
+        <span className="text-right text-violet-400 float-right text-xs mt-1">
+          *Required
+        </span>
+      </p>
+      <select className="mb-3">
+        <option value="">Select an event</option>
+        {ZuzaluEvents.map((event) => (
+          <option key={event.eventId} value={event.eventId}>
+            {event.eventName}
+          </option>
+        ))}
+      </select>
+      {/* <TagsInput
+        inputProps={{ placeholder: "Add Event" }}
+        onlyUnique={true}
+        value={selectedEvents.map(
+          (eventId) =>
+            ZuzaluEvents.find((event) => event.eventId === eventId)
+              ?.eventName || ""
+        )}
+        onChange={(tags) => {
+          // handle tags input change if necessary
+        }}
+        renderTag={(props) => (
+          <span key={props.key} className="tag">
+            {props.tag}
+            <button
+              type="button"
+              onClick={() => removeEvent(selectedEvents[props.key])}
+            >
+              x
+            </button>
+          </span>
+        )}
+      /> */}
+      <div className="grid grid-cols-6 gap-6 mb-1">
+        <div className="col-span-6 sm:col-span-3">
+          <div className="relative border rounded-md px-3 py-2 mb-2 shadow-sm focus-within:ring-1">
+            <label className="block text-[10px]">
+              Max Contribution Amount (Allowlisted Users)
+            </label>
+            {/* <input
+              type="number"
+              {...registerMatchingCapAmount}
+              className="block w-full border-0 p-0 text-gray-900 placeholder-gray-500 focus:ring-0 sm:text-sm"
+            />
+            {errors.roundMetadata?.maciParameters
+              ?.maxContributionAmountAllowlisted && (
+              <span className="text-red-500 text-xs">
+                {
+                  errors.roundMetadata.maciParameters
+                    .maxContributionAmountAllowlisted.message
+                }
+              </span>
+            )} */}
+          </div>
+        </div>
+        <div className="col-span-6 sm:col-span-3">
+          <div className="relative border rounded-md px-3 py-2 mb-2 shadow-sm focus-within:ring-1">
+            <label className="block text-[10px]">
+              Max Contribution Amount (Non Allowlisted Users)
+            </label>
+            {/* <input
+              type="number"
+              {...registerMatchingCapAmount}
+              className="block w-full border-0 p-0 text-gray-900 placeholder-gray-500 focus:ring-0 sm:text-sm"
+            />
+            {errors.roundMetadata?.maciParameters
+              ?.maxContributionAmountNonAllowlisted && (
+              <span className="text-red-500 text-xs">
+                {
+                  errors.roundMetadata.maciParameters
+                    .maxContributionAmountNonAllowlisted.message
+                }
+              </span>
+            )} */}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -121,7 +121,7 @@ const getContributed = async (
         ? applications[chainId]?.[roundID] || []
         : [];
 
-      const voteIdMap = await getVoteIdMap(applicationsForChainRound);
+      const voteIdMap = await getVoteIdMap(applicationsForChainRound,dataLayer);
       const contributed = await getApplicationsByVoteOptionIndex(
         applicationsForChainRound,
         decryptedMessages,
@@ -136,8 +136,9 @@ const getContributed = async (
 
 export const setContributed = async (
   projects: CartProject[],
+  walletAddress: string,
   dataLayer: DataLayer,
-  setCart: (projects: CartProject[]) => void,
+  setUserCart: (projects: CartProject[], walletAddress: string) => void,
   applications?: {
     [chainId: number]: {
       [roundId: string]: Application[];
@@ -192,10 +193,10 @@ export const setContributed = async (
       console.log("newProjects", newProjects);
 
       // Combine new projects with updated ones, excluding contributed projects with newVoteWeight === "0"
-      setCart([
-        ...updatedProjects.filter((p) => p.amount !== "0"),
-        ...newProjects,
-      ]);
+      setUserCart(
+        [...updatedProjects.filter((p) => p.amount !== "0"), ...newProjects],
+        walletAddress
+      );
     })
     .catch((error) => {
       console.error("Error fetching applications in cart", error);

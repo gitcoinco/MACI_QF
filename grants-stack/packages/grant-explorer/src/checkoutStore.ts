@@ -11,7 +11,7 @@ import {
   IMessageContractParams,
   IPubKey,
 } from "./features/api/types";
-import { Allo, ChainId } from "common";
+import { ChainId } from "common";
 import { useCartStorage } from "./store";
 import {
   Hex,
@@ -20,33 +20,26 @@ import {
   parseUnits,
   SwitchChainError,
   UserRejectedRequestError,
-  zeroAddress,
 } from "viem";
 import {
   Keypair as GenKeyPair,
   prepareAllocationData,
   bnSqrt,
 } from "./features/api/voting";
-import { groupBy, round, uniq } from "lodash-es";
+import { groupBy, uniq } from "lodash-es";
 import { getEnabledChains } from "./app/chainConfig";
 import { WalletClient, PublicClient } from "wagmi";
-import { getContract, getPublicClient } from "@wagmi/core";
-import { getPermitType } from "common/dist/allo/voting";
-import { MRC_CONTRACTS } from "common/dist/allo/addresses/mrc";
-import { getConfig } from "common/src/config";
-import { DataLayer } from "data-layer";
+import { getPublicClient } from "@wagmi/core";
 
-import { decodeAbiParameters, parseAbiParameters, formatEther } from "viem";
+import { decodeAbiParameters, parseAbiParameters } from "viem";
 
 // NEW CODE
 import { Keypair, PCommand, PubKey, PrivKey } from "maci-domainobjs";
 import { genRandomSalt } from "maci-crypto";
-import { is } from "date-fns/locale";
-import { Console } from "console";
+import { DataLayer } from "data-layer";
 
 type ChainMap<T> = Record<ChainId, T>;
 
-const isV2 = getConfig().allo.version === "allo-v2";
 interface CheckoutState {
   permitStatus: ChainMap<ProgressStatus>;
   setPermitStatusForChain: (
@@ -90,16 +83,20 @@ interface CheckoutState {
     roundId: string,
     walletClient: WalletClient,
     publicClient: PublicClient,
+    dataLayer: DataLayer,
+    walletAddress: string,
     pcd?: string
-  ) => Promise<void>;
+  ) => Promise<boolean>;
 
   changeDonations: (
     chainId: ChainId,
     roundId: string,
     walletClient: WalletClient,
     previousMessages: PCommand[],
-    stateIndex: bigint
-  ) => Promise<void>;
+    stateIndex: bigint,
+    dataLayer: DataLayer,
+    walletAddress: string
+  ) => Promise<boolean>;
 
   getCheckedOutProjects: () => CartProject[];
   checkedOutProjects: CartProject[];
@@ -112,6 +109,20 @@ const defaultProgressStatusForAllChains = Object.fromEntries(
     ProgressStatus.NOT_STARTED,
   ])
 ) as ChainMap<ProgressStatus>;
+
+const abi = parseAbi([
+  "function getPool(uint256) view returns ((bytes32 profileId, address strategy, address token, (uint256,string) metadata, bytes32 managerRole, bytes32 adminRole))",
+  "function _pollContracts() view returns ((address poll, address messageProcessor,address tally,address subsidy))",
+  "function coordinatorPubKey() view returns (uint256 x, uint256 y)",
+  "function allocate(uint256, bytes) external payable",
+
+  "function publishMessageBatch((uint256 msgType,uint256[10] data)[] _messages,(uint256 x,uint256 y)[] _pubKeys)",
+  "function maxValues() view returns (uint256 maxVoteOptions)",
+  "function coordinatorPubKey() view returns ((uint256, uint256))",
+]);
+
+const alloContractAddress =
+  "0x1133ea7af70876e64665ecd07c0a0476d09465a1" as `0x${string}`;
 
 export const useCheckoutStore = create<CheckoutState>()(
   devtools((set, get) => ({
@@ -178,6 +189,7 @@ export const useCheckoutStore = create<CheckoutState>()(
         isDonationOrChangeDonationInProgress: isInProgress,
       });
     },
+
     /** Checkout the given chains
      * this has the side effect of adding the chains to the wallet if they are not yet present
      * We get the data necessary to construct the votes from the cart store */
@@ -186,8 +198,10 @@ export const useCheckoutStore = create<CheckoutState>()(
       roundId: string,
       walletClient: WalletClient,
       publicClient: PublicClient,
+      dataLayer: DataLayer,
+      walletAddress: string,
       pcd?: string
-    ) => {
+    ): Promise<boolean> => {
       const chainIdsToCheckOut = [chainId];
       get().setChainsToCheckout(
         uniq([...get().chainsToCheckout, ...chainIdsToCheckOut])
@@ -197,25 +211,14 @@ export const useCheckoutStore = create<CheckoutState>()(
 
       const projectsToCheckOut = useCartStorage
         .getState()
-        .projects.filter(
-          (project) =>
-            project.chainId === chainId && project.roundId === roundId
-        );
+        .userProjects[
+          walletAddress
+        ].filter((project) => project.chainId === chainId && project.roundId === roundId);
 
       const projectsByChain = { [chainId]: projectsToCheckOut };
 
       const getVotingTokenForChain =
         useCartStorage.getState().getVotingTokenForChain;
-
-      const totalDonationPerChain = projectsToCheckOut.reduce(
-        (acc, project) =>
-          acc +
-          parseUnits(
-            project.amount ? project.amount : "0",
-            getVotingTokenForChain(chainId).decimal
-          ),
-        0n
-      );
 
       const donations = projectsByChain[chainId];
 
@@ -264,26 +267,26 @@ export const useCheckoutStore = create<CheckoutState>()(
 
         const voteIdMap: { [key: string]: bigint } = {};
 
-        const strategyAddress = await publicClient.readContract({
-          address:
-            "0x1133eA7Af70876e64665ecD07C0A0476d09465a1" as `0x${string}`,
-          abi: parseAbi([
-            "function getPool(uint256) public view returns ((bytes32, address, address, (uint256,string), bytes32, bytes32))",
-          ]),
+        const pool = (await publicClient.readContract({
+          address: alloContractAddress,
+          abi: abi,
           functionName: "getPool",
           args: [BigInt(roundId)],
-        });
+        })) as PoolInfo;
         for (const app of groupedDonations[roundId]) {
-          const ID = await publicClient.readContract({
-            address: strategyAddress[1] as `0x${string}`,
-            abi: parseAbi([
-              "function recipientToVoteIndex(address) public view returns (uint256)",
-            ]),
-            functionName: "recipientToVoteIndex",
-            args: [app.anchorAddress as `0x${string}`],
-          });
+          const ID = (await dataLayer.getVoteOptionIndexByChainIdAndRoundId({
+            chainId: chainId,
+            roundId: roundId,
+            recipientId: app.anchorAddress ?? ("" as string),
+          })) as {
+            votingIndexOptions: { optionIndex: bigint }[];
+          };
 
-          voteIdMap[app.anchorAddress ?? ""] = ID;
+          console.log("ID", ID);
+
+          const voteOption = ID?.votingIndexOptions[0].optionIndex;
+
+          voteIdMap[app.anchorAddress ?? ""] = voteOption;
         }
 
         // Process each donation
@@ -347,21 +350,18 @@ export const useCheckoutStore = create<CheckoutState>()(
 
         get().setContributionStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
 
+        get().setVoteStatusForChain(chainId, ProgressStatus.IN_PROGRESS);
+
         // Publish the batch of messages
         await publishBatch(PublishBatchArgs);
 
-        // donations.forEach((donation) => {
-        //   useCartStorage.getState().remove(donation);
-        // });
-        set((oldState) => ({
-          voteStatus: {
-            ...oldState.voteStatus,
-            [chainId]: ProgressStatus.IS_SUCCESS,
-          },
-        }));
+        get().setVoteStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
+
         set({
           checkedOutProjects: [...get().checkedOutProjects, ...donations],
         });
+
+        return true;
       } catch (error) {
         let context: Record<string, unknown> = {
           chainId,
@@ -382,7 +382,7 @@ export const useCheckoutStore = create<CheckoutState>()(
         }
 
         get().setVoteStatusForChain(chainId, ProgressStatus.IS_ERROR);
-        throw error;
+        return false;
       }
     },
 
@@ -394,8 +394,10 @@ export const useCheckoutStore = create<CheckoutState>()(
       roundId: string,
       walletClient: WalletClient,
       previousMessages: PCommand[],
-      stateIndex: bigint
-    ) => {
+      stateIndex: bigint,
+      dataLayer: DataLayer,
+      walletAddress: string
+    ): Promise<boolean> => {
       const chainIdsToCheckOut = [chainId];
       get().setChainsToCheckout(
         uniq([...get().chainsToCheckout, ...chainIdsToCheckOut])
@@ -405,10 +407,9 @@ export const useCheckoutStore = create<CheckoutState>()(
 
       const projectsToCheckOut = useCartStorage
         .getState()
-        .projects.filter(
-          (project) =>
-            project.chainId === chainId && project.roundId === roundId
-        );
+        .userProjects[
+          walletAddress
+        ].filter((project) => project.chainId === chainId && project.roundId === roundId);
 
       const projectsByChain = { [chainId]: projectsToCheckOut };
 
@@ -442,26 +443,30 @@ export const useCheckoutStore = create<CheckoutState>()(
           chainId,
         });
 
-        const strategyAddress = await publicClient.readContract({
-          address:
-            "0x1133eA7Af70876e64665ecD07C0A0476d09465a1" as `0x${string}`,
-          abi: parseAbi([
-            "function getPool(uint256) public view returns ((bytes32, address, address, (uint256,string), bytes32, bytes32))",
-          ]),
-          functionName: "getPool",
-          args: [BigInt(roundId)],
-        });
-        for (const app of groupedDonations[roundId]) {
-          const ID = await publicClient.readContract({
-            address: strategyAddress[1] as `0x${string}`,
-            abi: parseAbi([
-              "function recipientToVoteIndex(address) public view returns (uint256)",
-            ]),
-            functionName: "recipientToVoteIndex",
-            args: [app.anchorAddress as `0x${string}`],
-          });
+        const [Pool] = await Promise.all([
+          publicClient.readContract({
+            abi: abi,
+            address: alloContractAddress as Hex,
+            functionName: "getPool",
+            args: [BigInt(roundId)],
+          }),
+        ]);
 
-          voteIdMap[app.anchorAddress ?? ""] = ID;
+        const pool = Pool as PoolInfo;
+        for (const app of groupedDonations[roundId]) {
+          const ID = (await dataLayer.getVoteOptionIndexByChainIdAndRoundId({
+            chainId: chainId,
+            roundId: roundId,
+            recipientId: app.anchorAddress ?? ("" as string),
+          })) as {
+            votingIndexOptions: { optionIndex: bigint }[];
+          };
+
+          console.log("ID", ID);
+
+          const voteOption = ID?.votingIndexOptions[0].optionIndex;
+
+          voteIdMap[app.anchorAddress ?? ""] = voteOption;
         }
 
         get().setMaciKeyStatusForChain(chainId, ProgressStatus.IN_PROGRESS);
@@ -541,27 +546,6 @@ export const useCheckoutStore = create<CheckoutState>()(
 
         messagesPerRound[roundId] = messages;
 
-        const abi = parseAbi([
-          "function getPool(uint256) view returns ((bytes32 profileId, address strategy, address token, (uint256,string) metadata, bytes32 managerRole, bytes32 adminRole))",
-          "function _pollContracts() view returns ((address poll, address messageProcessor,address tally,address subsidy))",
-          "function coordinatorPubKey() view returns (uint256 x, uint256 y)",
-          "function allocate(uint256, bytes) external payable",
-        ]);
-
-        const alloContractAddress =
-          "0x1133ea7af70876e64665ecd07c0a0476d09465a1";
-
-        const [Pool] = await Promise.all([
-          publicClient.readContract({
-            abi: abi,
-            address: alloContractAddress as Hex,
-            functionName: "getPool",
-            args: [BigInt(roundId)],
-          }),
-        ]);
-
-        const pool = Pool as PoolInfo;
-
         const pollContracts = await publicClient.readContract({
           abi: abi,
           address: pool.strategy as Hex,
@@ -595,8 +579,6 @@ export const useCheckoutStore = create<CheckoutState>()(
             useCartStorage.getState().remove(donation);
           }
         });
-        // // reload the page
-        // window.location.reload();
 
         get().setChangeDonationsStatusForChain(
           chainId,
@@ -612,6 +594,8 @@ export const useCheckoutStore = create<CheckoutState>()(
         set({
           checkedOutProjects: [...get().checkedOutProjects, ...donations],
         });
+
+        return true;
       } catch (error) {
         let context: Record<string, unknown> = {
           chainId,
@@ -632,7 +616,7 @@ export const useCheckoutStore = create<CheckoutState>()(
         }
 
         get().setVoteStatusForChain(chainId, ProgressStatus.IS_ERROR);
-        throw error;
+        return false;
       }
     },
     checkedOutProjects: [],
@@ -741,19 +725,10 @@ const allocate = async ({
     chainId,
   });
 
-  const abi = parseAbi([
-    "function getPool(uint256) view returns ((bytes32 profileId, address strategy, address token, (uint256,string) metadata, bytes32 managerRole, bytes32 adminRole))",
-    "function _pollContracts() view returns ((address poll, address messageProcessor,address tally,address subsidy))",
-    "function coordinatorPubKey() view returns (uint256 x, uint256 y)",
-    "function allocate(uint256, bytes) external payable",
-  ]);
-
-  const alloContractAddress = "0x1133ea7af70876e64665ecd07c0a0476d09465a1";
-
   const [Pool] = await Promise.all([
     publicClient.readContract({
       abi: abi,
-      address: alloContractAddress as Hex,
+      address: alloContractAddress,
       functionName: "getPool",
       args: [BigInt(roundId)],
     }),
@@ -769,7 +744,7 @@ const allocate = async ({
   const poll = pollContracts as MACIPollContracts;
 
   const allocate = await walletClient.writeContract({
-    address: alloContractAddress as Hex,
+    address: alloContractAddress,
     abi: abi,
     functionName: "allocate",
     args: [BigInt(roundId), bytes],
@@ -822,18 +797,7 @@ export const publishBatch = async ({
 
   const userMaciPrivKey = privateKey;
 
-  const abi = parseAbi([
-    "function publishMessageBatch((uint256 msgType,uint256[10] data)[] _messages,(uint256 x,uint256 y)[] _pubKeys)",
-    "function maxValues() view returns (uint256 maxVoteOptions)",
-    "function coordinatorPubKey() view returns ((uint256, uint256))",
-  ]);
-
-  const [maxValues, coordinatorPubKeyResult] = await Promise.all([
-    publicClient.readContract({
-      abi: abi,
-      address: Poll as Hex,
-      functionName: "maxValues",
-    }),
+  const [coordinatorPubKeyResult] = await Promise.all([
     publicClient.readContract({
       abi: abi,
       address: Poll as Hex,
@@ -841,9 +805,7 @@ export const publishBatch = async ({
     }),
   ]);
 
-  const maxoptions = maxValues as bigint;
-
-  const maxVoteOptions = Number(maxoptions);
+  const maxVoteOptions = 125;
 
   // validate the vote options index against the max leaf index on-chain
   messages.forEach(({ stateIndex, voteOptionIndex, nonce }) => {
@@ -904,8 +866,7 @@ export const publishBatch = async ({
   const preparedMessages = payload
     .map((obj) => obj.message)
     .reverse() as unknown as IMessageContractParams[];
-  const preparedKeys = payload
-    .map((obj) => obj.key) as IPubKey[];
+  const preparedKeys = payload.map((obj) => obj.key) as IPubKey[];
 
   if (!walletClient) {
     console.log("Wallet client not found");

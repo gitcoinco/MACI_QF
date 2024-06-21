@@ -9,7 +9,6 @@ import { useNavigate } from "react-router-dom";
 import { useAccount, useWalletClient } from "wagmi";
 import { Button } from "common/src/styles";
 import { InformationCircleIcon } from "@heroicons/react/24/solid";
-import { BoltIcon } from "@heroicons/react/24/outline";
 import { getClassForPassportColor } from "../../api/passport";
 import useSWR from "swr";
 import MRCProgressModal from "../../common/MRCProgressModal";
@@ -17,19 +16,9 @@ import { MRCProgressModalBody } from "./MRCProgressModalBody";
 import { useCheckoutStore } from "../../../checkoutStore";
 import { formatUnits, parseUnits, zeroAddress } from "viem";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
-import {
-  matchingEstimatesToText,
-  useMatchingEstimates,
-} from "../../../hooks/matchingEstimate";
-import { Skeleton } from "@chakra-ui/react";
-import { MatchingEstimateTooltip } from "../../common/MatchingEstimateTooltip";
 import { parseChainId } from "common/src/chains";
 import { fetchBalance, getPublicClient } from "@wagmi/core";
 import { useAllo } from "../../api/AlloWrapper";
-import { getFormattedRoundId } from "../../common/utils/utils";
-import { Switch } from "@headlessui/react";
-import { zuAuthPopup } from "@pcd/zuauth";
-import { ZUAUTH_CONFIG, fieldsToReveal } from "../../api/pcd";
 import { useDataLayer } from "data-layer";
 import { PCommand } from "maci-domainobjs";
 import { NATIVE } from "common";
@@ -43,18 +32,23 @@ export function SummaryContainer(props: {
   stateIndex: bigint;
   chainId: number;
   roundId: string;
+  pcd: string | undefined;
+  walletAddress: string;
 }) {
   const { data: walletClient } = useWalletClient();
   const { address, isConnected } = useAccount();
   const {
-    projects,
+    userProjects,
     getVotingTokenForChain,
-    remove: removeProjectFromCart,
+    removeUserProject: removeProjectFromCart,
   } = useCartStorage();
   const { checkoutMaci, changeDonations } = useCheckoutStore();
   const dataLayer = useDataLayer();
   const { openConnectModal } = useConnectModal();
   const allo = useAllo();
+  const navigate = useNavigate();
+
+  const projects = userProjects[props.walletAddress];
 
   const maciChainId = props.chainId;
   const maciRoundId = props.roundId;
@@ -69,7 +63,15 @@ export function SummaryContainer(props: {
 
   const totalDonations = filteredProjects.reduce(
     (acc, project) =>
-      acc + parseUnits(project.amount || "0", votingToken.decimal),
+      acc +
+      parseUnits(
+        project.amount === ""
+          ? "0"
+          : isNaN(Number(project.amount))
+            ? "0"
+            : project.amount,
+        votingToken.decimal
+      ),
     0n
   );
 
@@ -102,26 +104,10 @@ export function SummaryContainer(props: {
     if (!round) return;
     if (round.roundEndTime.getTime() < Date.now()) {
       filteredProjects.forEach((project) => {
-        removeProjectFromCart(project);
+        removeProjectFromCart(project, props.walletAddress);
       });
     }
-  }, [filteredProjects, removeProjectFromCart, round]);
-
-  const [pcd, setPcd] = useState<string | undefined>(undefined);
-  const [pcdFetched, setPcdFetched] = useState(false);
-
-  const getProof = useCallback(async () => {
-    if (!address) return;
-    const result = await zuAuthPopup({
-      fieldsToReveal,
-      watermark: address,
-      config: ZUAUTH_CONFIG,
-    });
-    if (result.type === "pcd") {
-      setPcd(JSON.parse(result.pcdStr).pcd);
-      setPcdFetched(true);
-    }
-  }, [address]);
+  }, [filteredProjects, removeProjectFromCart, round, props.walletAddress]);
 
   const handleConfirmation = async () => {
     if (
@@ -145,7 +131,6 @@ export function SummaryContainer(props: {
   const [openChainConfirmationModal, setOpenChainConfirmationModal] =
     useState(false);
   const [openMRCProgressModal, setOpenMRCProgressModal] = useState(false);
-  const [enabled, setEnabled] = useState(false);
 
   console.log("props.decryptedMessages", props.decryptedMessages);
 
@@ -154,52 +139,11 @@ export function SummaryContainer(props: {
       <ChainConfirmationModal
         title={"Checkout"}
         confirmButtonText={
-          pcdFetched && enabled
-            ? "Checkout"
-            : !enabled
-            ? "Checkout"
-            : "Generate Proof"
+          props.alreadyContributed ? "Change Donations" : "Checkout"
         }
-        confirmButtonAction={
-          (pcdFetched && enabled) || !enabled ? handleSubmitDonation : getProof
-        }
+        confirmButtonAction={handleSubmitDonation}
         body={
           <div>
-            <Switch.Group
-              as="div"
-              className="flex items-center justify-between mb-4"
-            >
-              <span className="flex flex-grow flex-col">
-                <Switch.Label
-                  as="span"
-                  className="text-sm font-medium leading-6 text-gray-900"
-                  passive
-                >
-                  Join Allowlist
-                </Switch.Label>
-                <Switch.Description as="span" className="text-sm text-gray-500">
-                  You will gain access to the Allowlist and be able to donate
-                  more
-                </Switch.Description>
-              </span>
-              <Switch
-                checked={enabled}
-                onChange={setEnabled}
-                className={classNames(
-                  enabled ? "bg-indigo-600" : "bg-gray-200",
-                  "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2"
-                )}
-              >
-                <span
-                  aria-hidden="true"
-                  className={classNames(
-                    enabled ? "translate-x-5" : "translate-x-0",
-                    "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                  )}
-                />
-              </Switch>
-            </Switch.Group>
-
             <ChainConfirmationModalBody
               projectsByChain={{ [maciChainId]: filteredProjects }}
               totalDonationsPerChain={{ [maciChainId]: totalDonations }}
@@ -235,26 +179,36 @@ export function SummaryContainer(props: {
       setOpenChainConfirmationModal(false);
     }, modalDelayMs);
     if (props.alreadyContributed) {
-      await changeDonations(
+      const isSuccess = await changeDonations(
         parseChainId(maciChainId),
         maciRoundId,
         walletClient,
         props.decryptedMessages ?? [],
-        props.stateIndex
+        props.stateIndex,
+        dataLayer,
+        address as string
       );
+      if (isSuccess) {
+        setOpenMRCProgressModal(false);
+      }
     } else {
-      await checkoutMaci(
+      const isSuccess = await checkoutMaci(
         parseChainId(maciChainId),
         maciRoundId,
         walletClient,
         getPublicClient({
           chainId: Number(maciChainId),
         }),
-        pcdFetched ? pcd : undefined
+        dataLayer,
+        address as string,
+        props.pcd
       );
+      if (isSuccess) {
+        setOpenMRCProgressModal(false);
+        navigate("/thankyou");
+      }
     }
   };
-
 
   if (filteredProjects.length === 0) {
     return null;
@@ -324,19 +278,15 @@ export function SummaryContainer(props: {
           ? totalDonations > tokenBalance && !props.alreadyContributed
             ? "Not enough funds to donate"
             : props.alreadyContributed && props.donatedAmount < totalDonations
-            ? "Exceeds donation limit"
-            : props.alreadyContributed && props.donatedAmount > totalDonations
-            ? "Make use 100% of your donation amount"
-            : props.alreadyContributed
-            ? "Change donations"
-            : "Submit your donation!"
+              ? "Exceeds donation limit"
+              : props.alreadyContributed && props.donatedAmount > totalDonations
+                ? "Make use 100% of your donation amount"
+                : props.alreadyContributed
+                  ? "Change donations"
+                  : "Submit your donation!"
           : "Connect wallet to continue"}
       </Button>
       <PayoutModals />
     </div>
   );
-}
-
-function classNames(...classes: string[]) {
-  return classes.filter(Boolean).join(" ");
 }

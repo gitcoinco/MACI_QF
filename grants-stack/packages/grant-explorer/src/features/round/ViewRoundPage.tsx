@@ -704,7 +704,10 @@ function ProjectCard(props: {
   const projectRecipient =
     project.recipient.slice(0, 5) + "..." + project.recipient.slice(-4);
 
-  const { projects, add, remove } = useCartStorage();
+  const { userProjects, addUserProject, removeUserProject } = useCartStorage();
+  const { address } = useAccount();
+
+  const projects = address ? userProjects[address] ?? [] : [];
 
   const isAlreadyInCart = projects.some(
     (cartProject) =>
@@ -778,15 +781,15 @@ function ProjectCard(props: {
                   total raised by {props.uniqueContributorsCount} contributors
                 </p>
               </div>
-              {props.isBeforeRoundEndDate && (
+              {props.isBeforeRoundEndDate && address && (
                 <CartButton
                   project={project}
                   isAlreadyInCart={isAlreadyInCart}
                   removeFromCart={() => {
-                    remove(cartProject);
+                    removeUserProject(cartProject, address);
                   }}
                   addToCart={() => {
-                    add(cartProject);
+                    addUserProject(cartProject, address);
                   }}
                   setCurrentProjectAddedToCart={
                     props.setCurrentProjectAddedToCart

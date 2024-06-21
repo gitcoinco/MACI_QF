@@ -4,7 +4,12 @@ import {
   VerifiableCredential,
 } from "@gitcoinco/passport-sdk-types";
 import { ShieldCheckIcon } from "@heroicons/react/24/solid";
-import { PassportVerifierWithExpiration, formatDateWithOrdinal, renderToHTML, useParams } from "common";
+import {
+  PassportVerifierWithExpiration,
+  formatDateWithOrdinal,
+  renderToHTML,
+  useParams,
+} from "common";
 import { getAlloVersion } from "common/src/config";
 import { formatDistanceToNowStrict } from "date-fns";
 import React, {
@@ -122,7 +127,9 @@ export default function ViewProjectDetails() {
     round?.roundMetadata?.quadraticFundingConfig?.sybilDefense === true;
 
   const { grants } = useGap(projectToRender?.projectRegistryId as string);
-  const { stats } = useOSO(projectToRender?.projectMetadata.projectGithub as string);
+  const { stats } = useOSO(
+    projectToRender?.projectMetadata.projectGithub as string
+  );
 
   const currentTime = new Date();
   const isAfterRoundEndDate =
@@ -147,7 +154,10 @@ export default function ViewProjectDetails() {
   const disableAddToCartButton =
     (alloVersion === "allo-v2" && roundId.startsWith("0x")) ||
     isAfterRoundEndDate;
-  const { projects, add, remove } = useCartStorage();
+  const { userProjects, addUserProject, removeUserProject } = useCartStorage();
+  const { address } = useAccount();
+
+  const projects = address ? userProjects[address] : [];
 
   const isAlreadyInCart = projects.some(
     (project) =>
@@ -249,15 +259,15 @@ export default function ViewProjectDetails() {
           </div>
         </div>
         <div className="md:flex gap-4 flex-row-reverse">
-          {round && !isDirectRound(round) && (
+          {round && address && !isDirectRound(round) && (
             <Sidebar
               isAlreadyInCart={isAlreadyInCart}
               isBeforeRoundEndDate={!disableAddToCartButton}
               removeFromCart={() => {
-                remove(cartProject);
+                removeUserProject(cartProject, address);
               }}
               addToCart={() => {
-                add(cartProject);
+                addUserProject(cartProject, address);
               }}
             />
           )}
@@ -670,7 +680,8 @@ async function isVerified(args: {
   const { verifiableCredential, provider, project } = args;
 
   const passportVerifier = new PassportVerifierWithExpiration();
-  const  vcHasValidProof = await passportVerifier.verifyCredential(verifiableCredential);
+  const vcHasValidProof =
+    await passportVerifier.verifyCredential(verifiableCredential);
 
   const vcIssuedByValidIAMServer = verifiableCredential.issuer === IAM_SERVER;
   const providerMatchesProject = vcProviderMatchesProject(
