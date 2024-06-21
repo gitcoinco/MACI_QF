@@ -515,21 +515,32 @@ export const useCheckoutStore = create<CheckoutState>()(
           ] = voteWeight;
         });
 
-        const messagesPerRound: Record<string, IPublishMessage[]> = {};
+        // Sort the previous messages by nonce 0 index of the array should have the max nonce
+        previousMessages.sort((a, b) => {
+          return a.nonce < b.nonce ? -1 : 1;
+        });
 
-        let maxNonce = 0n;
-        for (const message of previousMessages) {
-          if (message.nonce > maxNonce) {
-            maxNonce = message.nonce;
-          }
-        }
+        let maxNonce =
+          previousMessages.length > 0
+            ? previousMessages[previousMessages.length - 1].nonce
+            : 1n;
 
         // Increment maxNonce to start from the next nonce
         if (previousMessages.length > 0) {
           maxNonce++;
         }
 
-        const messages: IPublishMessage[] = [];
+        const messages: IPublishMessage[] =
+          previousMessages.length > 0
+            ? previousMessages.map((msg) => {
+                return {
+                  stateIndex: stateIndex,
+                  voteOptionIndex: msg.voteOptionIndex,
+                  nonce: msg.nonce,
+                  newVoteWeight: msg.newVoteWeight,
+                };
+              })
+            : [];
 
         groupedDonations[roundId].forEach((donation) => {
           const amount = DonationVotesEachRound[roundId][
@@ -537,14 +548,22 @@ export const useCheckoutStore = create<CheckoutState>()(
           ] as bigint;
           messages.push({
             stateIndex: 1n,
-            voteOptionIndex: voteIdMap[donation.anchorAddress ?? ""],
+            voteOptionIndex: BigInt(voteIdMap[donation.anchorAddress ?? ""]),
             nonce: maxNonce,
             newVoteWeight: amount === 0n ? 0n : bnSqrt(amount),
           });
           maxNonce++;
         });
 
-        messagesPerRound[roundId] = messages;
+        const seen = new Set();
+        const filteredMessages = messages.filter((item) => {
+          if (seen.has(item.nonce)) {
+            return false;
+          } else {
+            seen.add(item.nonce);
+            return true;
+          }
+        });
 
         const pollContracts = await publicClient.readContract({
           abi: abi,
@@ -554,7 +573,7 @@ export const useCheckoutStore = create<CheckoutState>()(
 
         const poll = pollContracts as MACIPollContracts;
 
-        const Messages = messages.map((message) => {
+        const Messages = filteredMessages.map((message) => {
           return {
             stateIndex: stateIndex,
             voteOptionIndex: message.voteOptionIndex,
@@ -562,6 +581,8 @@ export const useCheckoutStore = create<CheckoutState>()(
             newVoteWeight: message.newVoteWeight,
           };
         });
+
+        console.log("Messages", Messages);
 
         await Promise.all([
           publishBatch({
@@ -882,7 +903,7 @@ export const publishBatch = async ({
   await Promise.all([
     publicClient.waitForTransactionReceipt({
       hash: hash,
-      confirmations: 2,
+      confirmations: 1,
     }),
   ]);
 };

@@ -19,7 +19,6 @@ export const getVoteIdMap = async (
     };
   };
 }> => {
-  const client = getPublicClient();
   const voteIdMap: {
     [chainId: number]: {
       [roundId: string]: {

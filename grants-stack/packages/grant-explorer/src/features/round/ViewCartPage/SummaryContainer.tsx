@@ -68,8 +68,8 @@ export function SummaryContainer(props: {
         project.amount === ""
           ? "0"
           : isNaN(Number(project.amount))
-          ? "0"
-          : project.amount,
+            ? "0"
+            : project.amount,
         votingToken.decimal
       ),
     0n
@@ -120,8 +120,8 @@ export function SummaryContainer(props: {
       return;
     }
     if (
-      (props.alreadyContributed && props.donatedAmount > totalDonations) ||
-      (props.alreadyContributed && props.donatedAmount < totalDonations)
+      props.donatedAmount > totalDonations ||
+      props.donatedAmount < totalDonations
     ) {
       return;
     }
@@ -156,7 +156,11 @@ export function SummaryContainer(props: {
       />
       <MRCProgressModal
         isOpen={openMRCProgressModal}
-        subheading={"Please hold while we submit your donation."}
+        subheading={
+          !props.alreadyContributed
+            ? "Please hold while we submit your donation."
+            : "Please hold while we change your donations."
+        }
         body={
           <div className="flex flex-col items-center">
             <MRCProgressModalBody
@@ -275,13 +279,13 @@ export function SummaryContainer(props: {
         {isConnected
           ? totalDonations > tokenBalance && !props.alreadyContributed
             ? "Not enough funds to donate"
-            : props.alreadyContributed && props.donatedAmount < totalDonations
-            ? "Exceeds donation limit"
-            : props.alreadyContributed && props.donatedAmount > totalDonations
-            ? "Make use 100% of your donation amount"
-            : props.alreadyContributed
-            ? "Change donations"
-            : "Submit your donation!"
+            : props.donatedAmount < totalDonations
+              ? "Exceeds donation limit"
+              : props.donatedAmount > totalDonations
+                ? "Make use 100% of your donation amount"
+                : props.alreadyContributed
+                  ? "Change donations"
+                  : "Submit your donation!"
           : "Connect wallet to continue"}
       </Button>
       <PayoutModals />

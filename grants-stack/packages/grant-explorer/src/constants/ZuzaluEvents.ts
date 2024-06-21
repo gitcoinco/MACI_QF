@@ -40,8 +40,6 @@ export const ZuzaluEvents = [
     ],
     eventId: "9ccc53cb-3b0a-415b-ab0d-76cfa21c72ac",
     eventName: "Vitalia",
-    productId: "cd3f2b06-e520-4eff-b9ed-c52365c60848",
-    productName: "Resident",
   },
   //ETHBerlin (Berlin, 2024)
   {

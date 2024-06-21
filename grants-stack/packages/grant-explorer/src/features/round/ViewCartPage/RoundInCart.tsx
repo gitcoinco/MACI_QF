@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { CartProject, MACIContributions } from "../../api/types";
 import { useRoundById } from "../../../context/RoundContext";
 import { ProjectInCart } from "./ProjectInCart";
@@ -65,12 +65,15 @@ export function RoundInCart(
     ? validObjEventIDs.map((eventId) => BigInt(eventId.eventID))
     : [];
 
+  console.log("array", array);
+
   // Choose only the unique event IDs create a map and then convert it to an array again
   const eventIDs = Array.from(new Set(array));
 
   // Now for each Zuzaluevent for each one filter those that are in the eventIDs array by compating the eventID <= uuidToBigInt(eventId) with the eventIDs array
   const filteredEvents = ZuzaluEvents.filter((event) =>
-    eventIDs.some((eventId) => eventId <= uuidToBigInt(event.eventId))
+    // eventIDs.some((eventId) => eventId <= uuidToBigInt(event.eventId))
+    eventIDs.includes(uuidToBigInt(event.eventId))
   );
 
   const eventsList = filteredEvents.map((event) => event.eventName).join("\n");
@@ -98,23 +101,19 @@ export function RoundInCart(
   const isActiveRound = round && round?.roundEndTime > currentTime;
 
   const maxContributionAllowlisted = round
-    ? formatUnits(
-        BigInt(
-          round.roundMetadata?.maciParameters
-            ?.maxContributionAmountAllowlisted ?? 0n
-        ),
-        1
-      )
+    ? BigInt(
+        round.roundMetadata?.maciParameters?.maxContributionAmountAllowlisted ??
+          0n
+      ).toString()
     : "1.0";
   const maxContributionNonAllowlisted = round
-    ? formatUnits(
-        BigInt(
-          round.roundMetadata?.maciParameters
-            ?.maxContributionAmountNonAllowlisted ?? 0n
-        ),
-        1
-      )
+    ? BigInt(
+        round.roundMetadata?.maciParameters
+          ?.maxContributionAmountNonAllowlisted ?? 0n
+      ).toString()
     : "0.1";
+
+  console.log("maxContributionAllowlisted", maxContributionAllowlisted);
 
   const [donationInput, setDonationInput] = useState(
     formatUnits(donatedAmount, 18)
@@ -129,9 +128,11 @@ export function RoundInCart(
     value =
       pcdFetched === true && Number(value) >= Number(maxContributionAllowlisted)
         ? maxContributionAllowlisted
-        : Number(value) >= Number(maxContributionNonAllowlisted)
-          ? maxContributionNonAllowlisted
-          : value;
+        : pcdFetched === true
+          ? value
+          : Number(value) >= Number(maxContributionNonAllowlisted)
+            ? maxContributionNonAllowlisted
+            : value;
     value = value === "" ? "0.0" : value;
 
     if (/^\d*\.?\d*$/.test(value)) {
@@ -159,16 +160,15 @@ export function RoundInCart(
       setPcd(JSON.parse(result.pcdStr).pcd);
       setPcdFetched(true);
     }
-  }, [address, filteredEvents]);
+  }, [address]);
 
-
-  if (isActiveRound === false) {
-    // remove projects from cart if round is not active
-    props.roundCart.forEach((project) => {
-      props.handleRemoveProjectFromCart(project, address as string);
-    });
-    return null;
-  }
+  useEffect(() => {}, [
+    props.roundCart,
+    alreadyContributed,
+    props.decryptedContributions,
+    address,
+    voiceCreditBalance,
+  ]);
 
   if (!isActiveRound) {
     return null;

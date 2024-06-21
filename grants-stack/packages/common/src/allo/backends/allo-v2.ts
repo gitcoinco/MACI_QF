@@ -510,6 +510,8 @@ export class AlloV2 implements Allo {
         const array = validObjEventIDs
           ? validObjEventIDs.map((eventId) => BigInt(eventId.eventID))
           : [];
+        
+        console.log("array", array);
 
         // Choose only the unique event IDs create a map and then convert it to an array again
         const eventIDs = Array.from(new Set(array));
@@ -544,14 +546,11 @@ export class AlloV2 implements Allo {
           "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,uint8,bytes,uint256,uint256))"
         );
 
-        console.log("types", types);
-
         const encoded: `0x${string}` = encodeAbiParameters(types, [
           initStruct,
         ] as any);
 
-        initStrategyDataEncoded = encoded ?? "0x00";
-        console.log("encoded", encoded);
+        initStrategyDataEncoded = encoded ?? "0x";
       } else {
         throw new Error(
           `Unsupported round type ${args.roundData.roundCategory}`
