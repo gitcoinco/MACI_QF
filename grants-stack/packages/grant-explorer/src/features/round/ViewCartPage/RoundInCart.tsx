@@ -24,6 +24,7 @@ import { zuAuthPopup } from "@pcd/zuauth";
 import { ZUAUTH_CONFIG, fieldsToReveal } from "../../api/pcd";
 import { ZuzaluEvents } from "../../../constants/ZuzaluEvents";
 import { uuidToBigInt } from "@pcd/util";
+import { is } from "date-fns/locale";
 
 export function RoundInCart(
   props: React.ComponentProps<"div"> & {
@@ -163,10 +164,14 @@ export function RoundInCart(
 
 
   if (isActiveRound === false) {
-    // remove projects from cart
+    // remove projects from cart if round is not active
     props.roundCart.forEach((project) => {
       props.handleRemoveProjectFromCart(project, address as string);
     });
+    return null;
+  }
+
+  if (!isActiveRound) {
     return null;
   }
 
