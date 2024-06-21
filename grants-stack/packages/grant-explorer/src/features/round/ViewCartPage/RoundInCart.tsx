@@ -105,7 +105,7 @@ export function RoundInCart(
           round.roundMetadata?.maciParameters
             ?.maxContributionAmountAllowlisted ?? 0n
         ),
-        18
+        1
       )
     : "1.0";
   const maxContributionNonAllowlisted = round
@@ -114,7 +114,7 @@ export function RoundInCart(
           round.roundMetadata?.maciParameters
             ?.maxContributionAmountNonAllowlisted ?? 0n
         ),
-        18
+        1
       )
     : "0.1";
 
