@@ -73,8 +73,6 @@ export function RoundInCart(
     eventIDs.some((eventId) => eventId <= uuidToBigInt(event.eventId))
   );
 
-  console.log("filteredEvents", filteredEvents);
-
   const eventsList = filteredEvents.map((event) => event.eventName).join("\n");
 
   const donatedAmount = voiceCreditBalance
@@ -163,13 +161,12 @@ export function RoundInCart(
     }
   }, [address]);
 
-  useEffect(() => {}, [
-    props.roundCart,
-    alreadyContributed,
-    props.decryptedContributions,
-  ]);
 
-  if (!isActiveRound) {
+  if (isActiveRound === false) {
+    // remove projects from cart
+    props.roundCart.forEach((project) => {
+      props.handleRemoveProjectFromCart(project, address as string);
+    });
     return null;
   }
 
