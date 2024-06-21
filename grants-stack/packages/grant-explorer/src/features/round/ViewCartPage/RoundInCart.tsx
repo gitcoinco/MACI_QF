@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { CartProject, MACIContributions } from "../../api/types";
 import { useRoundById } from "../../../context/RoundContext";
 import { ProjectInCart } from "./ProjectInCart";
@@ -21,10 +21,9 @@ import { PCommand } from "maci-domainobjs";
 import { SummaryContainer } from "./SummaryContainer";
 import { Switch } from "@headlessui/react";
 import { zuAuthPopup } from "@pcd/zuauth";
-import { ZUAUTH_CONFIG, fieldsToReveal } from "../../api/pcd";
+import { fieldsToReveal } from "../../api/pcd";
 import { ZuzaluEvents } from "../../../constants/ZuzaluEvents";
 import { uuidToBigInt } from "@pcd/util";
-import { is } from "date-fns/locale";
 
 export function RoundInCart(
   props: React.ComponentProps<"div"> & {
@@ -160,7 +159,7 @@ export function RoundInCart(
       setPcd(JSON.parse(result.pcdStr).pcd);
       setPcdFetched(true);
     }
-  }, [address]);
+  }, [address, filteredEvents]);
 
 
   if (isActiveRound === false) {
