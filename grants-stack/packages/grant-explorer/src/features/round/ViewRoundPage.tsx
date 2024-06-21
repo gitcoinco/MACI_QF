@@ -623,8 +623,6 @@ const ProjectList = (props: {
     dataLayer
   );
 
-  console.log("applications", applications);
-
   const applicationsMapByGrantApplicationId:
     | Map<string, Application>
     | undefined = useMemo(() => {

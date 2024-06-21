@@ -36,8 +36,6 @@ export default function ViewCart() {
 
   const projects = walletAddress ? userProjects[walletAddress] ?? [] : [];
 
-  console.log("projects", projects);
-
   const dataLayer = useDataLayer();
 
   const { data: maciContributions } = useMACIContributions(

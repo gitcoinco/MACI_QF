@@ -129,12 +129,6 @@ export function MRCProgressModalBody({
             const isSuccess =
               checkoutStore.voteStatus[chainId] === ProgressStatus.IS_SUCCESS;
 
-            console.log(
-              chainId,
-              "chainswitchstatus",
-              checkoutStore.chainSwitchStatus[chainId as ChainId]
-            );
-
             return (
               <>
                 {inProgress && (

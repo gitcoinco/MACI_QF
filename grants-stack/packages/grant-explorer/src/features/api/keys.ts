@@ -46,11 +46,7 @@ export const getMACIKeys = async ({
     signatureSeeds.rounds[chainID][roundID] = {};
   }
 
-  console.log("signatureSeeds after ensuring structure:", signatureSeeds);
-
   let signature = signatureSeeds.rounds[chainID][roundID][address];
-  console.log("signature", signature);
-  console.log("signatureSeeds", signatureSeeds);
 
   if (!signature) {
     signature = await walletClient.signMessage({
@@ -134,11 +130,7 @@ export const getMACIKey = ({
     signatureSeeds.rounds[chainID][roundID] = {};
   }
 
-  console.log("signatureSeeds after ensuring structure:", signatureSeeds);
-
   const signature = signatureSeeds.rounds[chainID][roundID][address];
-  console.log("signature", signature);
-  console.log("signatureSeeds", signatureSeeds);
 
   if (!signature) {
     return;
