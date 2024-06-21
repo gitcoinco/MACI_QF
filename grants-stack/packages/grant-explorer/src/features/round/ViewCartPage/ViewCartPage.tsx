@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { ChainId } from "common";
 import { groupProjectsInCart } from "../../api/utils";
 import Footer from "common/src/components/Footer";
@@ -34,7 +34,9 @@ export default function ViewCart() {
   const { userProjects, setUserCart } = useCartStorage();
   const { address: walletAddress } = useAccount();
 
-  const projects = walletAddress ? userProjects[walletAddress] ?? [] : [];
+  const projects = useMemo(() => 
+    walletAddress ? userProjects[walletAddress] ?? [] : [], 
+  [userProjects, walletAddress]);
 
   const dataLayer = useDataLayer();
 
@@ -99,6 +101,7 @@ export default function ViewCart() {
     });
     setGroupedCredits(credits);
     setInitialLoading(false); // Set initial loading to false after loading cart projects
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataLayer, applications, maciContributions, DecryptedContributions]);
 
   // Check for existing signatures and set state accordingly

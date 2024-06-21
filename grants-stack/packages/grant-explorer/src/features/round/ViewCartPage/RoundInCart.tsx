@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { CartProject, MACIContributions } from "../../api/types";
 import { useRoundById } from "../../../context/RoundContext";
 import { ProjectInCart } from "./ProjectInCart";
@@ -21,7 +21,7 @@ import { PCommand } from "maci-domainobjs";
 import { SummaryContainer } from "./SummaryContainer";
 import { Switch } from "@headlessui/react";
 import { zuAuthPopup } from "@pcd/zuauth";
-import { ZUAUTH_CONFIG, fieldsToReveal } from "../../api/pcd";
+import { fieldsToReveal } from "../../api/pcd";
 import { ZuzaluEvents } from "../../../constants/ZuzaluEvents";
 import { uuidToBigInt } from "@pcd/util";
 
@@ -72,8 +72,6 @@ export function RoundInCart(
   const filteredEvents = ZuzaluEvents.filter((event) =>
     eventIDs.some((eventId) => eventId <= uuidToBigInt(event.eventId))
   );
-
-  console.log("filteredEvents", filteredEvents);
 
   const eventsList = filteredEvents.map((event) => event.eventName).join("\n");
 
@@ -161,13 +159,16 @@ export function RoundInCart(
       setPcd(JSON.parse(result.pcdStr).pcd);
       setPcdFetched(true);
     }
-  }, [address]);
+  }, [address, filteredEvents]);
 
-  useEffect(() => {}, [
-    props.roundCart,
-    alreadyContributed,
-    props.decryptedContributions,
-  ]);
+
+  if (isActiveRound === false) {
+    // remove projects from cart if round is not active
+    props.roundCart.forEach((project) => {
+      props.handleRemoveProjectFromCart(project, address as string);
+    });
+    return null;
+  }
 
   if (!isActiveRound) {
     return null;

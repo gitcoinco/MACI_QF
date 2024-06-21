@@ -5,8 +5,7 @@ import {
 } from "../../api/utils";
 import { useEffect } from "react";
 import { RoundInCart } from "./RoundInCart";
-import { ChainId, useTokenPrice, VotingToken } from "common";
-import { Button, Input } from "common/src/styles";
+import { ChainId, useTokenPrice } from "common";
 import { useCartStorage } from "../../../store";
 import {
   GroupedCreditsByRoundId,
