@@ -112,8 +112,8 @@ export const RoundValidationSchema = yup.object().shape({
       then: yup
         .date()
         .min(
-          yup.ref("applicationsStartTime"),
-          "Round start date must be later than the applications start date."
+          yup.ref("applicationsEndTime"),
+          "Round start date must be later than the applications end date."
         )
         .max(
           yup.ref("roundEndTime"),
@@ -176,7 +176,7 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
 
   const FormStepper = props.stepper;
   const [applicationStartDate, setApplicationStartDate] = useState(moment());
-  const [, setApplicationEndDate] = useState(moment());
+  const [applicationEndDate, setApplicationEndDate] = useState(moment());
   const [roundStartDate, setRoundStartDate] = useState(moment());
   const [roundEndDate, setRoundEndDate] = useState<moment.Moment | "">("");
   const [rollingApplications, setRollingApplications] = useState(false);
@@ -207,6 +207,10 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
 
   function disableBeforeApplicationStartDate(current: moment.Moment) {
     return current.isAfter(applicationStartDate);
+  }
+
+  function disableBeforeApplicationEndDate(current: moment.Moment) {
+    return current.isAfter(applicationEndDate);
   }
 
   const disablePastAndBeforeRoundStartDate = (current: moment.Moment) => {
@@ -441,7 +445,7 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
                           {errors.applicationsStartTime?.message}
                         </p>
                       )}
-                      <div className="flex items-center mt-2">
+                      <div className="flex items-center mt-2 hidden">
                         <input
                           id="rollingApplications"
                           name="rollingApplications"
@@ -589,7 +593,7 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
                               className:
                                 "block w-full border-0 p-0 text-gray-900 placeholder-grey-400 focus:ring-0 text-sm",
                             }}
-                            isValidDate={disableBeforeApplicationStartDate}
+                            isValidDate={disableBeforeApplicationEndDate}
                             utc={true}
                             dateFormat={"YYYY-MM-DD"}
                             timeFormat={"HH:mm UTC"}
