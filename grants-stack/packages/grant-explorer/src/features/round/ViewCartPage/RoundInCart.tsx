@@ -23,8 +23,7 @@ import { Switch } from "@headlessui/react";
 import { zuAuthPopup } from "@pcd/zuauth";
 import { ZUAUTH_CONFIG, fieldsToReveal } from "../../api/pcd";
 import { ZuzaluEvents } from "../../../constants/ZuzaluEvents";
-
-const eventsList = ZuzaluEvents.map((event) => event.eventName).join("\n");
+import { uuidToBigInt } from "@pcd/util";
 
 export function RoundInCart(
   props: React.ComponentProps<"div"> & {
@@ -61,6 +60,23 @@ export function RoundInCart(
     (project) => project.chainId === chainId && project.roundId === roundId
   );
 
+  const validObjEventIDs = round?.roundMetadata?.maciParameters?.validEventIDs;
+  const array = validObjEventIDs
+    ? validObjEventIDs.map((eventId) => BigInt(eventId.eventID))
+    : [];
+
+  // Choose only the unique event IDs create a map and then convert it to an array again
+  const eventIDs = Array.from(new Set(array));
+
+  // Now for each Zuzaluevent for each one filter those that are in the eventIDs array by compating the eventID <= uuidToBigInt(eventId) with the eventIDs array
+  const filteredEvents = ZuzaluEvents.filter((event) =>
+    eventIDs.some((eventId) => eventId <= uuidToBigInt(event.eventId))
+  );
+
+  console.log("filteredEvents", filteredEvents);
+
+  const eventsList = filteredEvents.map((event) => event.eventName).join("\n");
+
   const donatedAmount = voiceCreditBalance
     ? BigInt(voiceCreditBalance) * 10n ** 13n
     : filteredProjects.length > 0
@@ -83,8 +99,24 @@ export function RoundInCart(
 
   const isActiveRound = round && round?.roundEndTime > currentTime;
 
-  const maxContributionAllowlisted = "1.0";
-  const maxContributionNonAllowlisted = "0.1";
+  const maxContributionAllowlisted = round
+    ? formatUnits(
+        BigInt(
+          round.roundMetadata?.maciParameters
+            ?.maxContributionAmountAllowlisted ?? 0n
+        ),
+        18
+      )
+    : "1.0";
+  const maxContributionNonAllowlisted = round
+    ? formatUnits(
+        BigInt(
+          round.roundMetadata?.maciParameters
+            ?.maxContributionAmountNonAllowlisted ?? 0n
+        ),
+        18
+      )
+    : "0.1";
 
   const [donationInput, setDonationInput] = useState(
     formatUnits(donatedAmount, 18)
@@ -123,7 +155,7 @@ export function RoundInCart(
     const result = await zuAuthPopup({
       fieldsToReveal,
       watermark: address,
-      config: ZUAUTH_CONFIG,
+      config: filteredEvents,
     });
     if (result.type === "pcd") {
       setPcd(JSON.parse(result.pcdStr).pcd);

@@ -1,3 +1,5 @@
+import { PipelineEdDSATicketZuAuthConfig } from "@pcd/passport-interface";
+
 export const ZuzaluEvents = [
   //Zuzalu (Montenegro, 2023)
   {
@@ -72,11 +74,4 @@ export const ZuzaluEvents = [
     eventId: "21c7db2e-08e3-4234-9a6e-386a592d63c8",
     eventName: "Edge Esmeralda",
   },
-] as {
-  pcdType: string;
-  publicKey: string[];
-  eventId: string;
-  eventName: string;
-  productId?: undefined;
-  productName?: undefined;
-}[];
+] as PipelineEdDSATicketZuAuthConfig[];
