@@ -186,7 +186,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         allowlistVerifier = IAlowlistVerifier(_params.maciParams.verifier);
         // Round Whitelisted events registration
         allowlistVerifier.setRoundAllowlist(_params.maciParams.allowlistDetails);
-        // Set the maximum contribution amounts for allowlisted and non-allowlisted users
+        // Set the maximum contribution amounts for Zupass and non-Zupass users
         maxContributionAllowlisted = _params.maciParams.maxContributionAllowlisted;
         maxContributionNotAllowlisted= _params.maciParams.maxContributionNotAllowlisted;
 
@@ -319,7 +319,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         paidOut[recipientId] = true;
         IAllo.Pool memory pool = allo.getPool(poolId);
 
-        _transferAmount(pool.token, recipientId, amount);
+        _transferAmount(pool.token, recipient.recipientAddress, amount);
 
         emit FundsDistributed(amount, recipient.recipientAddress, pool.token, recipientId);
     }

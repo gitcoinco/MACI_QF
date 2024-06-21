@@ -47,7 +47,7 @@ describe("e2e", function test() {
   before(async () => {
     [Coordinator] = await ethers.getSigners();
 
-    const SerializedPrivateKey = process.env.COORDINATOR_SECRET_KEY as string;
+    const SerializedPrivateKey = process.env.COORDINATOR_PRIVATE_KEY as string;
     const deserializedPrivKey = PrivKey.deserialize(SerializedPrivateKey);
     coordinatorKeypair = new Keypair(deserializedPrivKey);
 

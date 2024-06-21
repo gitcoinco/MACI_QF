@@ -192,7 +192,9 @@ async function main() {
 
     deployments.write(DeployedContracts);
 
-    // await verifyContract(ZuPassRegistryAddress, [Groth16VerifierAddress]);
+    // await verifyContract(ZuPassRegistryAddress, [
+    //   MACIDeployments?.Groth16Verifier?.Groth16VerifierAddress,
+    // ]);
 
     const ZuPassFactory = await ethers.getContractAt(
       "ZuPassRegistry",
@@ -277,8 +279,11 @@ async function main() {
       mpAddr: mpAddr,
     };
     deployments.write(DeployedContracts);
-
-    // await verifyContract(mpAddr, []);
+    // try {
+    //   await verifyContract(mpAddr, []);
+    // } catch (e) {
+    //   console.log("Error verifying MessageProcessorFactory", e);
+    // }
   } else {
     console.log(
       "Reusing MessageProcessorFactory:",
@@ -306,7 +311,11 @@ async function main() {
 
     deployments.write(DeployedContracts);
 
-    // await verifyContract(tallyAddr, []);
+    // try {
+    //   await verifyContract(tallyAddr, []);
+    // } catch (e) {
+    //   console.log("Error verifying TallyFactory", e);
+    // }
   } else {
     console.log(
       "Reusing TallyFactory:",
@@ -334,7 +343,11 @@ async function main() {
     };
     deployments.write(DeployedContracts);
 
-    // await verifyContract(ClonableMACIAddress, []);
+    // try {
+    //   await verifyContract(ClonableMACIAddress, []);
+    // } catch (e) {
+    //   console.log("Error verifying ClonableMACI", e);
+    // }
   } else {
     console.log(
       "Reusing ClonableMACI:",
@@ -367,12 +380,16 @@ async function main() {
     };
     deployments.write(DeployedContracts);
 
-    // await verifyContract(ClonableMACIFactoryAddress, [
-    //   DeployedContracts.ClonableMACI.ClonableMACIAddress,
-    //   DeployedContracts.PollFactory.pollAddress,
-    //   DeployedContracts.TallyFactory.tallyAddr,
-    //   DeployedContracts.MessageProcessorFactory.mpAddr,
-    // ]);
+    // try {
+    //   await verifyContract(ClonableMACIFactoryAddress, [
+    //     DeployedContracts.ClonableMACI.ClonableMACIAddress,
+    //     DeployedContracts.PollFactory.pollAddress,
+    //     DeployedContracts.TallyFactory.tallyAddr,
+    //     DeployedContracts.MessageProcessorFactory.mpAddr,
+    //   ]);
+    // } catch (e) {
+    //   console.log("Error verifying ClonableMACIFactory", e);
+    // }
 
     const setMaciParameters = await ClonableMACIFactory.setMaciSettings(
       0,
@@ -453,7 +470,7 @@ async function main() {
           RegistryAddress: registryAddress,
         };
       }
-    } 
+    }
 
     console.log("Deploying MACIQFStrategy...");
     console.log("Allo address:", Allo);
@@ -473,7 +490,11 @@ async function main() {
     };
     deployments.write(DeployedContracts);
 
-    // await verifyContract(MACIQFStrategyAddress, [Allo, "MACIQF"]);
+    // try {
+    //   await verifyContract(MACIQFStrategyAddress, [Allo, "MACIQF"]);
+    // } catch (e) {
+    //   console.log("Error verifying MACIQFStrategy", e);
+    // }
   } else {
     console.log(
       "Reusing MACIQFStrategy:",

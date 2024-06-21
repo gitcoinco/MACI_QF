@@ -2,61 +2,61 @@
   "11155111": {
     "VkRegistry": {
       "name": "VkRegistry",
-      "vkRegistryContractAddress": "0x841335DBB796Fc055a1F64d9c07714E2FEe92254"
+      "vkRegistryContractAddress": "0xA973D019E9ea0B1aA8065537ABee29ECB8C566C1"
     },
     "Verifier": {
       "name": "Verifier",
-      "verifierContractAddress": "0x644bdFdDc80cbEd8A030CD539e478706800b516C"
+      "verifierContractAddress": "0x5E342a6e4B1d9767e7B1a3a119dD3A75941F1FC4"
     },
     "PosseidonAddresses": [
       {
         "name": "PoseidonT3",
-        "address": "0x096c71398CCb576Db00578a7E4c6baa7E1906bd9"
+        "address": "0x6d1E659613FaF4a1464415F92C976a6d834B83fE"
       },
       {
         "name": "PoseidonT4",
-        "address": "0x9CE3773fb379EcF5c7d252CFc6de2a2474181769"
+        "address": "0xD8c7200970f8345f2d986580e4c1D4F562Be2683"
       },
       {
         "name": "PoseidonT5",
-        "address": "0x2A823363132848aCbA61f2B0308050067513Fb56"
+        "address": "0x93f0F5Ec177678a83a073adBB67bE1bA8a3aBD6D"
       },
       {
         "name": "PoseidonT6",
-        "address": "0xa4c8874f10A01a8901f8faD2f2267971f1994790"
+        "address": "0xAC93d7AC0df14261610bEC280718f53744C2b555"
       }
     ],
     "Groth16Verifier": {
       "name": "Groth16Verifier",
-      "Groth16VerifierAddress": "0x26BFf40A66298eB22a9322C2a81910FC5D9Dff88"
+      "Groth16VerifierAddress": "0xAf18809b8F69eD4eA39361F590f789C7Cb763251"
     },
     "ZuPassRegistry": {
       "name": "ZuPassRegistry",
-      "ZuPassRegistryAddress": "0x5b498551F04FA6Bb411aA488e5250A4caC43324B"
+      "ZuPassRegistryAddress": "0xB9B19aF74CC70c8F9Ea6d782C94C058235d7d3bD"
     },
     "PollFactory": {
       "name": "PollFactory",
-      "pollAddress": "0xEb02eD9A81c4FfCF1689e041Ecc3360233Ee3dD1"
+      "pollAddress": "0xDcb1348D3cDCF0939cA64A7c3858DE940571e362"
     },
     "MessageProcessorFactory": {
       "name": "MessageProcessorFactory",
-      "mpAddr": "0x2F5c0201EC393d07C7e864FAa13bf29c561F7E02"
+      "mpAddr": "0xA2a9c8C707977feEbc9ca5B7D3883De4850A55Fe"
     },
     "TallyFactory": {
       "name": "TallyFactory",
-      "tallyAddr": "0xF45F45B4f6EfFec8a51D6095aB66a100B663C601"
+      "tallyAddr": "0x2620b7862f059f55d97D779bCD036E3864AA2505"
     },
     "ClonableMACI": {
       "name": "ClonableMACI",
-      "ClonableMACIAddress": "0x69140036F285d351cc11c71394179a30AcF1AA11"
+      "ClonableMACIAddress": "0x9eA7C81F9F523E5cc29b167299C84221355f050F"
     },
     "ClonableMACIFactory": {
       "name": "ClonableMACIFactory",
-      "ClonableMACIFactoryAddress": "0x3B1dF8C7Be283fE8Ba0C6F71C36eb90326C58d24"
+      "ClonableMACIFactoryAddress": "0x1E2F10C546e8Bf24adB3C927b582eE7F91DB4E5c"
     },
     "MACIQFStrategy": {
       "name": "MACIQFStrategy",
-      "MACIQFStrategyAddress": "0x931761803458a041030fc032dA57dcC4823Fbaeb"
+      "MACIQFStrategyAddress": "0x8A81103524b1c006BcD9a7239375A818D7F7492f"
     }
   }
 }
