@@ -8,16 +8,20 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { classNames } from "common";
 import { Input } from "common/src/styles";
 import _ from "lodash";
-import { Fragment, useContext, useState } from "react";
+import { Fragment, useContext, useEffect, useState } from "react";
 import {
   Control,
   FieldErrors,
   SubmitHandler,
   UseFormRegisterReturn,
+  UseFormSetValue,
   useController,
   useForm,
+  useFormContext,
   useWatch,
 } from "react-hook-form";
+import { FormProvider } from "react-hook-form";
+
 import ReactTooltip from "react-tooltip";
 import * as yup from "yup";
 import { Round } from "../api/types";
@@ -74,6 +78,32 @@ export const FundingValidationSchema = yup.object().shape({
         .boolean()
         .required("You must select if you want to use sybil defense."),
     }),
+    maciParameters: yup.object().shape({
+      maxContributionAmountAllowlisted: yup
+        .number()
+        .typeError("Must be a valid number.")
+        .moreThan(-0.00001, "Amount must be more or equal to zero.")
+        .max(999999, "Amount must be less than or equal to 999999")
+        .test(
+          "maxDecimals",
+          "Amount can have up to 6 decimal places.",
+          (value) => {
+            return /^\d+(\.\d{1,6})?$/.test(value?.toString() ?? "0");
+          }
+        ),
+      maxContributionAmountNonAllowlisted: yup
+        .number()
+        .typeError("Must be a valid number.")
+        .moreThan(-0.00001, "Amount must be more or equal to zero.")
+        .max(999999, "Amount must be less than or equal to 999999")
+        .test(
+          "maxDecimals",
+          "Amount can have up to 6 decimal places.",
+          (value) => {
+            return /^\d+(\.\d{1,6})?$/.test(value?.toString() ?? "0");
+          }
+        ),
+    }),
   }),
   token: yup
     .string()
@@ -108,13 +138,7 @@ export default function QuadraticFundingForm(props: QuadraticFundingFormProps) {
     ...getPayoutTokenOptions(chain.id),
   ];
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    formState: { errors },
-    watch,
-  } = useForm<Round>({
+  const methods = useForm<Round>({
     defaultValues: {
       ...formData,
       roundMetadata: {
@@ -123,6 +147,15 @@ export default function QuadraticFundingForm(props: QuadraticFundingFormProps) {
     },
     resolver: yupResolver(FundingValidationSchema),
   });
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+    watch,
+    setValue,
+  } = methods;
 
   const FormStepper = props.stepper;
 
@@ -134,79 +167,86 @@ export default function QuadraticFundingForm(props: QuadraticFundingFormProps) {
   const prev = () => setCurrentStep(currentStep - 1);
 
   return (
-    <div>
-      <div className="md:grid md:grid-cols-3 md:gap-10">
-        <LeftSidebar />
+    <FormProvider {...methods}>
+      <div>
+        <div className="md:grid md:grid-cols-3 md:gap-10">
+          <LeftSidebar />
 
-        <div className="mt-5 md:mt-0 md:col-span-2">
-          <form
-            onSubmit={handleSubmit(next, (errors) => {
-              console.log(errors);
-            })}
-            className="shadow-sm text-grey-500"
-          >
-            {/* QF Settings */}
-            <div className="p-6 bg-white">
-              <p className="text-grey-400 mb-4">Quadratic Funding Settings</p>
-              <div className="grid grid-cols-6 gap-6">
-                <PayoutTokenDropdown
-                  register={register("token")}
-                  errors={errors}
-                  control={control}
-                  payoutTokenOptions={payoutTokenOptions}
-                />
-                <MatchingFundsAvailable
-                  errors={errors}
-                  register={register(
-                    "roundMetadata.quadraticFundingConfig.matchingFundsAvailable",
-                    {
-                      valueAsNumber: true,
-                    }
-                  )}
-                  token={watch("token")}
-                  payoutTokenOptions={payoutTokenOptions}
+          <div className="mt-5 md:mt-0 md:col-span-2">
+            <form
+              onSubmit={handleSubmit(next, (errors) => {
+                console.log(errors);
+              })}
+              className="shadow-sm text-grey-500"
+            >
+              {/* QF Settings */}
+              <div className="p-6 bg-white">
+                <p className="text-grey-400 mb-4">Quadratic Funding Settings</p>
+                <div className="grid grid-cols-6 gap-6">
+                  <PayoutTokenDropdown
+                    register={register("token")}
+                    errors={errors}
+                    control={control}
+                    payoutTokenOptions={payoutTokenOptions}
+                  />
+                  <MatchingFundsAvailable
+                    errors={errors}
+                    register={register(
+                      "roundMetadata.quadraticFundingConfig.matchingFundsAvailable",
+                      {
+                        valueAsNumber: true,
+                      }
+                    )}
+                    token={watch("token")}
+                    payoutTokenOptions={payoutTokenOptions}
+                  />
+                </div>
+              </div>
+
+              {/* Sybil Defense */}
+              <div className="p-6 bg-white">
+                <p className="text-grey-400 mb-2 mt-1 text-sm">
+                  Ensure that project supporters are not bots or sybil with
+                  ZuPass. Learn more about ZuPass{" "}
+                  <a
+                    href="https://docs.passport.gitcoin.co/overview/readme"
+                    className="text-violet-300"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    here
+                  </a>
+                  .
+                </p>
+                <div className="flex">
+                  <SybilDefense
+                    registerEvents={register(
+                      "roundMetadata.maciParameters.validEventIDs"
+                    )}
+                    setEvents={setValue}
+                    registerLimitAllowlisted={register(
+                      "roundMetadata.maciParameters.maxContributionAmountAllowlisted"
+                    )}
+                    registerLimitNonAllowlisted={register(
+                      "roundMetadata.maciParameters.maxContributionAmountNonAllowlisted"
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* FormStepper */}
+              <div className="px-6 align-middle py-3.5 shadow-md">
+                <FormStepper
+                  currentStep={currentStep}
+                  stepsCount={stepsCount}
+                  prev={prev}
                 />
               </div>
-            </div>
-
-            {/* Sybil Defense */}
-            <div className="p-6 bg-white">
-              <p className="text-grey-400 mb-2 mt-1 text-sm">
-                Ensure that project supporters are not bots or sybil with
-                Gitcoin Passport. Learn more about Gitcoin Passport{" "}
-                <a
-                  href="https://docs.passport.gitcoin.co/overview/readme"
-                  className="text-violet-300"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  here
-                </a>
-                .
-              </p>
-              <div className="flex">
-                <SybilDefense
-                  errors={errors}
-                  registerMatchingCapAmount={register(
-                    "roundMetadata.quadraticFundingConfig.sybilDefense"
-                  )}
-                  control={control}
-                />
-              </div>
-            </div>
-
-            {/* FormStepper */}
-            <div className="px-6 align-middle py-3.5 shadow-md">
-              <FormStepper
-                currentStep={currentStep}
-                stepsCount={stepsCount}
-                prev={prev}
-              />
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
-    </div>
+    </FormProvider>
   );
 }
 
@@ -457,47 +497,45 @@ function MatchingFundsAvailable(props: {
   );
 }
 
-
 import "react-tagsinput/react-tagsinput.css";
 import { ZuzaluEvents } from "../../constants";
 import { uuidToBigInt } from "@pcd/util";
 
-function SybilDefense(props: {
-  registerMatchingCapAmount: UseFormRegisterReturn<string>;
-  errors: FieldErrors<Round>;
-  control?: Control<Round>;
+function SybilDefense({
+  registerEvents,
+  setEvents,
+  registerLimitAllowlisted,
+  registerLimitNonAllowlisted,
+}: {
+  registerEvents: UseFormRegisterReturn<string>;
+  setEvents: UseFormSetValue<Round>;
+  registerLimitAllowlisted: UseFormRegisterReturn<string>;
+  registerLimitNonAllowlisted: UseFormRegisterReturn<string>;
 }) {
-  const { field: sybilDefenseField } = useController({
-    name: "roundMetadata.quadraticFundingConfig.sybilDefense",
-    defaultValue: false,
-    control: props.control,
-    rules: {
-      required: true,
-    },
-  });
-
+  const { setValue } = useFormContext<Round>();
   const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
 
-  // const handleEventSelection = (event) => {
-  //   const eventId = event.target.value;
-  //   if (eventId && !selectedEvents.includes(eventId)) {
-  //     const updatedEvents = [...selectedEvents, eventId];
-  //     setSelectedEvents(updatedEvents);
-  //     setValue(
-  //       "roundMetadata.maciParameters.validEventIDs",
-  //       updatedEvents.map(uuidToBigInt)
-  //     );
-  //   }
-  // };
+  const handleEventSelection = (
+    event: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const eventId = event.target.value;
+    if (eventId && !selectedEvents.includes(eventId)) {
+      const updatedEvents = [...selectedEvents, eventId];
 
-  // const removeEvent = (eventId) => {
-  //   const updatedEvents = selectedEvents.filter((id) => id !== eventId);
-  //   setSelectedEvents(updatedEvents);
-  //   setValue(
-  //     "roundMetadata.maciParameters.validEventIDs",
-  //     updatedEvents.map(uuidToBigInt)
-  //   );
-  // };
+      console.log(updatedEvents);
+      setSelectedEvents(updatedEvents);
+    }
+  };
+
+  useEffect(() => {
+    const formUpdateData = selectedEvents.map((event) => {
+      return {
+        eventID: uuidToBigInt(event).toString(),
+      };
+    });
+    console.log(formUpdateData);
+    setValue("roundMetadata.maciParameters.validEventIDs", formUpdateData);
+  }, [selectedEvents]);
 
   return (
     <div className="col-span-6 sm:col-span-3">
@@ -516,57 +554,63 @@ function SybilDefense(props: {
           *Required
         </span>
       </p>
-      <select className="mb-3">
-        <option value="">Select an event</option>
-        {ZuzaluEvents.map((event) => (
-          <option key={event.eventId} value={event.eventId}>
-            {event.eventName}
-          </option>
-        ))}
-      </select>
-      {/* <TagsInput
-        inputProps={{ placeholder: "Add Event" }}
-        onlyUnique={true}
-        value={selectedEvents.map(
-          (eventId) =>
-            ZuzaluEvents.find((event) => event.eventId === eventId)
-              ?.eventName || ""
-        )}
-        onChange={(tags) => {
-          // handle tags input change if necessary
-        }}
-        renderTag={(props) => (
-          <span key={props.key} className="tag">
-            {props.tag}
-            <button
-              type="button"
-              onClick={() => removeEvent(selectedEvents[props.key])}
-            >
-              x
-            </button>
-          </span>
-        )}
-      /> */}
+      <div className="flex flex-row sm:items-center sm:space-x-4 mb-3">
+        <select className="mb-3 w-2/6" onChange={handleEventSelection}>
+          <option value="">Select an event</option>
+          {ZuzaluEvents.map((event) => (
+            <option key={event.eventId} value={event.eventId}>
+              {event.eventName}
+            </option>
+          ))}
+        </select>
+
+        <div className="w-4/6">
+          <TagsInput
+            value={selectedEvents.map(
+              (eventId) =>
+                ZuzaluEvents.find((event) => event.eventId === eventId)
+                  ?.eventName || ""
+            )}
+            onChange={(tags) => {
+              const updatedEvents = tags.map((tag) =>
+                ZuzaluEvents.find(
+                  (event) => event.eventName === tag && event.eventId !== ""
+                )
+              );
+              setSelectedEvents(
+                updatedEvents.map((event) => event?.eventId || "")
+              );
+            }}
+            inputProps={{ placeholder: "" }}
+            onlyUnique={true}
+            renderTag={({ tag, key, onRemove, ...props }) => (
+              <span
+                key={key}
+                {...props}
+                className="bg-gray-200 rounded-md px-2 py-1 m-1 mx-auto gap-3 cursor-pointer"
+                onClick={() => onRemove(key)}
+                data-tip="Remove"
+              >
+                {tag}
+                <ReactTooltip effect="solid" />
+              </span>
+            )}
+          />
+        </div>
+      </div>
+
       <div className="grid grid-cols-6 gap-6 mb-1">
         <div className="col-span-6 sm:col-span-3">
           <div className="relative border rounded-md px-3 py-2 mb-2 shadow-sm focus-within:ring-1">
             <label className="block text-[10px]">
               Max Contribution Amount (Allowlisted Users)
             </label>
-            {/* <input
+            <input
               type="number"
-              {...registerMatchingCapAmount}
+              {...registerLimitAllowlisted}
               className="block w-full border-0 p-0 text-gray-900 placeholder-gray-500 focus:ring-0 sm:text-sm"
+              id="roundMetadata.maciParameters.maxContributionAmountAllowlisted"
             />
-            {errors.roundMetadata?.maciParameters
-              ?.maxContributionAmountAllowlisted && (
-              <span className="text-red-500 text-xs">
-                {
-                  errors.roundMetadata.maciParameters
-                    .maxContributionAmountAllowlisted.message
-                }
-              </span>
-            )} */}
           </div>
         </div>
         <div className="col-span-6 sm:col-span-3">
@@ -574,20 +618,12 @@ function SybilDefense(props: {
             <label className="block text-[10px]">
               Max Contribution Amount (Non Allowlisted Users)
             </label>
-            {/* <input
+            <input
               type="number"
-              {...registerMatchingCapAmount}
+              {...registerLimitNonAllowlisted}
+              id="roundMetadata.maciParameters.maxContributionAmountNonAllowlisted"
               className="block w-full border-0 p-0 text-gray-900 placeholder-gray-500 focus:ring-0 sm:text-sm"
             />
-            {errors.roundMetadata?.maciParameters
-              ?.maxContributionAmountNonAllowlisted && (
-              <span className="text-red-500 text-xs">
-                {
-                  errors.roundMetadata.maciParameters
-                    .maxContributionAmountNonAllowlisted.message
-                }
-              </span>
-            )} */}
           </div>
         </div>
       </div>

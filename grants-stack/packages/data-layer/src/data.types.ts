@@ -446,6 +446,8 @@ export interface Round {
     maciParameters?: {
       coordinatorKeyPair: string;
       validEventIDs: { eventID: string }[];
+      maxContributionAmountAllowlisted: number;
+      maxContributionAmountNonAllowlisted: number;
     };
   };
   /**
@@ -770,7 +772,7 @@ export type MACIContribution = {
   stateIndex: string;
   maciId: string;
   chainId: string;
-  voiceCreditBalance: string; 
+  voiceCreditBalance: string;
   roundId: string;
   id: string;
   messages: Message[];

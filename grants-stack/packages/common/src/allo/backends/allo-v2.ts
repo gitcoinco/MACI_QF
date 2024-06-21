@@ -481,23 +481,38 @@ export class AlloV2 implements Allo {
           dateToEthereumTimestamp(args.roundData.roundStartTime), // in seconds, must be after registrationStartTime
           dateToEthereumTimestamp(args.roundData.roundEndTime), // in seconds, must be after allocationStartTime
         ];
-        console.log(
-          "args.roundData.roundMetadataWithProgramContractAddress",
-          args.roundData.roundMetadataWithProgramContractAddress
-        );
+
         let CoordinatorKeypair =
           args.roundData.roundMetadataWithProgramContractAddress?.maciParameters
             ?.coordinatorKeyPair;
-
-        console.log("CoordinatorKeypair", CoordinatorKeypair);
 
         const pubk = PubKey.deserialize(CoordinatorKeypair as string);
 
         const address = await this.transactionSender.address();
 
-        console.log("address", address);
+        const validObjEventIDs =
+          args.roundData.roundMetadataWithProgramContractAddress?.maciParameters
+            ?.validEventIDs;
+        const maxContributionAmountAllowlisted =
+          BigInt(
+            args.roundData.roundMetadataWithProgramContractAddress
+              ?.maciParameters?.maxContributionAmountAllowlisted ?? 0n
+          ) *
+          10n ** 18n;
 
-        const eventIDs = ["192993346581360151154216832563903227660"];
+        const maxContributionAmountNonAllowlisted =
+          BigInt(
+            args.roundData.roundMetadataWithProgramContractAddress
+              ?.maciParameters?.maxContributionAmountNonAllowlisted ?? 0n
+          ) *
+          10n ** 18n;
+
+        const array = validObjEventIDs
+          ? validObjEventIDs.map((eventId) => BigInt(eventId.eventID))
+          : [];
+
+        // Choose only the unique event IDs create a map and then convert it to an array again
+        const eventIDs = Array.from(new Set(array));
 
         let encodedEventIDs = new ethers.utils.AbiCoder().encode(
           ["uint256[]"],
@@ -516,9 +531,9 @@ export class AlloV2 implements Allo {
           // VALID_EVENT_IDS
           encodedEventIDs,
           // maxContributionAmountForZupass
-          10n ** 18n * 100n,
+          maxContributionAmountAllowlisted,
           // maxContributionAmountForNonZupass
-          10n ** 18n * 100n,
+          maxContributionAmountNonAllowlisted,
         ];
 
         let initStruct = [initStrategyData, MaciParams];
