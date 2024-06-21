@@ -121,7 +121,10 @@ const getContributed = async (
         ? applications[chainId]?.[roundID] || []
         : [];
 
-      const voteIdMap = await getVoteIdMap(applicationsForChainRound,dataLayer);
+      const voteIdMap = await getVoteIdMap(
+        applicationsForChainRound,
+        dataLayer
+      );
       const contributed = await getApplicationsByVoteOptionIndex(
         applicationsForChainRound,
         decryptedMessages,
@@ -154,7 +157,6 @@ export const setContributed = async (
     applications
   );
   const applicationRefs = getApplicationRefs(projects, applications);
-  console.log("applicationRefs", contributedTo);
 
   dataLayer
     .getApprovedApplicationsByExpandedRefs(applicationRefs)
@@ -188,9 +190,6 @@ export const setContributed = async (
               project.roundId === contrib.roundId
           )
       );
-
-      console.log("updatedProjects", updatedProjects);
-      console.log("newProjects", newProjects);
 
       // Combine new projects with updated ones, excluding contributed projects with newVoteWeight === "0"
       setUserCart(

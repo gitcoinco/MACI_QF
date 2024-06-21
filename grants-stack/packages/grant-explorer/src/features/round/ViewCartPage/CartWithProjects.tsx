@@ -40,8 +40,6 @@ export function CartWithProjects({
 
   const roundIds = Object.keys(cart);
 
-  console.log("cartByRound", cartByRound);
-
   const store = useCartStorage();
 
   const { getVotingTokenForChain, setVotingTokenForChain } = useCartStorage();

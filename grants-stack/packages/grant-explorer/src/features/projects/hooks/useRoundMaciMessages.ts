@@ -13,8 +13,6 @@ export function useMACIContributions(address: string, dataLayer: DataLayer) {
     const response: GroupedMaciContributions = {};
     const contributions = await getContributions(address, dataLayer);
 
-    console.log("contributions", contributions);
-
     for (const contribution of contributions) {
       const chainId = Number(contribution.encrypted.chainId);
       const roundId = contribution.encrypted.roundId;
@@ -44,8 +42,6 @@ export function useMACIContributions(address: string, dataLayer: DataLayer) {
         ])
       ).values()
     );
-
-    console.log("uniqueDetails", uniqueDetails);
 
     return { groupedMaciContributions: response, groupedRounds: uniqueDetails };
   });

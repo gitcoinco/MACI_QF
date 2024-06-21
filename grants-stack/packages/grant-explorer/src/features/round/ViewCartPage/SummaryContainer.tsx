@@ -1,9 +1,9 @@
 import { useCartStorage } from "../../../store";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Summary } from "./Summary";
 import ChainConfirmationModal from "../../common/ConfirmationModal";
 import { ChainConfirmationModalBody } from "./ChainConfirmationModalBody";
-import { MACIContributions, ProgressStatus } from "../../api/types";
+import { MACIContributions } from "../../api/types";
 import { modalDelayMs } from "../../../constants";
 import { useNavigate } from "react-router-dom";
 import { useAccount, useWalletClient } from "wagmi";
@@ -68,8 +68,8 @@ export function SummaryContainer(props: {
         project.amount === ""
           ? "0"
           : isNaN(Number(project.amount))
-            ? "0"
-            : project.amount,
+          ? "0"
+          : project.amount,
         votingToken.decimal
       ),
     0n
@@ -131,8 +131,6 @@ export function SummaryContainer(props: {
   const [openChainConfirmationModal, setOpenChainConfirmationModal] =
     useState(false);
   const [openMRCProgressModal, setOpenMRCProgressModal] = useState(false);
-
-  console.log("props.decryptedMessages", props.decryptedMessages);
 
   const PayoutModals = () => (
     <>
@@ -278,12 +276,12 @@ export function SummaryContainer(props: {
           ? totalDonations > tokenBalance && !props.alreadyContributed
             ? "Not enough funds to donate"
             : props.alreadyContributed && props.donatedAmount < totalDonations
-              ? "Exceeds donation limit"
-              : props.alreadyContributed && props.donatedAmount > totalDonations
-                ? "Make use 100% of your donation amount"
-                : props.alreadyContributed
-                  ? "Change donations"
-                  : "Submit your donation!"
+            ? "Exceeds donation limit"
+            : props.alreadyContributed && props.donatedAmount > totalDonations
+            ? "Make use 100% of your donation amount"
+            : props.alreadyContributed
+            ? "Change donations"
+            : "Submit your donation!"
           : "Connect wallet to continue"}
       </Button>
       <PayoutModals />
