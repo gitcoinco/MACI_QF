@@ -59,6 +59,7 @@ import {
 import Breadcrumb, { BreadcrumbItem } from "../common/Breadcrumb";
 
 const builderURL = process.env.REACT_APP_BUILDER_URL;
+
 import CartNotification from "../common/CartNotification";
 import { useCartStorage } from "../../store";
 import { useAccount, useToken } from "wagmi";

@@ -1,4 +1,4 @@
-import { Listbox, RadioGroup, Transition } from "@headlessui/react";
+import { Listbox, Transition } from "@headlessui/react";
 import {
   CheckIcon,
   InformationCircleIcon,
@@ -7,20 +7,18 @@ import {
 import { yupResolver } from "@hookform/resolvers/yup";
 import { classNames } from "common";
 import { Input } from "common/src/styles";
-import _ from "lodash";
+import _, { get } from "lodash";
 import { Fragment, useContext, useEffect, useState } from "react";
 import {
   Control,
   FieldErrors,
   SubmitHandler,
-  UseFormRegisterReturn,
-  UseFormSetValue,
-  useController,
   useForm,
   useFormContext,
-  useWatch,
+  FormProvider,
+  UseFormRegisterReturn,
+  useController,
 } from "react-hook-form";
-import { FormProvider } from "react-hook-form";
 
 import ReactTooltip from "react-tooltip";
 import * as yup from "yup";
@@ -29,8 +27,9 @@ import { useWallet } from "../common/Auth";
 import { FormStepper } from "../common/FormStepper";
 import { FormContext } from "../common/FormWizard";
 import { getPayoutTokenOptions, PayoutToken } from "../api/payoutTokens";
+
 import TagsInput from "react-tagsinput";
-import { useSearchParams } from "react-router-dom";
+
 interface QuadraticFundingFormProps {
   stepper: typeof FormStepper;
 }
@@ -81,28 +80,12 @@ export const FundingValidationSchema = yup.object().shape({
     maciParameters: yup.object().shape({
       maxContributionAmountAllowlisted: yup
         .number()
-        .typeError("Must be a valid number.")
-        .moreThan(-0.00001, "Amount must be more or equal to zero.")
-        .max(999999, "Amount must be less than or equal to 999999")
-        .test(
-          "maxDecimals",
-          "Amount can have up to 6 decimal places.",
-          (value) => {
-            return /^\d+(\.\d{1,6})?$/.test(value?.toString() ?? "0");
-          }
-        ),
+        .min(0, "Amount must be greater than or equal to 0")
+        .required("Amount is required"),
       maxContributionAmountNonAllowlisted: yup
         .number()
-        .typeError("Must be a valid number.")
-        .moreThan(-0.00001, "Amount must be more or equal to zero.")
-        .max(999999, "Amount must be less than or equal to 999999")
-        .test(
-          "maxDecimals",
-          "Amount can have up to 6 decimal places.",
-          (value) => {
-            return /^\d+(\.\d{1,6})?$/.test(value?.toString() ?? "0");
-          }
-        ),
+        .min(0, "Amount must be greater than or equal to 0")
+        .required("Amount is required"),
     }),
   }),
   token: yup
@@ -126,6 +109,20 @@ export default function QuadraticFundingForm(props: QuadraticFundingFormProps) {
       sybilDefense: true,
     };
 
+  const initialMACIConfig: Round["roundMetadata"]["maciParameters"] =
+    // @ts-expect-error Needs refactoring/typing as a whole
+    formData?.roundMetadata.maciParameters ?? {
+      maxContributionAmountAllowlisted: "",
+      maxContributionAmountNonAllowlisted: "",
+      validEventIDs: [],
+      coordinatorAddress:
+        // @ts-expect-error Needs refactoring/typing as a whole
+        formData?.roundMetadata.maciParameters.coordinatorAddress ?? "",
+      coordinatorKeyPair:
+        // @ts-expect-error Needs refactoring/typing as a whole
+        formData?.roundMetadata.maciParameters.coordinatorKeyPair ?? "",
+    };
+
   const { chain } = useWallet();
   const payoutTokenOptions: PayoutToken[] = [
     {
@@ -143,6 +140,7 @@ export default function QuadraticFundingForm(props: QuadraticFundingFormProps) {
       ...formData,
       roundMetadata: {
         quadraticFundingConfig: initialQuadraticFundingConfig,
+        maciParameters: initialMACIConfig,
       },
     },
     resolver: yupResolver(FundingValidationSchema),
@@ -205,7 +203,7 @@ export default function QuadraticFundingForm(props: QuadraticFundingFormProps) {
 
               {/* Sybil Defense */}
               <div className="p-6 bg-white">
-                <p className="text-grey-400 mb-2 mt-1 text-sm">
+                <p className="text-grey-400 mt-1 text-sm">
                   Ensure that project supporters are not bots or sybil with
                   ZuPass. Learn more about ZuPass{" "}
                   <a
@@ -220,16 +218,13 @@ export default function QuadraticFundingForm(props: QuadraticFundingFormProps) {
                 </p>
                 <div className="flex">
                   <SybilDefense
-                    registerEvents={register(
-                      "roundMetadata.maciParameters.validEventIDs"
-                    )}
-                    setEvents={setValue}
                     registerLimitAllowlisted={register(
                       "roundMetadata.maciParameters.maxContributionAmountAllowlisted"
                     )}
                     registerLimitNonAllowlisted={register(
                       "roundMetadata.maciParameters.maxContributionAmountNonAllowlisted"
                     )}
+                    errors={errors}
                   />
                 </div>
               </div>
@@ -497,20 +492,17 @@ function MatchingFundsAvailable(props: {
   );
 }
 
-import "react-tagsinput/react-tagsinput.css";
 import { ZuzaluEvents } from "../../constants";
 import { uuidToBigInt } from "@pcd/util";
 
 function SybilDefense({
-  registerEvents,
-  setEvents,
   registerLimitAllowlisted,
   registerLimitNonAllowlisted,
+  errors,
 }: {
-  registerEvents: UseFormRegisterReturn<string>;
-  setEvents: UseFormSetValue<Round>;
   registerLimitAllowlisted: UseFormRegisterReturn<string>;
   registerLimitNonAllowlisted: UseFormRegisterReturn<string>;
+  errors: FieldErrors<Round>;
 }) {
   const { setValue } = useFormContext<Round>();
   const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
@@ -522,7 +514,6 @@ function SybilDefense({
     if (eventId && !selectedEvents.includes(eventId)) {
       const updatedEvents = [...selectedEvents, eventId];
 
-      console.log(updatedEvents);
       setSelectedEvents(updatedEvents);
     }
   };
@@ -533,13 +524,12 @@ function SybilDefense({
         eventID: uuidToBigInt(event).toString(),
       };
     });
-    console.log(formUpdateData);
     setValue("roundMetadata.maciParameters.validEventIDs", formUpdateData);
   }, [selectedEvents]);
 
   return (
-    <div className="col-span-6 sm:col-span-3">
-      <div className="mt-6 mb-3 text-sm text-grey-400">
+    <div className="flex flex-col float-rigth w-full">
+      <div className="mt-1 mb-3 text-sm text-grey-400">
         <div className="text-base">
           Valid Events for MACI are required to prevent spam and fraud
         </div>
@@ -555,7 +545,10 @@ function SybilDefense({
         </span>
       </p>
       <div className="flex flex-row sm:items-center sm:space-x-4 mb-3">
-        <select className="mb-3 w-2/6" onChange={handleEventSelection}>
+        <select
+          className="my-auto w-2/6 mt-1 mb-2 shadow-sm block rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          onChange={handleEventSelection}
+        >
           <option value="">Select an event</option>
           {ZuzaluEvents.map((event) => (
             <option key={event.eventId} value={event.eventId}>
@@ -564,7 +557,7 @@ function SybilDefense({
           ))}
         </select>
 
-        <div className="w-4/6">
+        <div className="w-4/6 my-auto ">
           <TagsInput
             value={selectedEvents.map(
               (eventId) =>
@@ -583,49 +576,89 @@ function SybilDefense({
             }}
             inputProps={{ placeholder: "" }}
             onlyUnique={true}
-            renderTag={({ tag, key, onRemove, ...props }) => (
-              <span
-                key={key}
-                {...props}
-                className="bg-gray-200 rounded-md px-2 py-1 m-1 mx-auto gap-3 cursor-pointer"
-                onClick={() => onRemove(key)}
-                data-tip="Remove"
-              >
-                {tag}
-                <ReactTooltip effect="solid" />
-              </span>
-            )}
+            // renderTag={({ tag, key, onRemove, ...props }) => (
+            //   <span
+            //     key={key}
+            //     {...props}
+            //     className="bg-gray-200 rounded-md p-2 my-auto mx-auto flex items-center justify-between gap-2 cursor-pointer"
+            //     onClick={() => onRemove(key)}
+            //   >
+            //     {tag}
+            //     <button
+            //       type="button"
+            //       className="text-red-500 hover:text-red-700"
+            //     >
+            //       &times;
+            //     </button>
+            //   </span>
+            // )}
+            // renderLayout={(tagComponents, inputComponent) => (
+            //   <div className="mt-1 mb-2 shadow-sm block rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm flex flex-wrap gap-2">
+            //     {tagComponents}
+            //     {inputComponent}
+            //   </div>
+            // )}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-6 gap-6 mb-1">
-        <div className="col-span-6 sm:col-span-3">
-          <div className="relative border rounded-md px-3 py-2 mb-2 shadow-sm focus-within:ring-1">
-            <label className="block text-[10px]">
+      <div className="flex flex-col items-right w-full">
+        <div>
+          <div className="flex justify-between">
+            <label htmlFor="matchingFundsAvailable" className="text-sm">
               Max Contribution Amount (Allowlisted Users)
             </label>
-            <input
-              type="number"
-              {...registerLimitAllowlisted}
-              className="block w-full border-0 p-0 text-gray-900 placeholder-gray-500 focus:ring-0 sm:text-sm"
-              id="roundMetadata.maciParameters.maxContributionAmountAllowlisted"
-            />
+            <span className="text-right text-violet-400 float-right text-xs mt-1">
+              *Required
+            </span>
           </div>
+
+          <Input
+            {...registerLimitAllowlisted}
+            className={
+              "block w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm h-10"
+            }
+            type="number"
+            id={"roundMetadata.maciParameters.maxContributionAmountAllowlisted"}
+            $hasError={
+              errors?.roundMetadata?.maciParameters
+                ?.maxContributionAmountAllowlisted
+            }
+            placeholder="Enter the amount."
+            data-testid="matching-funds-available"
+            aria-describedby="price-currency"
+            step="any"
+          />
         </div>
-        <div className="col-span-6 sm:col-span-3">
-          <div className="relative border rounded-md px-3 py-2 mb-2 shadow-sm focus-within:ring-1">
-            <label className="block text-[10px]">
-              Max Contribution Amount (Non Allowlisted Users)
-            </label>
-            <input
-              type="number"
-              {...registerLimitNonAllowlisted}
-              id="roundMetadata.maciParameters.maxContributionAmountNonAllowlisted"
-              className="block w-full border-0 p-0 text-gray-900 placeholder-gray-500 focus:ring-0 sm:text-sm"
-            />
-          </div>
+      </div>
+      <div>
+        <div className="flex justify-between">
+          <label htmlFor="matchingFundsAvailable" className="text-sm">
+            Max Contribution Amount (Non Allowlisted Users)
+          </label>
+          <span className="text-right text-violet-400 float-right text-xs mt-1">
+            *Required
+          </span>
         </div>
+
+        <Input
+          {...registerLimitNonAllowlisted}
+          className={
+            "block w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm h-10"
+          }
+          type="number"
+          id={
+            "roundMetadata.maciParameters.maxContributionAmountNonAllowlisted"
+          }
+          $hasError={
+            errors?.roundMetadata?.maciParameters
+              ?.maxContributionAmountNonAllowlisted
+          }
+          placeholder="Enter the amount."
+          data-testid="matching-funds-available"
+          aria-describedby="price-currency"
+          step="any"
+        />
       </div>
     </div>
   );

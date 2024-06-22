@@ -45,8 +45,6 @@ export const getVoteIdMap = async (
       votingIndexOptions: { optionIndex: bigint }[];
     };
 
-    console.log("ID", ID);
-
     const voteOption = ID?.votingIndexOptions[0].optionIndex;
 
     const chainId = Number(app.chainId);

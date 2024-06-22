@@ -37,6 +37,7 @@ import { decodeAbiParameters, parseAbiParameters } from "viem";
 import { Keypair, PCommand, PubKey, PrivKey } from "maci-domainobjs";
 import { genRandomSalt } from "maci-crypto";
 import { DataLayer } from "data-layer";
+import { generatePubKey } from "./features/api/keys";
 
 type ChainMap<T> = Record<ChainId, T>;
 
@@ -282,8 +283,6 @@ export const useCheckoutStore = create<CheckoutState>()(
             votingIndexOptions: { optionIndex: bigint }[];
           };
 
-          console.log("ID", ID);
-
           const voteOption = ID?.votingIndexOptions[0].optionIndex;
 
           voteIdMap[app.anchorAddress ?? ""] = voteOption;
@@ -462,8 +461,6 @@ export const useCheckoutStore = create<CheckoutState>()(
             votingIndexOptions: { optionIndex: bigint }[];
           };
 
-          console.log("ID", ID);
-
           const voteOption = ID?.votingIndexOptions[0].optionIndex;
 
           voteIdMap[app.anchorAddress ?? ""] = voteOption;
@@ -582,8 +579,6 @@ export const useCheckoutStore = create<CheckoutState>()(
           };
         });
 
-        console.log("Messages", Messages);
-
         await Promise.all([
           publishBatch({
             messages: Messages,
@@ -651,77 +646,6 @@ export const useCheckoutStore = create<CheckoutState>()(
     },
   }))
 );
-
-export const generatePubKey = async (
-  walletClient: WalletClient,
-  roundID: string,
-  chainID: string
-) => {
-  const MACIKeys = localStorage.getItem("MACIKeys");
-  console.log("MACIKeys", MACIKeys);
-
-  const address = walletClient.account.address.toLowerCase();
-
-  let signatureSeeds;
-
-  try {
-    signatureSeeds = JSON.parse(MACIKeys ? MACIKeys : "{}");
-  } catch (e) {
-    console.error("Failed to parse MACIKeys from localStorage:", e);
-    signatureSeeds = {};
-  }
-
-  // Ensure the structure exists
-  if (
-    typeof signatureSeeds.rounds !== "object" ||
-    signatureSeeds.rounds === null
-  ) {
-    signatureSeeds.rounds = {};
-  }
-
-  if (
-    typeof signatureSeeds.rounds[chainID] !== "object" ||
-    signatureSeeds.rounds[chainID] === null
-  ) {
-    signatureSeeds.rounds[chainID] = {};
-  }
-
-  if (
-    typeof signatureSeeds.rounds[chainID][roundID] !== "object" ||
-    signatureSeeds.rounds[chainID][roundID] === null
-  ) {
-    signatureSeeds.rounds[chainID][roundID] = {};
-  }
-
-  console.log("signatureSeeds after ensuring structure:", signatureSeeds);
-
-  let signature = signatureSeeds.rounds[chainID][roundID][address];
-  console.log("signature", signature);
-  console.log("signatureSeeds", signatureSeeds);
-
-  if (!signature) {
-    signature = await walletClient.signMessage({
-      message: `Sign this message to get your public key for MACI voting on Allo for the round with address ${roundID} on chain ${chainID}`,
-    });
-
-    // Ensure the nested structure exists before assigning the new signature
-    if (!signatureSeeds.rounds[chainID][roundID]) {
-      signatureSeeds.rounds[chainID][roundID] = {};
-    }
-
-    signatureSeeds.rounds[chainID][roundID][address] = signature;
-    localStorage.setItem("MACIKeys", JSON.stringify(signatureSeeds));
-  }
-
-  const getUserPubKey = GenKeyPair.createFromSeed(signature);
-
-  return getUserPubKey;
-};
-
-export const generatePubKeyWithSeed = (seed: string) => {
-  const getUserPubKey = GenKeyPair.createFromSeed(seed);
-  return getUserPubKey;
-};
 
 const allocate = async ({
   messages,
@@ -869,8 +793,6 @@ export const publishBatch = async ({
         BigInt(0),
         userSalt
       );
-
-      console.log("command", command);
 
       // sign the command with the user private key
       const signature = command.sign(userMaciPrivKey);

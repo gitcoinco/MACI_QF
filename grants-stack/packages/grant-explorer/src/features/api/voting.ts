@@ -270,7 +270,6 @@ export const prepareAllocationData = ({
   // uint[38] memory _pubSignals
   const types = "(uint256,uint256),uint256,bytes";
 
-  console.log("amount", amount);
   let dt: ProofArgs | null = null;
   if (proof) {
     dt = generateWitness(JSON.parse(proof));

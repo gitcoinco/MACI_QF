@@ -167,6 +167,7 @@ export interface Round {
     };
     maciParameters?: {
       coordinatorKeyPair: string;
+      coordinatorAddress: string;
       validEventIDs: { eventID: string }[];
       maxContributionAmountAllowlisted: number;
       maxContributionAmountNonAllowlisted: number;

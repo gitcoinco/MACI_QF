@@ -23,7 +23,15 @@ import {
   RoundApplicationAnswers,
   RoundCategory,
 } from "data-layer";
-import { Abi, Address, Hex, PublicClient, getAddress, zeroAddress } from "viem";
+import {
+  Abi,
+  Address,
+  Hex,
+  PublicClient,
+  getAddress,
+  zeroAddress,
+  isAddress,
+} from "viem";
 import { AnyJson, ChainId } from "../..";
 import { UpdateRoundParams, MatchingStatsData, VotingToken } from "../../types";
 import { Allo, AlloError, AlloOperation, CreateRoundArguments } from "../allo";
@@ -45,6 +53,7 @@ import { generateMerkleTree } from "./allo-v1";
 import { BigNumber, ethers, utils } from "ethers";
 
 import { Keypair, PubKey } from "maci-domainobjs";
+import { isValid } from "zod";
 
 function getStrategyAddress(strategy: RoundCategory, chainId: ChainId): string {
   let strategyAddresses;
@@ -423,139 +432,86 @@ export class AlloV2 implements Allo {
       let initStrategyDataEncoded: Address;
       let token: Address = getAddress(NATIVE);
 
-      if (args.roundData.roundCategory === RoundCategory.QuadraticFunding) {
-        const initStrategyData: DonationVotingMerkleDistributionStrategyTypes.InitializeData =
-          {
-            useRegistryAnchor: true,
-            metadataRequired: true,
-            registrationStartTime: dateToEthereumTimestamp(
-              args.roundData.applicationsStartTime
-            ), // in seconds, must be in future
-            registrationEndTime: dateToEthereumTimestamp(
-              args.roundData.applicationsEndTime
-            ), // in seconds, must be after registrationStartTime
-            allocationStartTime: dateToEthereumTimestamp(
-              args.roundData.roundStartTime
-            ), // in seconds, must be after registrationStartTime
-            allocationEndTime: dateToEthereumTimestamp(
-              args.roundData.roundEndTime
-            ), // in seconds, must be after allocationStartTime
-            allowedTokens: [], // allow all tokens
-          };
+      const initStrategyData = [
+        true,
+        true,
+        dateToEthereumTimestamp(args.roundData.applicationsStartTime), // in seconds, must be in future
+        dateToEthereumTimestamp(args.roundData.applicationsEndTime), // in seconds, must be after registrationStartTime
+        dateToEthereumTimestamp(args.roundData.roundStartTime), // in seconds, must be after registrationStartTime
+        dateToEthereumTimestamp(args.roundData.roundEndTime), // in seconds, must be after allocationStartTime
+      ];
 
-        const strategy = new DonationVotingMerkleDistributionStrategy({
-          chain: this.chainId,
-        });
+      let CoordinatorKeypair =
+        args.roundData.roundMetadataWithProgramContractAddress?.maciParameters
+          ?.coordinatorKeyPair;
 
-        initStrategyDataEncoded =
-          await strategy.getInitializeData(initStrategyData);
+      const pubk = PubKey.deserialize(CoordinatorKeypair as string);
 
-        const alloToken =
-          args.roundData.token === zeroAddress ? NATIVE : args.roundData.token;
+      const address = getAddress(
+        args.roundData.roundMetadataWithProgramContractAddress?.maciParameters
+          ?.coordinatorAddress as string
+      ) as Address;
 
-        token = getAddress(alloToken);
-      } else if (args.roundData.roundCategory === RoundCategory.Direct) {
-        const initStrategyData: DirectGrantsStrategyTypes.InitializeParams = {
-          registryGating: true,
-          metadataRequired: true,
-          grantAmountRequired: true,
-          registrationStartTime: dateToEthereumTimestamp(
-            args.roundData.roundStartTime
-          ), // in seconds, must be in future
-          registrationEndTime: dateToEthereumTimestamp(
-            args.roundData.roundEndTime
-          ), // in seconds, must be after registrationStartTime
-        };
+      const validObjEventIDs =
+        args.roundData.roundMetadataWithProgramContractAddress?.maciParameters
+          ?.validEventIDs;
 
-        const strategy = new DirectGrantsStrategy({
-          chain: this.chainId,
-        });
-
-        initStrategyDataEncoded = strategy.getInitializeData(initStrategyData);
-      } else if (args.roundData.roundCategory == RoundCategory.Maci) {
-        const initStrategyData = [
-          true,
-          true,
-          dateToEthereumTimestamp(args.roundData.applicationsStartTime), // in seconds, must be in future
-          dateToEthereumTimestamp(args.roundData.applicationsEndTime), // in seconds, must be after registrationStartTime
-          dateToEthereumTimestamp(args.roundData.roundStartTime), // in seconds, must be after registrationStartTime
-          dateToEthereumTimestamp(args.roundData.roundEndTime), // in seconds, must be after allocationStartTime
-        ];
-
-        let CoordinatorKeypair =
+      const maxContributionAmountAllowlisted = BigInt(
+        Number(
           args.roundData.roundMetadataWithProgramContractAddress?.maciParameters
-            ?.coordinatorKeyPair;
+            ?.maxContributionAmountAllowlisted
+        ) *
+          10 ** 18
+      );
 
-        const pubk = PubKey.deserialize(CoordinatorKeypair as string);
-
-        const address = await this.transactionSender.address();
-
-        const validObjEventIDs =
+      const maxContributionAmountNonAllowlisted = BigInt(
+        Number(
           args.roundData.roundMetadataWithProgramContractAddress?.maciParameters
-            ?.validEventIDs;
-        const maxContributionAmountAllowlisted =
-          BigInt(
-            args.roundData.roundMetadataWithProgramContractAddress
-              ?.maciParameters?.maxContributionAmountAllowlisted ?? 0n
-          ) *
-          10n ** 18n;
+            ?.maxContributionAmountNonAllowlisted
+        ) *
+          10 ** 18
+      );
 
-        const maxContributionAmountNonAllowlisted =
-          BigInt(
-            args.roundData.roundMetadataWithProgramContractAddress
-              ?.maciParameters?.maxContributionAmountNonAllowlisted ?? 0n
-          ) *
-          10n ** 18n;
+      const array = validObjEventIDs
+        ? validObjEventIDs.map((eventId) => BigInt(eventId.eventID))
+        : [];
 
-        const array = validObjEventIDs
-          ? validObjEventIDs.map((eventId) => BigInt(eventId.eventID))
-          : [];
-        
-        console.log("array", array);
+      // Choose only the unique event IDs create a map and then convert it to an array again
+      const eventIDs = Array.from(new Set(array));
 
-        // Choose only the unique event IDs create a map and then convert it to an array again
-        const eventIDs = Array.from(new Set(array));
+      let encodedEventIDs = new ethers.utils.AbiCoder().encode(
+        ["uint256[]"],
+        [eventIDs]
+      );
 
-        let encodedEventIDs = new ethers.utils.AbiCoder().encode(
-          ["uint256[]"],
-          [eventIDs]
-        );
+      let MaciParams = [
+        // coordinator:
+        address,
+        // coordinatorPubKey:
+        [BigInt(pubk.asContractParam().x), BigInt(pubk.asContractParam().y)],
+        ClonableMACIFactoryAddress,
+        ZuPassRegistryAddress,
+        // maci_id
+        0n,
+        // VALID_EVENT_IDS
+        encodedEventIDs,
+        // maxContributionAmountForZupass
+        maxContributionAmountAllowlisted,
+        // maxContributionAmountForNonZupass
+        maxContributionAmountNonAllowlisted,
+      ];
 
-        let MaciParams = [
-          // coordinator:
-          address,
-          // coordinatorPubKey:
-          [BigInt(pubk.asContractParam().x), BigInt(pubk.asContractParam().y)],
-          ClonableMACIFactoryAddress,
-          ZuPassRegistryAddress,
-          // maci_id
-          0n,
-          // VALID_EVENT_IDS
-          encodedEventIDs,
-          // maxContributionAmountForZupass
-          maxContributionAmountAllowlisted,
-          // maxContributionAmountForNonZupass
-          maxContributionAmountNonAllowlisted,
-        ];
+      let initStruct = [initStrategyData, MaciParams];
 
-        let initStruct = [initStrategyData, MaciParams];
+      let types = parseAbiParameters(
+        "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,uint8,bytes,uint256,uint256))"
+      );
 
-        console.log("initStruct", initStruct);
+      const encoded: `0x${string}` = encodeAbiParameters(types, [
+        initStruct,
+      ] as any);
 
-        let types = parseAbiParameters(
-          "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,uint8,bytes,uint256,uint256))"
-        );
-
-        const encoded: `0x${string}` = encodeAbiParameters(types, [
-          initStruct,
-        ] as any);
-
-        initStrategyDataEncoded = encoded ?? "0x";
-      } else {
-        throw new Error(
-          `Unsupported round type ${args.roundData.roundCategory}`
-        );
-      }
+      initStrategyDataEncoded = encoded ?? "0x";
 
       const profileId = args.roundData.roundMetadataWithProgramContractAddress
         ?.programContractAddress as `0x${string}`;
@@ -564,6 +520,10 @@ export class AlloV2 implements Allo {
         throw new Error("Program contract address is required");
       }
 
+      const managers = args.roundData.roundOperators.map((address) =>
+        getAddress(address)
+      );
+      console.log("Managers", managers);
       const createPoolArgs: CreatePoolArgs = {
         profileId: profileId as Hex,
         strategy: getStrategyAddress(
@@ -574,10 +534,8 @@ export class AlloV2 implements Allo {
         token,
         amount: 0n, // we send 0 tokens to the pool, we fund it later
         metadata: { protocol: 1n, pointer: roundIpfsResult.value },
-        managers: args.roundData.roundOperators ?? [],
+        managers: managers as Address[],
       };
-
-      console.log("createPoolArgs", createPoolArgs);
 
       const txData = this.allo.createPool(createPoolArgs);
 

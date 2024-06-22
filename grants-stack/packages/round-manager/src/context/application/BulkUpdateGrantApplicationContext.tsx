@@ -216,7 +216,6 @@ async function _bulkUpdateGrantApplication({
           })
           .execute();
       } else if (roundStrategy === "MACIQF") {
-        console.log("bulkMACIUpdateApplicationStatus", selectedApplications);
         result = await allo
           .bulkMACIUpdateApplicationStatus({
             roundId,

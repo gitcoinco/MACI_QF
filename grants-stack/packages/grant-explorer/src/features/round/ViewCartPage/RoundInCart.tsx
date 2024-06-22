@@ -65,8 +65,6 @@ export function RoundInCart(
     ? validObjEventIDs.map((eventId) => BigInt(eventId.eventID))
     : [];
 
-  console.log("array", array);
-
   // Choose only the unique event IDs create a map and then convert it to an array again
   const eventIDs = Array.from(new Set(array));
 
@@ -112,8 +110,6 @@ export function RoundInCart(
           ?.maxContributionAmountNonAllowlisted ?? 0n
       ).toString()
     : "0.1";
-
-  console.log("maxContributionAllowlisted", maxContributionAllowlisted);
 
   const [donationInput, setDonationInput] = useState(
     formatUnits(donatedAmount, 18)

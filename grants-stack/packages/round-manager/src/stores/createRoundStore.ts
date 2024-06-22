@@ -43,8 +43,6 @@ export const useCreateRoundStore = create<CreateRoundStoreState>((set) => ({
       ipfsStatus: ProgressStatus.IN_PROGRESS,
     });
 
-    console.log("createRoundData", createRoundData);
-
     try {
       const round = await allo
         .createRound(createRoundData)

@@ -3,10 +3,18 @@ import { DataLayer, Message } from "data-layer";
 import { getPublicClient } from "@wagmi/core";
 import { parseAbi } from "viem";
 import { PCommand, PubKey } from "maci-domainobjs";
-import { generatePubKeyWithSeed } from "../../../checkoutStore";
-import { getMACIKey } from "../../api/keys";
+import { getMACIKey, generatePubKeyWithSeed } from "../../api/keys";
 import { getContributorMessages } from "../../api/voting";
 import { GroupedMaciContributions, MACIContributions } from "../../api/types";
+
+const abi = parseAbi([
+  "function getPool(uint256) view returns ((bytes32 profileId, address strategy, address token, (uint256,string) metadata, bytes32 managerRole, bytes32 adminRole))",
+  "function _maci() public view returns (address)",
+  "function _pollContracts() public view returns ((address,address,address,address))",
+  "function coordinatorPubKey() public view returns ((uint256,uint256))",
+]);
+
+const alloContractAddress = "0x1133ea7af70876e64665ecd07c0a0476d09465a1";
 
 export function useMACIContributions(address: string, dataLayer: DataLayer) {
   return useSWR(["allContributions", address], async () => {
@@ -120,15 +128,6 @@ export const useDecryptMessages = (
 
 async function getMaciAddress(chainID: number, roundID: string) {
   const publicClient = getPublicClient({ chainId: chainID });
-
-  const abi = parseAbi([
-    "function getPool(uint256) view returns ((bytes32 profileId, address strategy, address token, (uint256,string) metadata, bytes32 managerRole, bytes32 adminRole))",
-    "function _maci() public view returns (address)",
-    "function _pollContracts() public view returns ((address,address,address,address))",
-    "function coordinatorPubKey() public view returns ((uint256,uint256))",
-  ]);
-
-  const alloContractAddress = "0x1133ea7af70876e64665ecd07c0a0476d09465a1";
 
   const [Pool] = await Promise.all([
     publicClient.readContract({

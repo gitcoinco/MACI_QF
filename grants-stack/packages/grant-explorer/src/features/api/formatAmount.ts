@@ -14,7 +14,6 @@ export function formatAmount(
         : formatUnits(_value as bigint, units).toString();
     let result: number = parseFloat(formattedValue);
     // If `maxDecimals` passed, fix/truncate to string and parse back to number
-    console.log("result", result);
     result = parseFloat(result.toFixed(2));
 
     // If `maximumSignificantDigits` passed, return compact human-readable form to specified digits
