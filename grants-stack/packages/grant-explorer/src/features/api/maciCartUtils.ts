@@ -5,10 +5,11 @@ import {
   GroupedMaciContributions,
 } from "./types";
 import { PCommand } from "maci-domainobjs";
-import { formatAmount } from "./formatAmount";
 import { getVoteIdMap } from "./projectsMatching";
 import { createCartProjectFromApplication } from "../discovery/ExploreProjectsPage";
 import { getMACIKey } from "./keys";
+import { formatEther } from "viem";
+import { tr } from "date-fns/locale";
 
 interface Result {
   applicationId: string;
@@ -64,12 +65,12 @@ async function getApplicationsByVoteOptionIndex(
 
       const voteWeight =
         matchedVote && matchedVote.newVoteWeight !== 0n
-          ? formatAmount(
+          ? formatEther(
               matchedVote.newVoteWeight * matchedVote.newVoteWeight * 10n ** 13n
             ).toString()
           : matchedVote && matchedVote.newVoteWeight === 0n
-          ? undefined
-          : "0";
+            ? undefined
+            : "0";
 
       return {
         ...app,
@@ -100,19 +101,6 @@ const getContributed = async (
     for (const roundID of Object.keys(
       (groupedMaciContributions && groupedMaciContributions[chainId]) ?? {}
     )) {
-      const round = (
-        await dataLayer.getRoundForExplorer({
-          roundId: roundID,
-          chainId,
-        })
-      )?.round;
-      const currentTime = new Date();
-
-      const isActiveRound = round && round?.roundEndTime > currentTime;
-      if (!isActiveRound) {
-        continue;
-      }
-
       const decryptedMessages = groupedDecryptedContributions
         ? groupedDecryptedContributions[chainId]?.[roundID] || []
         : [];
@@ -243,11 +231,11 @@ function getApplicationRefs(
 }
 
 export const areSignaturesPresent = (
-  maciContributions: GroupedMaciContributions,
+  maciContributions: GroupedMaciContributions | undefined,
   walletAddress: string
 ) => {
-  if (!maciContributions || !walletAddress) return false;
-
+  if (!walletAddress) return false;
+  if (!maciContributions) return true;
   for (const chainId in maciContributions) {
     for (const roundId in maciContributions[chainId]) {
       const signature = getMACIKey({

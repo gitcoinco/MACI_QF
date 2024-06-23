@@ -1,4 +1,3 @@
-import { getPublicClient } from "@wagmi/core";
 import { Application, DataLayer } from "data-layer";
 
 

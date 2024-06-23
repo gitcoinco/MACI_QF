@@ -4,7 +4,6 @@ import { useRoundById } from "../../../context/RoundContext";
 import { ProjectInCart } from "./ProjectInCart";
 import { formatUnits, parseUnits } from "viem";
 import { useAccount } from "wagmi";
-
 import {
   Button,
   Tooltip,
@@ -43,20 +42,33 @@ export function RoundInCart(
     handleDecrypt: () => Promise<void>;
   }
 ) {
-  const chainId = props.chainId;
-  const roundId = props.roundId;
+  const {
+    chainId,
+    roundId,
+    voiceCredits,
+    selectedPayoutToken,
+    roundCart,
+    decryptedContributions,
+    handleRemoveProjectFromCart,
+    maciContributions,
+    payoutTokenPrice,
+  } = props;
 
   const round = useRoundById(chainId, roundId).round;
-
   const { address } = useAccount();
 
-  const voiceCreditBalance = props.voiceCredits;
+  const [totalAmountAfterDecryption, setTotalAmountAfterDecryption] =
+    useState(0n);
+  const [donationInput, setDonationInput] = useState("0");
+  const [pcd, setPcd] = useState<string | undefined>(undefined);
+  const [pcdFetched, setPcdFetched] = useState(false);
+  const [enabled, setEnabled] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const alreadyContributed = voiceCreditBalance ? true : false;
+  const alreadyContributed = Boolean(voiceCredits);
+  const votingToken = selectedPayoutToken;
 
-  const votingToken = props.selectedPayoutToken;
-
-  const filteredProjects = props.roundCart.filter(
+  const filteredProjects = roundCart.filter(
     (project) => project.chainId === chainId && project.roundId === roundId
   );
 
@@ -65,59 +77,39 @@ export function RoundInCart(
     ? validObjEventIDs.map((eventId) => BigInt(eventId.eventID))
     : [];
 
-  // Choose only the unique event IDs create a map and then convert it to an array again
   const eventIDs = Array.from(new Set(array));
-
-  // Now for each Zuzaluevent for each one filter those that are in the eventIDs array by compating the eventID <= uuidToBigInt(eventId) with the eventIDs array
   const filteredEvents = ZuzaluEvents.filter((event) =>
-    // eventIDs.some((eventId) => eventId <= uuidToBigInt(event.eventId))
     eventIDs.includes(uuidToBigInt(event.eventId))
   );
-
   const eventsList = filteredEvents.map((event) => event.eventName).join("\n");
 
-  const donatedAmount = voiceCreditBalance
-    ? BigInt(voiceCreditBalance) * 10n ** 13n
-    : filteredProjects.length > 0
-      ? filteredProjects.reduce(
-          (acc, project) =>
-            acc +
-            parseUnits(
-              project.amount === ""
-                ? "0"
-                : isNaN(Number(project.amount))
-                  ? "0"
-                  : project.amount,
-              votingToken.decimal
-            ),
-          0n
-        )
-      : 0n;
+  const [donatedAmount, setDonatedAmount] = useState<bigint>(0n);
 
   const currentTime = new Date();
+  const isActiveRound = round && round.roundEndTime > currentTime;
 
-  const isActiveRound = round && round?.roundEndTime > currentTime;
+  useEffect(() => {
+    if (decryptedContributions) {
+      const totalAmount = decryptedContributions.reduce(
+        (acc, contribution) => acc + contribution.newVoteWeight,
+        0n
+      );
+      setTotalAmountAfterDecryption(totalAmount * 10n ** 13n);
+    }
+  }, [decryptedContributions]);
 
   const maxContributionAllowlisted = round
     ? BigInt(
         round.roundMetadata?.maciParameters?.maxContributionAmountAllowlisted ??
-          0n
+          2n
       ).toString()
     : "1.0";
   const maxContributionNonAllowlisted = round
     ? BigInt(
         round.roundMetadata?.maciParameters
-          ?.maxContributionAmountNonAllowlisted ?? 0n
+          ?.maxContributionAmountNonAllowlisted ?? 1n
       ).toString()
     : "0.1";
-
-  const [donationInput, setDonationInput] = useState(
-    formatUnits(donatedAmount, 18)
-  );
-
-  const donationValue = isNaN(parseFloat(donationInput))
-    ? 0
-    : parseFloat(donationInput) * props.payoutTokenPrice;
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     let value = event.target.value;
@@ -133,14 +125,9 @@ export function RoundInCart(
 
     if (/^\d*\.?\d*$/.test(value)) {
       setDonationInput(value);
+      setDonatedAmount(BigInt(Number(value) * 10 ** 18));
     }
   };
-
-  const [pcd, setPcd] = useState<string | undefined>(undefined);
-  const [pcdFetched, setPcdFetched] = useState(false);
-  const [enabled, setEnabled] = useState(false);
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
@@ -156,15 +143,31 @@ export function RoundInCart(
       setPcd(JSON.parse(result.pcdStr).pcd);
       setPcdFetched(true);
     }
-  }, [address]);
+  }, [address, filteredEvents]);
 
-  useEffect(() => {}, [
-    props.roundCart,
-    alreadyContributed,
-    props.decryptedContributions,
-    address,
-    voiceCreditBalance,
-  ]);
+  useEffect(() => {
+    if (alreadyContributed && voiceCredits) {
+      console.log("voiceCredits", voiceCredits);
+      const donatedAmount = voiceCredits
+        ? BigInt(voiceCredits) * 10n ** 13n
+        : filteredProjects.reduce(
+            (acc, project) =>
+              acc +
+              parseUnits(
+                project.amount === ""
+                  ? "0"
+                  : isNaN(Number(project.amount))
+                    ? "0"
+                    : project.amount,
+                votingToken.decimal
+              ),
+            0n
+          );
+
+      setDonatedAmount(donatedAmount);
+      setDonationInput(formatUnits(donatedAmount, 18));
+    }
+  }, [alreadyContributed, voiceCredits, donatedAmount, donationInput]);
 
   if (!isActiveRound) {
     return null;
@@ -173,7 +176,7 @@ export function RoundInCart(
   return (
     <div className="my-4 flex w-full">
       <div className="flex flex-col flex-grow w-3/4">
-        <div className="bg-grey-50 px-4 py-6 rounded-t-xl mb-4 flex-grow mr-2">
+        <div className="bg-grey-50 px-4 py-6 rounded-xl mb-4 flex-grow mr-2">
           <div className="flex flex-row items-end justify-between">
             <div className="flex flex-col">
               <div>
@@ -181,7 +184,7 @@ export function RoundInCart(
                   {round?.roundMetadata?.name}
                 </p>
                 <p className="text-lg font-bold ml-2 inline">
-                  ({props.roundCart.length})
+                  ({roundCart.length})
                 </p>
               </div>
               {!alreadyContributed && (
@@ -223,7 +226,7 @@ export function RoundInCart(
                 </p>
               )}
             </div>
-            {!alreadyContributed && !props.decryptedContributions && (
+            {!alreadyContributed && !decryptedContributions && (
               <div className="flex items-center pt-2  mb-5 mr-2">
                 <label
                   htmlFor="totalDonationETH"
@@ -236,28 +239,27 @@ export function RoundInCart(
                   id="totalDonationETH"
                   value={donationInput}
                   typeof="number"
-                  min={0}
                   onChange={handleInputChange}
-                  className="px-3 py-2 bg-white border shadow-sm border-slate-300 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-sky-500 block rounded-md sm:text-sm focus:ring-1"
+                  className="px-3 py-2 w-20 bg-white border shadow-sm border-slate-300 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-sky-500 block rounded-md sm:text-sm focus:ring-1"
                   placeholder="Enter amount in ETH"
                 />
               </div>
             )}
           </div>
           <div>
-            {props.roundCart.map((project, key) => {
+            {roundCart.map((project, key) => {
               return (
                 <div key={key}>
                   <ProjectInCart
-                    projects={props.roundCart}
-                    selectedPayoutToken={props.selectedPayoutToken}
-                    removeProjectFromCart={props.handleRemoveProjectFromCart}
+                    projects={roundCart}
+                    selectedPayoutToken={selectedPayoutToken}
+                    removeProjectFromCart={handleRemoveProjectFromCart}
                     totalAmount={parseFloat(donationInput)}
                     project={project}
                     index={key}
-                    roundRoutePath={`/round/${props.chainId}/${props.roundCart[0].roundId}`}
-                    last={key === props.roundCart.length - 1}
-                    payoutTokenPrice={props.payoutTokenPrice}
+                    roundRoutePath={`/round/${chainId}/${roundCart[0].roundId}`}
+                    last={key === roundCart.length - 1}
+                    payoutTokenPrice={payoutTokenPrice}
                     alreadyContributed={alreadyContributed}
                     walletAddress={address as `0x${string}`}
                   />
@@ -266,7 +268,7 @@ export function RoundInCart(
             })}
           </div>
         </div>
-        <div className="p-4 bg-grey-100 rounded-b-xl font-medium text-lg">
+        {/* <div className="p-4 bg-grey-100 rounded-b-xl font-medium text-lg">
           <div className="flex flex-row justify-between items-center">
             <div className="flex flex-row gap-3 justify-center pt-1 pr-2">
               <div className="font-semibold">
@@ -277,25 +279,24 @@ export function RoundInCart(
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
       <div className="w-1/4 ml-[4%]">
         <SummaryContainer
           alreadyContributed={
-            (props.maciContributions?.encrypted ? true : (false as boolean)) ||
-            false
+            (maciContributions?.encrypted ? true : (false as boolean)) || false
           }
-          payoutTokenPrice={props.payoutTokenPrice}
-          decryptedMessages={props.decryptedContributions}
-          stateIndex={BigInt(
-            props.maciContributions?.encrypted?.stateIndex ?? "0"
-          )}
-          donatedAmount={BigInt(parseFloat(donationInput) * 10 ** 18)}
-          maciMessages={props.maciContributions ?? null}
-          roundId={props.roundId}
-          chainId={props.chainId}
+          payoutTokenPrice={payoutTokenPrice}
+          decryptedMessages={decryptedContributions}
+          stateIndex={BigInt(maciContributions?.encrypted?.stateIndex ?? "0")}
+          donatedAmount={donatedAmount}
+          totalAmountAfterDecryption={totalAmountAfterDecryption}
+          maciMessages={maciContributions ?? null}
+          roundId={roundId}
+          chainId={chainId}
           walletAddress={address as `0x${string}`}
           pcd={pcdFetched ? pcd : undefined}
+          roundName={round?.roundMetadata?.name ?? ""}
         />
       </div>
 

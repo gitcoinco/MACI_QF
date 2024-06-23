@@ -100,7 +100,6 @@ export function MRCProgressModalBody({
   }, [
     chainId,
     chainSwitchStatus,
-    permitStatus,
     voteStatus,
     changeDonationsStatus,
     maciKeyStatus,

@@ -1,14 +1,17 @@
 import { ChainId, useTokenPrice, VotingToken } from "common";
 import { CHAINS } from "../../api/utils";
-import { formatUnits, zeroAddress } from "viem";
+import { zeroAddress, formatEther } from "viem";
 import { useAccount, useBalance } from "wagmi";
 import { InformationCircleIcon } from "@heroicons/react/24/solid";
+import { Tooltip } from "@chakra-ui/react";
+import { formatAmount } from "../../api/formatAmount";
 
 type SummaryProps = {
   totalDonation: bigint;
   selectedPayoutToken: VotingToken;
   chainId: ChainId;
   alreadyContributed: boolean;
+  roundName: string;
 };
 
 export function Summary({
@@ -16,14 +19,17 @@ export function Summary({
   totalDonation,
   chainId,
   alreadyContributed,
+  roundName,
 }: SummaryProps) {
   const { data: payoutTokenPrice } = useTokenPrice(
     selectedPayoutToken.redstoneTokenId
   );
+
+  const amount = alreadyContributed
+    ? formatAmount(totalDonation, selectedPayoutToken.decimal)
+    : formatEther(totalDonation);
   const totalDonationInUSD =
-    payoutTokenPrice &&
-    Number(formatUnits(totalDonation, selectedPayoutToken.decimal)) *
-      Number(payoutTokenPrice);
+    payoutTokenPrice && Number(amount) * Number(payoutTokenPrice);
 
   const { address } = useAccount();
 
@@ -42,20 +48,31 @@ export function Summary({
     <div>
       <div className="flex flex-row justify-between mt-2 mb-5">
         <div className="flex flex-col">
-          <p className="mb-2">Your contribution on</p>
-          <p>
+          <p className="mb-2">Your donations amount on</p>
+          <div className="flex items-center">
             <img
               className={"inline max-w-[32px] mr-2"}
               alt={CHAINS[chainId].name}
               src={CHAINS[chainId].logo}
             />
-            {CHAINS[chainId].name}
-          </p>
+            <p>{roundName}</p>
+            <Tooltip
+              label="The total donation amount & percentages may slightly differ due to rounding during MACI vote calculations."
+              aria-label="Tooltip explaining rounding differences"
+              placement="top"
+              hasArrow
+              bg="gray.600"
+              color="white"
+              fontSize="sm"
+            >
+              <InformationCircleIcon className="w-4 h-4 ml-2 cursor-pointer text-gray-500" />
+            </Tooltip>
+          </div>
         </div>
         <div className="flex flex-col">
           <p className="text-right">
             <span data-testid={"totalDonation"} className="mr-2">
-              {formatUnits(totalDonation, selectedPayoutToken.decimal)}
+              {formatAmount(totalDonation, selectedPayoutToken.decimal)}
             </span>
             <span data-testid={"summaryPayoutToken"}>
               {selectedPayoutToken.name}

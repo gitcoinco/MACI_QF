@@ -15,7 +15,7 @@ import {
   useDecryptMessages,
 } from "../../projects/hooks/useRoundMaciMessages";
 import { useAccount } from "wagmi";
-import { Spinner } from "@chakra-ui/react"; // Added Spinner for loading indicator
+import { Spinner } from "@chakra-ui/react";
 import { setContributed, areSignaturesPresent } from "../../api/maciCartUtils";
 import {
   MACIContributionsByRoundId,
@@ -25,18 +25,23 @@ import {
 import { signAndStoreSignatures } from "../../api/keys";
 import { WalletClient, getWalletClient } from "@wagmi/core";
 
+const LOCAL_STORAGE_KEY = "lastConnectedWallet";
+
 export default function ViewCart() {
   const [signaturesReady, setSignaturesReady] = useState(false);
-  const [signaturesRequested, setSignaturesRequested] = useState(false); // To prevent multiple signature requests
-  const [initialLoading, setInitialLoading] = useState(true); // Added initial loading state
-  const [groupedCredits, setGroupedCredits] = useState<GroupedCredits>({}); // Added groupedCredits state
+  const [signaturesRequested, setSignaturesRequested] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [groupedCredits, setGroupedCredits] = useState<GroupedCredits>({});
+  const [loadingMessage, setLoadingMessage] = useState<string>(
+    "Checking needed signatures..."
+  );
+  const { userProjects, setUserCart, removeUserProject } = useCartStorage();
+  const { address: walletAddress, isConnected } = useAccount();
 
-  const { userProjects, setUserCart } = useCartStorage();
-  const { address: walletAddress } = useAccount();
-
-  const projects = useMemo(() => 
-    walletAddress ? userProjects[walletAddress] ?? [] : [], 
-  [userProjects, walletAddress]);
+  const projects = useMemo(
+    () => (walletAddress ? userProjects[walletAddress] ?? [] : []),
+    [userProjects, walletAddress]
+  );
 
   const dataLayer = useDataLayer();
 
@@ -57,7 +62,7 @@ export default function ViewCart() {
   const { data: DecryptedContributions, refetch } = useDecryptMessages(
     maciContributions?.groupedMaciContributions,
     walletAddress?.toLowerCase() as string,
-    signaturesReady // Add signaturesReady as a dependency to refetch
+    signaturesReady
   );
 
   const groupedCartProjects = groupProjectsInCart(projects);
@@ -66,15 +71,53 @@ export default function ViewCart() {
     new Set([...groupedProjectsByChainId, ...maciContributionsByChainId])
   );
 
-  const getNeededSignatures = useCallback(async () => {
-    if (signaturesRequested) return; // Prevent multiple requests
-    setSignaturesRequested(true);
+  async function getNeededPairs(
+    groupedRounds:
+      | {
+          chainId: number;
+          roundId: string;
+          address: string;
+        }[]
+      | undefined
+  ) {
+    if (!groupedRounds) return;
+    const pairs: { chainId: number; roundId: string }[] = [];
+    for (const { chainId, roundId } of groupedRounds ?? []) {
+      const round = (
+        await dataLayer.getRoundForExplorer({
+          roundId: roundId,
+          chainId,
+        })
+      )?.round;
+      const currentTime = new Date();
 
-    const pairs =
-      maciContributions?.groupedRounds &&
-      (maciContributions?.groupedRounds.flatMap((round) => {
-        return { chainId: round.chainId, roundId: round.roundId };
-      }) as { chainId: number; roundId: string }[]);
+      const isActiveRound = round && round?.roundEndTime > currentTime;
+      if (!isActiveRound) {
+        for (const project of projects) {
+          if (project.chainId === chainId && project.roundId === roundId) {
+            removeUserProject(project, walletAddress as string);
+          }
+        }
+        continue;
+      }
+      pairs.push({ chainId, roundId });
+    }
+    return pairs.length ? pairs : null;
+  }
+
+  const getNeededSignatures = useCallback(async () => {
+    if (signaturesRequested) return;
+    setSignaturesRequested(true);
+    const pairs = await getNeededPairs(maciContributions?.groupedRounds);
+
+    if (!pairs || pairs.length === 0) {
+      setSignaturesReady(true);
+      setInitialLoading(false);
+      setLoadingMessage("");
+      return;
+    }
+
+    setLoadingMessage("Requesting signatures...");
     const walletClient = await getWalletClient();
     if (pairs) {
       await signAndStoreSignatures({
@@ -83,7 +126,10 @@ export default function ViewCart() {
         address: walletAddress as string,
       });
     }
-    setSignaturesReady(true); // Update state to indicate signatures are ready
+    setTimeout(() => {
+      setSignaturesReady(true);
+      setLoadingMessage("Decrypting...");
+    }, 2000); // 2-second delay
   }, [maciContributions, walletAddress, signaturesRequested]);
 
   const getCartProjects = useCallback(async () => {
@@ -100,12 +146,30 @@ export default function ViewCart() {
       contributorAddress: walletAddress?.toLowerCase() as string,
     });
     setGroupedCredits(credits);
-    setInitialLoading(false); // Set initial loading to false after loading cart projects
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataLayer, applications, maciContributions, DecryptedContributions]);
+    setInitialLoading(false);
+  }, [
+    dataLayer,
+    applications,
+    maciContributions,
+    DecryptedContributions,
+    walletAddress,
+    setUserCart,
+  ]);
 
-  // Check for existing signatures and set state accordingly
   useEffect(() => {
+    const lastWalletAddress = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (
+      isConnected &&
+      walletAddress &&
+      walletAddress.toLowerCase() !== lastWalletAddress?.toLowerCase()
+    ) {
+      localStorage.setItem(LOCAL_STORAGE_KEY, walletAddress.toLowerCase());
+      setSignaturesRequested(false);
+      setSignaturesReady(false);
+      setInitialLoading(true);
+      setLoadingMessage("Checking needed signatures...");
+    }
+
     if (maciContributions && walletAddress) {
       const signaturesExist = areSignaturesPresent(
         maciContributions.groupedMaciContributions,
@@ -113,21 +177,20 @@ export default function ViewCart() {
       );
       if (signaturesExist) {
         setSignaturesReady(true);
-        setInitialLoading(false); // Set initial loading to false if signatures already exist
+        setInitialLoading(false);
+        setLoadingMessage("");
       } else {
         getNeededSignatures();
       }
     }
   }, [maciContributions, walletAddress, getNeededSignatures]);
 
-  // Refetch decrypted contributions once signatures are ready
   useEffect(() => {
     if (signaturesReady) {
       refetch();
     }
   }, [signaturesReady, refetch]);
 
-  // Get cart projects once decrypted contributions are available
   useEffect(() => {
     if (DecryptedContributions && signaturesReady) {
       getCartProjects();
@@ -153,11 +216,13 @@ export default function ViewCart() {
           <Breadcrumb items={breadCrumbs} />
         </div>
         <main>
-          <Header projects={projects} />
-
+          <Header />
           {initialLoading && walletAddress ? (
-            <div className="flex justify-center items-center my-10">
+            <div className="flex flex-col justify-center items-center my-10">
               <Spinner size="xl" />
+              {loadingMessage && (
+                <p className="mt-4 text-lg">{loadingMessage}</p>
+              )}
             </div>
           ) : (
             <div className="flex flex-col md:flex-row gap-5">

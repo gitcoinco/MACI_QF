@@ -67,19 +67,53 @@ export function ProjectInCart(
 
   const updateProjectAmount = (currentIndex: number, newPercentage: number) => {
     const newAmount = (totalAmount * newPercentage) / 100;
-    const newAmounts = [...roundProjects];
-    newAmounts[currentIndex].amount = newAmount.toFixed(10);
+
+    // find the total amount of all projects in the round except the current project
+    const totalAmountOfOtherProjects = roundProjects
+      .filter((_, i) => i !== currentIndex)
+      .reduce(
+        (acc, project) => acc + Number(parseFloat(project.amount).toFixed(10)),
+        0
+      );
+    if (totalAmountOfOtherProjects + newAmount > totalAmount) {
+      store.updateUserDonationAmount(
+        project.chainId,
+        project.roundId,
+        project.grantApplicationId,
+        project.amount,
+        props.walletAddress
+      );
+      return;
+    }
 
     store.updateUserDonationAmount(
-      newAmounts[currentIndex].chainId,
-      newAmounts[currentIndex].roundId,
-      newAmounts[currentIndex].grantApplicationId,
-      newAmounts[currentIndex].amount,
+      project.chainId,
+      project.roundId,
+      project.grantApplicationId,
+      newAmount.toFixed(10),
       props.walletAddress
     );
     setPercentage(newPercentage.toFixed(10));
   };
 
+  useEffect(() => {
+    const newAmount = props.alreadyContributed
+      ? ((totalAmount * parseFloat(percentage)) / 100).toFixed(10)
+      : ((totalAmount * parseFloat(percentage)) / 100).toFixed(10);
+    store.updateUserDonationAmount(
+      project.chainId,
+      project.roundId,
+      project.grantApplicationId,
+      newAmount,
+      props.walletAddress
+    );
+  }, [totalAmount, props.alreadyContributed]);
+
+  useEffect(() => {
+    setPercentage(
+      ((Number(project.amount) / totalAmount) * 100).toFixed(10)
+    );
+  }, [project.amount]);
   return (
     <Box
       data-testid="cart-project"
@@ -164,6 +198,7 @@ export function ProjectInCart(
                 aria-label={`Donation percentage for project ${project.projectMetadata?.title}`}
                 value={Number(percentage).toFixed(0)}
                 onChange={handlePercentageChange}
+                className="rounded-xl"
                 min={0}
                 max={100}
                 type="number"

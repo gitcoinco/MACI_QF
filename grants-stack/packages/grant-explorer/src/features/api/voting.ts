@@ -397,7 +397,8 @@ export async function getContributorMessages({
 
   return maciMessages.messages.map((message) => {
     const macimsg = getMaciMessage(message.msgType, message.data);
-    const { command, signature } = PCommand.decrypt(macimsg, sharedKey, true);
+    const { command } = PCommand.decrypt(macimsg, sharedKey, true);
+
     return command;
   });
 }

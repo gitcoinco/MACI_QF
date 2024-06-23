@@ -1,5 +1,5 @@
 import { useCartStorage } from "../../../store";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Summary } from "./Summary";
 import ChainConfirmationModal from "../../common/ConfirmationModal";
 import { ChainConfirmationModalBody } from "./ChainConfirmationModalBody";
@@ -27,6 +27,7 @@ export function SummaryContainer(props: {
   alreadyContributed: boolean;
   maciMessages: MACIContributions | null;
   donatedAmount: bigint;
+  totalAmountAfterDecryption: bigint;
   decryptedMessages: PCommand[] | null;
   payoutTokenPrice: number;
   stateIndex: bigint;
@@ -34,6 +35,7 @@ export function SummaryContainer(props: {
   roundId: string;
   pcd: string | undefined;
   walletAddress: string;
+  roundName: string;
 }) {
   const { data: walletClient } = useWalletClient();
   const { address, isConnected } = useAccount();
@@ -49,9 +51,15 @@ export function SummaryContainer(props: {
   const navigate = useNavigate();
 
   const projects = userProjects[props.walletAddress];
-
   const maciChainId = props.chainId;
   const maciRoundId = props.roundId;
+  const votingToken = getVotingTokenForChain(parseChainId(maciChainId));
+
+  const [totalDonations, setTotalDonations] = useState<bigint>(0n);
+  const [tokenBalance, setTokenBalance] = useState<bigint>(0n);
+  const [openChainConfirmationModal, setOpenChainConfirmationModal] =
+    useState(false);
+  const [openMRCProgressModal, setOpenMRCProgressModal] = useState(false);
 
   const filteredProjects = projects.filter(
     (project) =>
@@ -59,38 +67,21 @@ export function SummaryContainer(props: {
       project.roundId === maciRoundId
   );
 
-  const votingToken = getVotingTokenForChain(parseChainId(maciChainId));
-
-  const totalDonations = filteredProjects.reduce(
-    (acc, project) =>
-      acc +
-      parseUnits(
-        project.amount === ""
-          ? "0"
-          : isNaN(Number(project.amount))
-            ? "0"
-            : project.amount,
-        votingToken.decimal
-      ),
-    0n
-  );
-
-  const [tokenBalance, setTokenBalance] = useState<bigint>(0n);
-  useEffect(() => {
-    const fetchBalanceForChain = async () => {
-      const { value } = await fetchBalance({
-        address: address ?? zeroAddress,
-        token:
-          votingToken.address === zeroAddress || votingToken.address === NATIVE
-            ? undefined
-            : votingToken.address,
-        chainId: parseChainId(maciChainId),
-      });
-      setTokenBalance(value);
-    };
-
-    fetchBalanceForChain();
+  const fetchBalanceForChain = useCallback(async () => {
+    const { value } = await fetchBalance({
+      address: address ?? zeroAddress,
+      token:
+        votingToken.address === zeroAddress || votingToken.address === NATIVE
+          ? undefined
+          : votingToken.address,
+      chainId: parseChainId(maciChainId),
+    });
+    setTokenBalance(value);
   }, [address, maciChainId, votingToken.address]);
+
+  useEffect(() => {
+    fetchBalanceForChain();
+  }, [fetchBalanceForChain]);
 
   const { data: round } = useSWR([maciRoundId, maciChainId], async () => {
     const result = await dataLayer.getRoundForExplorer({
@@ -109,70 +100,36 @@ export function SummaryContainer(props: {
     }
   }, [filteredProjects, removeProjectFromCart, round, props.walletAddress]);
 
-  const handleConfirmation = async () => {
-    if (
-      filteredProjects.some(
-        (project) =>
-          !project.amount ||
-          (Number(project.amount) === 0 && !props.alreadyContributed)
-      )
-    ) {
-      return;
+  useEffect(() => {
+    let newTotalDonations: bigint;
+    if (filteredProjects.length > 0) {
+      try {
+        newTotalDonations = filteredProjects.reduce(
+          (acc, project) =>
+            acc +
+            parseUnits(
+              project.amount === ""
+                ? "0"
+                : isNaN(Number(project.amount))
+                  ? "0"
+                  : project.amount,
+              votingToken.decimal
+            ),
+          0n
+        );
+        setTotalDonations(newTotalDonations);
+      } catch (e) {
+        console.error(e);
+        return;
+      }
+    } else if (props.alreadyContributed) {
+      setTotalDonations(props.donatedAmount);
     }
-    if (
-      props.donatedAmount > totalDonations ||
-      props.donatedAmount < totalDonations
-    ) {
-      return;
-    }
-    setOpenChainConfirmationModal(true);
-  };
-
-  const [openChainConfirmationModal, setOpenChainConfirmationModal] =
-    useState(false);
-  const [openMRCProgressModal, setOpenMRCProgressModal] = useState(false);
-
-  const PayoutModals = () => (
-    <>
-      <ChainConfirmationModal
-        title={"Checkout"}
-        confirmButtonText={
-          props.alreadyContributed ? "Change Donations" : "Checkout"
-        }
-        confirmButtonAction={handleSubmitDonation}
-        body={
-          <div>
-            <ChainConfirmationModalBody
-              projectsByChain={{ [maciChainId]: filteredProjects }}
-              totalDonationsPerChain={{ [maciChainId]: totalDonations }}
-              chainIdsBeingCheckedOut={[parseChainId(maciChainId)]}
-              setChainIdsBeingCheckedOut={() => {}}
-            />
-          </div>
-        }
-        isOpen={openChainConfirmationModal}
-        setIsOpen={setOpenChainConfirmationModal}
-        disabled={totalDonations > tokenBalance && !props.alreadyContributed}
-      />
-      <MRCProgressModal
-        isOpen={openMRCProgressModal}
-        subheading={
-          !props.alreadyContributed
-            ? "Please hold while we submit your donation."
-            : "Please hold while we change your donations."
-        }
-        body={
-          <div className="flex flex-col items-center">
-            <MRCProgressModalBody
-              chainIdsBeingCheckedOut={[parseChainId(maciChainId)]}
-              tryAgainFn={handleSubmitDonation}
-              setIsOpen={setOpenMRCProgressModal}
-            />
-          </div>
-        }
-      />
-    </>
-  );
+  }, [
+    projects,
+    votingToken,
+    props,
+  ]);
 
   const handleSubmitDonation = async () => {
     if (!walletClient || !allo) return;
@@ -181,9 +138,13 @@ export function SummaryContainer(props: {
       setOpenChainConfirmationModal(false);
     }, modalDelayMs);
     if (props.alreadyContributed) {
+      const voiceCreditsBalance = BigInt(
+        props.maciMessages?.encrypted.voiceCreditBalance ?? 0n
+      );
       const isSuccess = await changeDonations(
         parseChainId(maciChainId),
         maciRoundId,
+        voiceCreditsBalance,
         walletClient,
         props.decryptedMessages ?? [],
         props.stateIndex,
@@ -212,6 +173,65 @@ export function SummaryContainer(props: {
     }
   };
 
+  const handleConfirmation = async () => {
+    if (
+      filteredProjects.some(
+        (project) =>
+          !project.amount ||
+          (Number(project.amount) === 0 && !props.alreadyContributed)
+      ) ||
+      (props.donatedAmount > totalDonations &&
+        props.totalAmountAfterDecryption > totalDonations) ||
+      (props.donatedAmount < totalDonations &&
+        props.totalAmountAfterDecryption < totalDonations)
+    ) {
+      return;
+    }
+    setOpenChainConfirmationModal(true);
+  };
+
+  const PayoutModals = () => (
+    <>
+      <ChainConfirmationModal
+        title={"Checkout"}
+        confirmButtonText={
+          props.alreadyContributed ? "Change Donations" : "Checkout"
+        }
+        confirmButtonAction={handleSubmitDonation}
+        body={
+          <div>
+            <ChainConfirmationModalBody
+              projectsByChain={{ [maciChainId]: filteredProjects }}
+              totalDonationsPerChain={{ [maciChainId]: totalDonations }}
+              chainIdsBeingCheckedOut={[parseChainId(maciChainId)]}
+              setChainIdsBeingCheckedOut={() => {}}
+            />
+          </div>
+        }
+        isOpen={openChainConfirmationModal}
+        setIsOpen={setOpenChainConfirmationModal}
+        disabled={totalDonations > tokenBalance && !props.alreadyContributed}
+      />
+      <MRCProgressModal
+        isOpen={openMRCProgressModal}
+        subheading={
+          !props.alreadyContributed
+            ? "Please hold while we submit your donation."
+            : "Please hold while we change your donations. Keep in mind that each time you change your donations, gas fees grow exponentially."
+        }
+        body={
+          <div className="flex flex-col items-center">
+            <MRCProgressModalBody
+              chainIdsBeingCheckedOut={[parseChainId(maciChainId)]}
+              tryAgainFn={handleSubmitDonation}
+              setIsOpen={setOpenMRCProgressModal}
+            />
+          </div>
+        }
+      />
+    </>
+  );
+
   if (filteredProjects.length === 0) {
     return null;
   }
@@ -221,9 +241,7 @@ export function SummaryContainer(props: {
       <div className="px-4 pt-6 pb-4 rounded-t-3xl bg-grey-50 border border-grey-50">
         <h2 className="text-2xl border-b-2 pb-2 font-bold">Summary</h2>
         <div
-          className={`flex flex-row items-center justify-between mt-2 font-semibold italic ${getClassForPassportColor(
-            "black"
-          )}`}
+          className={`flex flex-row items-center justify-between mt-2 font-semibold italic ${getClassForPassportColor("black")}`}
         ></div>
         <div>
           <Summary
@@ -231,6 +249,7 @@ export function SummaryContainer(props: {
             selectedPayoutToken={votingToken}
             totalDonation={totalDonations}
             alreadyContributed={props.alreadyContributed}
+            roundName={props.roundName}
           />
           {totalDonations > 0 && (
             <div className="flex flex-row justify-between mt-4 border-t-2">
@@ -281,7 +300,7 @@ export function SummaryContainer(props: {
             ? "Not enough funds to donate"
             : props.donatedAmount < totalDonations
               ? "Exceeds donation limit"
-              : props.donatedAmount > totalDonations
+              : props.donatedAmount > totalDonations 
                 ? "Make use 100% of your donation amount"
                 : props.alreadyContributed
                   ? "Change donations"

@@ -33,7 +33,6 @@ if (process.env.REACT_APP_ENV === "production") {
 module.exports = {
   webpack: {
     swcMinify: true,
-
     configure: {
       devtool: "source-map", // Source map generation must be turned on
       module: {
@@ -75,6 +74,7 @@ module.exports = {
           fs: false,
           net: false,
           tls: false,
+          vm: false,
         },
       },
       experiments: {

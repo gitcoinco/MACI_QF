@@ -92,6 +92,7 @@ interface CheckoutState {
   changeDonations: (
     chainId: ChainId,
     roundId: string,
+    voiceCreditsBalance: bigint,
     walletClient: WalletClient,
     previousMessages: PCommand[],
     stateIndex: bigint,
@@ -268,12 +269,6 @@ export const useCheckoutStore = create<CheckoutState>()(
 
         const voteIdMap: { [key: string]: bigint } = {};
 
-        const pool = (await publicClient.readContract({
-          address: alloContractAddress,
-          abi: abi,
-          functionName: "getPool",
-          args: [BigInt(roundId)],
-        })) as PoolInfo;
         for (const app of groupedDonations[roundId]) {
           const ID = (await dataLayer.getVoteOptionIndexByChainIdAndRoundId({
             chainId: chainId,
@@ -391,6 +386,7 @@ export const useCheckoutStore = create<CheckoutState>()(
     changeDonations: async (
       chainId: ChainId,
       roundId: string,
+      voiceCreditsBalance: bigint,
       walletClient: WalletClient,
       previousMessages: PCommand[],
       stateIndex: bigint,
@@ -482,11 +478,15 @@ export const useCheckoutStore = create<CheckoutState>()(
           ProgressStatus.IN_PROGRESS
         );
 
+        const totalDonationAmount = donations.reduce(
+          (acc, donation) => acc + parseUnits(donation.amount, token.decimal),
+          0n
+        );
         const groupedAmounts: Record<string, bigint> = {};
         groupedDonations[roundId].forEach((donation) => {
           groupedAmounts[roundId] =
-            (groupedAmounts[roundId] || 0n) +
-            parseUnits(donation.amount, token.decimal);
+            (parseUnits(donation.amount, token.decimal) / totalDonationAmount) *
+            voiceCreditsBalance;
         });
 
         const DonationVotesEachRound: Record<
@@ -578,6 +578,8 @@ export const useCheckoutStore = create<CheckoutState>()(
             newVoteWeight: message.newVoteWeight,
           };
         });
+
+        console.log("Messages", Messages);
 
         await Promise.all([
           publishBatch({
@@ -702,7 +704,7 @@ const allocate = async ({
 
   const data = transaction.logs;
 
-  const [stateIndex, voiceCreditsBalance, timestampt] = decodeAbiParameters(
+  const [stateIndex, , ] = decodeAbiParameters(
     parseAbiParameters("uint256,uint256,uint256"),
     data[0].data
   );
