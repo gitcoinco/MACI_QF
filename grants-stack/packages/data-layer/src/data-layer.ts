@@ -55,8 +55,16 @@ import {
   getVoiceCreditsByChainIdAndRoundId,
   getVoiceCreditsByChainIdsAndRoundIds,
   getVoteOptionIndexByChainIdAndRoundId,
+  getVoteOptionIndexesByChainIdAndRoundIdQuery
 } from "./queries";
 import { mergeCanonicalAndLinkedProjects } from "./utils";
+
+interface VotingIndexOption {
+  chainId: number;
+  id: string;
+  optionIndex: number;
+  recipientId: string;
+}
 
 /**
  * DataLayer is a class that provides a unified interface to the various data sources.
@@ -942,6 +950,24 @@ export class DataLayer {
     const response = await request(
       this.gsIndexerEndpoint,
       getVoteOptionIndexByChainIdAndRoundId,
+      requestVariables,
+    );
+
+    return response;
+  }
+
+  async getVoteOptionIndexesByChainIdAndRoundId(
+    chainId: number,
+    roundId: string,
+  ) {
+    const requestVariables = {
+      chainId,
+      roundId,
+    };
+
+    const response: { votingIndexOptions: VotingIndexOption[] } = await request(
+      this.gsIndexerEndpoint,
+      getVoteOptionIndexesByChainIdAndRoundIdQuery,
       requestVariables,
     );
 
