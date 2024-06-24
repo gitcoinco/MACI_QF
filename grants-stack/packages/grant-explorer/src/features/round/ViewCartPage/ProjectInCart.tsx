@@ -53,7 +53,7 @@ export function ProjectInCart(
 
   const _percentage = (Number(project.amount) / totalAmount) * 100;
   const [percentage, setPercentage] = useState<string>(
-    (_percentage).toFixed(10)
+    (isNaN(_percentage) ? 0.0 : _percentage).toFixed(10)
   );
   const [showAlert, setShowAlert] = useState(false);
 
