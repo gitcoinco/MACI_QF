@@ -7,7 +7,7 @@ import {
 import { yupResolver } from "@hookform/resolvers/yup";
 import { classNames } from "common";
 import { Input } from "common/src/styles";
-import _, { get } from "lodash";
+import _ from "lodash";
 import { Fragment, useContext, useEffect, useState } from "react";
 import {
   Control,
@@ -152,7 +152,6 @@ export default function QuadraticFundingForm(props: QuadraticFundingFormProps) {
     control,
     formState: { errors },
     watch,
-    setValue,
   } = methods;
 
   const FormStepper = props.stepper;
@@ -525,6 +524,9 @@ function SybilDefense({
       };
     });
     setValue("roundMetadata.maciParameters.validEventIDs", formUpdateData);
+
+    // note: is there a reason to omit setValue from the dep array?
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEvents]);
 
   return (

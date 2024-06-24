@@ -12,7 +12,6 @@ import ApplicationEligibilityForm from "./ApplicationEligibilityForm";
 import QuadraticFundingForm from "./QuadraticFundingForm";
 import { RoundApplicationForm } from "./RoundApplicationForm";
 import { RoundDetailForm } from "./RoundDetailForm";
-import { Configuration } from "data-layer/dist/openapi-search-client";
 
 function ExitCreateRound(props: { onClick: () => void }) {
   return (

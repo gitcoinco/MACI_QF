@@ -10,11 +10,8 @@ import {
 } from "@heroicons/react/solid";
 import { Fragment } from "react";
 import { Link, useParams } from "react-router-dom";
-
 import Close from "../../assets/close.svg";
-import DirectGrants from "../../assets/direct-grants.svg";
 import QuadraticFundingSVG from "../../assets/quadratic-funding.svg";
-
 import { datadogLogs } from "@datadog/browser-logs";
 import Footer from "common/src/components/Footer";
 import { Button } from "common/src/styles";
@@ -24,7 +21,6 @@ import AccessDenied from "../common/AccessDenied";
 import { useWallet } from "../common/Auth";
 import Navbar from "../common/Navbar";
 import NotFoundPage from "../common/NotFoundPage";
-
 import { useProgramById } from "../../context/program/ReadProgramContext";
 import { useRounds } from "../../context/round/RoundContext";
 import { useDebugMode } from "../../hooks";
