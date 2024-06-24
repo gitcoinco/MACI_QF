@@ -12,6 +12,7 @@ type ChainConfirmationModalBodyProps = {
   totalDonationsPerChain: { [chain: number]: bigint };
   chainIdsBeingCheckedOut: number[];
   setChainIdsBeingCheckedOut: React.Dispatch<React.SetStateAction<number[]>>;
+  alreadyContributed: boolean;
 };
 
 export function ChainConfirmationModalBody({
@@ -19,6 +20,7 @@ export function ChainConfirmationModalBody({
   totalDonationsPerChain,
   chainIdsBeingCheckedOut,
   setChainIdsBeingCheckedOut,
+  alreadyContributed,
 }: ChainConfirmationModalBodyProps) {
   const handleChainCheckboxChange = (chainId: number, checked: boolean) => {
     if (checked) {
@@ -40,10 +42,16 @@ export function ChainConfirmationModalBody({
 
   return (
     <>
-      <p className="text-sm text-grey-400">
-        Checkout all your carts across different networks or select the cart you
-        wish to checkout now.
-      </p>
+      {!alreadyContributed ? (
+        <p className="text-sm text-grey-400">
+          Checkout your donations for the round.
+        </p>
+      ) : (
+        <p className="text-sm text-grey-400">
+          Change your donations for the round.
+        </p>
+      )}
+      )
       <div className="my-4">
         {Object.keys(projectsByChain)
           .map(parseChainId)

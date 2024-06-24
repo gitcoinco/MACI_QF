@@ -39,8 +39,6 @@ import {
   isInfiniteDate,
   votingTokens,
 } from "../api/utils";
-import { PassportWidget } from "../common/PassportWidget";
-
 import Footer from "common/src/components/Footer";
 import Navbar from "../common/Navbar";
 import NotFoundPage from "../common/NotFoundPage";
@@ -414,12 +412,6 @@ function AfterRoundStart(props: {
           >
             <Breadcrumb items={breadCrumbs} />
           </div>
-          {walletAddress &&
-            (isSybilDefenseEnabled || isRoundUsingPassportLite(round)) && (
-              <div data-testid="passport-widget">
-                <PassportWidget round={round} alignment="right" />
-              </div>
-            )}
         </div>
 
         <section>

@@ -51,8 +51,9 @@ export function ProjectInCart(
   const groupedProjects = groupProjectsInCart(projects);
   const roundProjects = groupedProjects[project.chainId][project.roundId];
 
+  const _percentage = (Number(project.amount) / totalAmount) * 100;
   const [percentage, setPercentage] = useState<string>(
-    ((Number(project.amount) / totalAmount) * 100).toFixed(10)
+    (_percentage).toFixed(10)
   );
   const [showAlert, setShowAlert] = useState(false);
 
@@ -110,9 +111,7 @@ export function ProjectInCart(
   }, [totalAmount, props.alreadyContributed]);
 
   useEffect(() => {
-    setPercentage(
-      ((Number(project.amount) / totalAmount) * 100).toFixed(10)
-    );
+    setPercentage(((Number(project.amount) / totalAmount) * 100).toFixed(10));
   }, [project.amount]);
   return (
     <Box
