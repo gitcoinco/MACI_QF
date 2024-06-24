@@ -18,7 +18,6 @@ import {
 
 import { MACIQF, Allo } from "../typechain-types";
 import { Keypair, PrivKey } from "maci-domainobjs";
-import { start } from "repl";
 
 dotenv.config();
 
@@ -64,8 +63,8 @@ describe("e2e", function test() {
       Coordinator
     )) as Allo;
 
-    const pollContracts = await MACIQFStrategy._pollContracts();
-    maciContractAddress = await MACIQFStrategy._maci();
+    const pollContracts = await MACIQFStrategy.pollContracts();
+    maciContractAddress = await MACIQFStrategy.maci();
     tallyContractAddress = pollContracts[2];
     mpContractAddress = pollContracts[1];
 

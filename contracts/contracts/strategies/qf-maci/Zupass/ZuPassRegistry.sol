@@ -106,7 +106,7 @@ contract ZuPassRegistry is Ownable {
     /// @param _EncodedProof Proof
     function validateAllowlist(
         bytes memory _EncodedProof
-    ) external returns (bool) {
+    ) external returns (uint256) {
         // Decode the proof
         (
             uint[2] memory _pA,
@@ -120,7 +120,7 @@ contract ZuPassRegistry is Ownable {
 
         // Validate that the event ID used in the proof is whitelisted
         // for the FundingRound (Strategy) that is validating the proof
-        if (!contractToEventIds[msg.sender].contains(eventID)) return false;
+        if (!contractToEventIds[msg.sender].contains(eventID)) return 0;
 
         // Get the Zupass signer used in the proof publicSignals[13] and publicSignals[14]
         ZUPASS_SIGNER memory signer = ZUPASS_SIGNER({G1: _pubSignals[13], G2: _pubSignals[14]});
@@ -131,30 +131,27 @@ contract ZuPassRegistry is Ownable {
             signer.G1 != eventToZupassSigner[eventID].G1 ||
             signer.G2 != eventToZupassSigner[eventID].G2
         ) {
-            return false;
+            return 0;
         }
 
         // Validate the proof with the Groth16 verifier
         if (!zupassVerifier.verifyProof(_pA, _pB, _pC, _pubSignals)) {
-            return false;
+            return 0;
         }
 
         // Preventing frontrunning the transaction by adding the watermark as the transaction origin
         // NOTE this needs to be tested we cannot have a proof for this one in the tests
-        if(getWaterMarkFromPublicSignals(_pubSignals) != uint256(uint160(tx.origin))){
-            return false;  
-        }
 
         // Get the nullifier used in the proof this is the email hash of the zupass
         uint256 ZupassNullifier = _pubSignals[9];
 
         // Validate that the nullifier has not been used before
-        if (usedRoundNullifiers[msg.sender][ZupassNullifier]) return false;
+        if (usedRoundNullifiers[msg.sender][ZupassNullifier]) return 0;
 
         // Mark the nullifier as used
         usedRoundNullifiers[msg.sender][ZupassNullifier] = true;
 
-        return true;
+        return getWaterMarkFromPublicSignals(_pubSignals);
     }
     
     function getWaterMarkFromPublicSignals(

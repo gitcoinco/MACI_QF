@@ -170,7 +170,7 @@ describe("e2e", function test() {
       messages: [
         {
           stateIndex: 1n,
-          voteOptionIndex: votingOption1,
+          voteOptionIndex: votingOption1, 
           nonce: 1n,
           newVoteWeight: bnSqrt(SINGLEVOTE * 78n),
         },

@@ -7,21 +7,8 @@ import { existsSync, mkdirSync } from "fs";
 import { Keypair } from "maci-domainobjs";
 
 import {
-  bnSqrt,
-  JSONFile,
-  getIpfsHash,
-  getTalyFilePath,
   allocate,
-  publishBatch,
-  register,
-  genAndSubmitProofs,
-  mergeMaciSubtrees,
-  addTallyResultsBatch,
-  finalize,
-  distribute,
 } from "./utils/index";
-
-import type { EthereumProvider } from "hardhat/types";
 
 import {
   MACIQF,
@@ -32,25 +19,21 @@ import {
   Allo,
 } from "../typechain-types";
 
-import { deployTestContracts, timeTravel } from "./utils_maciqf";
+import { deployTestContracts } from "./utils_maciqf";
 
 import path from "path";
 
 import dotenv from "dotenv";
-import { exploit_allocate } from "./utils/allocate";
 
 dotenv.config();
 
 // MACI zkFiles
 let circuitDirectory = process.env.CIRCUIT_DIRECTORY || "./zkeys/zkeys";
 const proofOutputDirectory = process.env.PROOF_OUTPUT_DIR || "./proof_output";
-const tallyBatchSize = Number(process.env.TALLY_BATCH_SIZE || 8);
 
 if (!existsSync(circuitDirectory)) {
   circuitDirectory = "../../zkeys/zkeys";
 }
-
-const voteOptionTreeDepth = 3;
 
 describe("e2e", function test() {
   this.timeout(9000000000000000);
@@ -77,8 +60,6 @@ describe("e2e", function test() {
   const CONTRIBUTION_AMOUNT1 = 100n * UNIT;
 
   const CONTRIBUTION_AMOUNT2 = 100n * UNIT;
-
-  const SINGLEVOTE = 10n ** 5n;
 
   const random = Math.floor(Math.random() * 10 ** 8);
 

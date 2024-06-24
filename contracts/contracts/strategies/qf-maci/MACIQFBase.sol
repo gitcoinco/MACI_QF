@@ -14,7 +14,6 @@ import {Metadata} from "../../core/libraries/Metadata.sol";
 import {BaseStrategy} from "../BaseStrategy.sol";
 
 // External Libraries
-// TODO - Do we really need this?
 import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -165,7 +164,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     string public tallyHash;
 
     /// @notice The MACI contract address
-    address public _maci;
+    address public maci;
 
     // Constants
     uint256 public constant MAX_VOICE_CREDITS = 10 ** 9; // MACI allows 2 ** 32 voice credits max
@@ -236,7 +235,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @notice Internal initialize function
     /// @param _poolId The ID of the pool
     /// @param _params The initialization parameters for the strategy
-    function __MACIQFBaseStrategy_init(uint256 _poolId, InitializeParams memory _params) internal {
+    function _maciQFBaseStrategy_init(uint256 _poolId, InitializeParams memory _params) internal {
         __BaseStrategy_init(_poolId);
 
         IAllo.Pool memory pool = allo.getPool(_poolId);
@@ -620,7 +619,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @param _tallyResult The result of the vote tally for the recipient
     /// @param _spent The amount of voice credits spent on the recipient
     /// @return The allocated token amount
-    function getAllocatedAmount(
+    function _getAllocatedAmount(
         uint256 _tallyResult,
         uint256 _spent
     ) internal view returns (uint256) {

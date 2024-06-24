@@ -391,9 +391,9 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
 
   const MACIQF_STRATEGY = await ethers.getContractAt("MACIQF", poolAddress);
 
-  const maci = await MACIQF_STRATEGY._maci();
+  const maci = await MACIQF_STRATEGY.maci();
 
-  const pollContracts = await MACIQF_STRATEGY._pollContracts();
+  const pollContracts = await MACIQF_STRATEGY.pollContracts();
 
   const signer2 = new ethers.Wallet(
     PRIVATE_KEY_USER1!,

@@ -6,7 +6,7 @@ interface IAlowlistVerifier {
     /// @param _proof Proof 
     function validateAllowlist(
         bytes memory _proof
-    ) external returns (bool);
+    ) external returns (uint256);
 
     function setRoundAllowlist(bytes memory _allowlistDetails) external;
 }
