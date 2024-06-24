@@ -14,8 +14,6 @@ import {
   Input,
   InputGroup,
   InputRightElement,
-  Alert,
-  AlertIcon,
 } from "@chakra-ui/react";
 import { groupProjectsInCart } from "../../api/utils";
 
@@ -55,12 +53,10 @@ export function ProjectInCart(
   const [percentage, setPercentage] = useState<string>(
     (isNaN(_percentage) ? 0.0 : _percentage).toFixed(10)
   );
-  const [showAlert, setShowAlert] = useState(false);
 
   const handlePercentageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newPercentage = e.target.value;
     if (parseFloat(newPercentage) > 100 || parseFloat(newPercentage) < 0) {
-      setShowAlert(true);
       return;
     }
     updateProjectAmount(index, parseFloat(newPercentage));
@@ -121,12 +117,6 @@ export function ProjectInCart(
       borderWidth={1}
       borderRadius="md"
     >
-      {showAlert && (
-        <Alert status="error" mb={4}>
-          <AlertIcon />
-          Percentage cannot exceed 100%
-        </Alert>
-      )}
       <Flex justify="space-between" align="center">
         <Flex>
           <Box
@@ -207,7 +197,6 @@ export function ProjectInCart(
               <InputRightElement width="2.5rem" children="%" />
             </InputGroup>
           </Box>
-          <Text ml={2}>{props.selectedPayoutToken?.name}</Text>
           {props.payoutTokenPrice && (
             <Box ml={2}>
               <Text fontSize="sm" color="gray.400">

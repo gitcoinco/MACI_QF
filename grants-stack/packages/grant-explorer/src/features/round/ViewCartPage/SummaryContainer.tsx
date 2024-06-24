@@ -187,8 +187,6 @@ export function SummaryContainer(props: {
           !project.amount ||
           (Number(project.amount) === 0 && !alreadyContributed)
       ) ||
-      (donatedAmount > totalDonations &&
-        totalAmountAfterDecryption > totalDonations) ||
       (donatedAmount < totalDonations &&
         totalAmountAfterDecryption < totalDonations)
     ) {
@@ -208,6 +206,7 @@ export function SummaryContainer(props: {
             <ChainConfirmationModalBody
               projectsByChain={{ [chainId]: filteredProjects }}
               totalDonationsPerChain={{ [chainId]: totalDonations }}
+              totalContributed={donatedAmount}
               chainIdsBeingCheckedOut={[parseChainId(chainId)]}
               setChainIdsBeingCheckedOut={() => {}}
               alreadyContributed={alreadyContributed}
@@ -305,11 +304,9 @@ export function SummaryContainer(props: {
             ? "Not enough funds to donate"
             : donatedAmount < totalDonations
               ? "Exceeds donation limit"
-              : donatedAmount > totalDonations
-                ? "Make use 100% of your donation amount"
-                : alreadyContributed
-                  ? "Change donations"
-                  : "Submit your donation!"
+              : alreadyContributed
+                ? "Change donations"
+                : "Submit your donation!"
           : "Connect wallet to continue"}
       </Button>
       <PayoutModals />
