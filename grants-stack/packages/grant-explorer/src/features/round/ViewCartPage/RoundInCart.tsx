@@ -169,6 +169,13 @@ export function RoundInCart(
     }
   }, [alreadyContributed, voiceCredits, donatedAmount, donationInput]);
 
+  if (isActiveRound === false) {
+    // remove projects from cart if round is not active
+    props.roundCart.forEach((project) => {
+      props.handleRemoveProjectFromCart(project, address as string);
+    });
+  }
+
   if (!isActiveRound) {
     return null;
   }
