@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
-import { Signer } from "ethers";
+import { AddressLike, BigNumberish, Signer } from "ethers";
 import { existsSync, mkdirSync } from "fs";
 
 import { Keypair } from "maci-domainobjs";
@@ -44,6 +44,7 @@ dotenv.config();
 let circuitDirectory = process.env.CIRCUIT_DIRECTORY || "./zkeys/zkeys";
 const proofOutputDirectory = process.env.PROOF_OUTPUT_DIR || "./proof_output";
 const tallyBatchSize = Number(process.env.TALLY_BATCH_SIZE || 8);
+const Debug = process.env.DEBUG === "true";
 
 if (!existsSync(circuitDirectory)) {
   circuitDirectory = "../../zkeys/zkeys";
@@ -81,8 +82,6 @@ describe("e2e", function test() {
 
   const random = Math.floor(Math.random() * 10 ** 8);
 
-  let recipientAddress1: string;
-  let recipientAddress2: string;
   let outputDir: string;
   let maciAddress: string;
 
@@ -104,9 +103,6 @@ describe("e2e", function test() {
     recipient2 = contracts.user3;
     maciTransactionHash = contracts.maciTransitionHash || "";
     coordinatorKeypair = contracts.CoordinatorKeypair;
-
-    recipientAddress1 = await recipient1.getAddress();
-    recipientAddress2 = await recipient2.getAddress();
     maciAddress = await maciContract.getAddress();
 
     outputDir = path.join(proofOutputDirectory, `${random}`);
@@ -130,9 +126,11 @@ describe("e2e", function test() {
   });
 
   it("Should Review Recipients", async () => {
+    const recipient1LatestUpdate = (await MACIQFStrategy.recipients(recipient1)).lastUpdateAt;
+    const recipient2LatestUpdate = (await MACIQFStrategy.recipients(recipient2)).lastUpdateAt;
     const reviewRecipientsTx = await MACIQFStrategy.connect(
       Coordinator
-    ).reviewRecipients([recipient1, recipient2], [2, 2]);
+    ).reviewRecipients([recipient1, recipient2] , [recipient1LatestUpdate,recipient2LatestUpdate] , [2, 2]);
 
     await reviewRecipientsTx.wait();
   });
@@ -219,7 +217,7 @@ describe("e2e", function test() {
       pollId: 0n,
       numQueueOps: "1",
       signer: Coordinator,
-      quiet: true,
+      quiet: !Debug,
     });
   });
 
@@ -236,6 +234,7 @@ describe("e2e", function test() {
       outputDir: outputDir,
       circuitDirectory: circuitDirectory,
       maciTransactionHash: maciTransactionHash,
+      quiet: !Debug,
     });
   });
 
@@ -250,8 +249,6 @@ describe("e2e", function test() {
     ).publishTallyHash(tallyHash);
 
     await publishTallyHashReceipt.wait();
-
-    console.log("Tally hash", tallyHash);
   });
 
   it("Should Add Tally Results in Batches", async () => {
@@ -269,11 +266,11 @@ describe("e2e", function test() {
   it("Recipient should have more than 0 votes received", async () => {
     let recipientAddress = await recipient1.getAddress();
     let recipient = await MACIQFStrategy.getRecipient(recipientAddress);
-    console.log("Recipient", recipient);
+    expect(recipient.totalVotesReceived).to.be.greaterThan(0);
 
     let recipientAddress2 = await recipient2.getAddress();
     recipient = await MACIQFStrategy.getRecipient(recipientAddress2);
-    console.log("Recipient 2", recipient);
+    expect(recipient.totalVotesReceived).to.be.greaterThan(0);
   });
 
   it("Should Finalize the Round", async () => {
@@ -286,31 +283,16 @@ describe("e2e", function test() {
     expect(isFinalized).to.be.true;
   });
 
-  it("Should Distribute Founds", async () => {
+  it("Should Distribute Founds ", async () => {
     const distributeResponse = await distribute({
       outputDir,
       AlloContract,
       MACIQFStrategy,
       distributor: Coordinator,
       recipientTreeDepth: voteOptionTreeDepth,
-      recipients: [
-        await recipient1.getAddress(),
-        await recipient2.getAddress(),
-      ],
       roundId: 1,
+      batchSize: 1,
     });
-
-    console.log("Distribute Response", distributeResponse);
-
-    expect(
-      distributeResponse.recipientsBalances[recipientAddress1].after
-    ).to.be.greaterThan(
-      distributeResponse.recipientsBalances[recipientAddress1].before
-    );
-    expect(
-      distributeResponse.recipientsBalances[recipientAddress2].after
-    ).to.be.greaterThan(
-      distributeResponse.recipientsBalances[recipientAddress2].before
-    );
+    expect(distributeResponse.poolAmountAfterDistribution).to.be.lessThan(distributeResponse.poolAmountBeforeDistribution);
   });
 });

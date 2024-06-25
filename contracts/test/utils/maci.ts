@@ -68,8 +68,6 @@ export async function mergeMaciSubtrees({
     quiet,
   } as MergeMessagesArgs);
 
-  console.log(`Merge MACI subtrees completed for poll ${pollId}`);
-
   await mergeSignups({
     pollId,
     maciAddress: maciAddress,
@@ -77,8 +75,6 @@ export async function mergeMaciSubtrees({
     signer,
     quiet,
   } as MergeSignupsArgs);
-
-  console.log("MACI subtrees merged and merged signups");
 }
 
 export const publishBatch = async ({
@@ -451,7 +447,7 @@ export async function addTallyResultsBatch(
       tallyData.newTallyCommitment
     );
   }
-
+  // Prevent creating proofs for non-existent recipients
   let totalRecipients = await MACIQF.getRecipientCount();
 
   for (let i = startIndex; i < totalRecipients; i = i + batchSize) {
@@ -461,7 +457,7 @@ export async function addTallyResultsBatch(
       tallyData,
       batchSize
     );
-    proofs.map((i: any) => console.log(i.result));
+    
     const tx = await MACIQF.addTallyResultsBatch(
       proofs.map((i: any) => i.recipientIndex),
       proofs.map((i: any) => i.result),

@@ -38,13 +38,14 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
 
     /// @notice The details of a recipient in the pool
     struct Recipient {
-        bool useRegistryAnchor;
-        bool tallyVerified;
-        Status status;
-        address recipientAddress;
-        uint256 totalVotesReceived;
-        Metadata metadata;
-        bool acceptedOnce;
+        bool useRegistryAnchor; // Flag to indicate if the recipient is using the registry anchor
+        bool tallyVerified; // Flag to indicate if the tally has been verified
+        Status status; // The status of the recipient
+        address recipientAddress; // The address of the recipient to receive the funds
+        uint256 totalVotesReceived; // The total number of votes received by the recipient
+        Metadata metadata; // The metadata of the recipient
+        bool acceptedOnce; // Flag to indicate if the recipient has been accepted once
+        uint64 lastUpdateAt; // The last time the recipient updated their registration
     }
 
     /// ======================
@@ -121,9 +122,6 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @notice Flag to indicate whether metadata is required or not.
     bool public metadataRequired;
 
-    // @notice Flag to indicate if registration is paused
-    bool public isRegistrationPaused;
-
     /// @notice The registry contract instance
     IRegistry private _registry;
 
@@ -178,7 +176,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     mapping(address => bool) public paidOut;
 
     /// @notice Mapping from recipient ID to recipient details
-    mapping(address => Recipient) public _recipients;
+    mapping(address => Recipient) public recipients;
 
     /// @notice Mapping from contributor address to total credits
     mapping(address => uint256) public contributorCredits;
@@ -285,25 +283,30 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// This because the recipients are not allowed to change their status during the allocation period as this will
     /// affect the votes and the matching pool amount.
     /// @dev This function is used to set the status of recipients to either Accepted, Rejected or InReview
-    /// @param recipients An array of recipient addresses
+    /// @param _recipients An array of recipient addresses
+    /// @param _latestUpdateTimes An array of the latest update times for the recipients in the same order to prevent front-running reviews
     /// @param _statuses An array of statuses corresponding to the recipients
     function reviewRecipients(
-        address[] memory recipients,
+        address[] memory _recipients,
+        uint64[] memory _latestUpdateTimes,
         Status[] memory _statuses
     ) external onlyActiveRegistration onlyPoolManager(msg.sender) {
-        uint256 length = recipients.length;
+        uint256 length = _latestUpdateTimes.length;
 
-        if (length != _statuses.length) {
+        if (length != _statuses.length && length != _recipients.length) {
             revert INVALID();
         }
 
         for (uint256 i; i < length; ) {
-            address recipientId = recipients[i];
-            Recipient storage recipient = _recipients[recipientId];
+            address recipientId = _recipients[i];
+            uint64 latestUpdateTime = _latestUpdateTimes[i];
+            Recipient storage recipient = recipients[recipientId];
 
             // If the recipient is not in review, skip the recipient
             // This is to prevent updating the status of a recipient that is not registered
-            if (recipient.status == Status.None) {
+            // Or if the recipient updated their metadata before the review process with outdated metadata
+            // This is to prevent front-running reviews
+            if (recipient.status == Status.None || recipient.lastUpdateAt != latestUpdateTime) {
                 unchecked {
                     i++;
                 }
@@ -405,11 +408,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @param _recipientId The ID of the recipient
     /// @return The recipient details
     function getRecipient(address _recipientId) external view returns (Recipient memory) {
-        return _recipients[_recipientId];
-    }
-
-    function toggleRegistrationPausedStatus() external onlyPoolManager(msg.sender) {
-        isRegistrationPaused = !isRegistrationPaused;
+        return recipients[_recipientId];
     }
 
     /// @notice Registers a recipient
@@ -420,7 +419,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         bytes memory _data,
         address _sender
     ) internal override onlyActiveRegistration returns (address) {
-        if (msg.value != 0 || isRegistrationPaused) {
+        if (msg.value != 0) {
             revert INVALID();
         }
 
@@ -458,7 +457,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
             revert RECIPIENT_ERROR(recipientId);
         }
 
-        Recipient storage recipient = _recipients[recipientId];
+        Recipient storage recipient = recipients[recipientId];
         recipient.recipientAddress = recipientAddress;
         recipient.metadata = metadata;
         recipient.useRegistryAnchor = useRegistryAnchor ? true : isUsingRegistryAnchor;
@@ -476,6 +475,9 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
             }else if (recipientStatus == Status.Accepted) {
                 recipient.status = Status.InReview;
             }
+
+            recipient.lastUpdateAt = uint64(block.timestamp);
+
             emit UpdatedRegistration(recipientId, _data, _sender, recipient.status);
         }
         return recipientId;
@@ -517,7 +519,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @param _recipientId The ID of the recipient
     /// @return The status of the recipient
     function _getRecipientStatus(address _recipientId) internal view override returns (Status) {
-        return _recipients[_recipientId].status;
+        return recipients[_recipientId].status;
     }
 
     /// @notice Ensures the registration period is active

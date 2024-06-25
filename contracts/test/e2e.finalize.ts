@@ -24,6 +24,8 @@ dotenv.config();
 let circuitDirectory = process.env.CIRCUIT_DIRECTORY || "./zkeys/zkeys";
 const proofOutputDirectory = process.env.PROOF_OUTPUT_DIR || "./proof_output";
 const tallyBatchSize = Number(process.env.TALLY_BATCH_SIZE || 8);
+const distributeBatchSize = Number(process.env.DISTRIBUTE_BATCH_SIZE || 1);
+const Debug = Boolean(process.env.DEBUG || false);
 const voteOptionTreeDepth = 3;
 
 if (!existsSync(circuitDirectory)) {
@@ -48,20 +50,26 @@ describe("e2e", function test() {
     [Coordinator] = await ethers.getSigners();
 
     const SerializedPrivateKey = process.env.COORDINATOR_PRIVATE_KEY as string;
-    const deserializedPrivKey = PrivKey.deserialize(SerializedPrivateKey);
-    coordinatorKeypair = new Keypair(deserializedPrivKey);
+    roundId = Number(process.env.ROUND_ID as string);
+    startBlock =  Number(process.env.STARTING_BLOCK as string);
 
-    MACIQFStrategy = (await ethers.getContractAt(
-      "MACIQF",
-      "0x6d4b63d93a25ee235af118b4a2489c57be044b94",
-      Coordinator
-    )) as MACIQF;
+    const deserializedPrivKey = PrivKey.deserialize(SerializedPrivateKey);
+
+    coordinatorKeypair = new Keypair(deserializedPrivKey);
 
     AlloContract = (await ethers.getContractAt(
       "Allo",
       "0x1133eA7Af70876e64665ecD07C0A0476d09465a1",
       Coordinator
     )) as Allo;
+
+    const StrategyAddress = (await AlloContract.getPool(roundId)).strategy;
+
+    MACIQFStrategy = (await ethers.getContractAt(
+      "MACIQF",
+      StrategyAddress,
+      Coordinator
+    )) as MACIQF;
 
     const pollContracts = await MACIQFStrategy.pollContracts();
     maciContractAddress = await MACIQFStrategy.maci();
@@ -70,9 +78,6 @@ describe("e2e", function test() {
 
     const random = 1;
     outputDir = path.join(proofOutputDirectory, `${random}`);
-
-    roundId = 287;
-    startBlock = 6140298;
 
     if (!existsSync(outputDir)) {
       mkdirSync(outputDir, { recursive: true });
@@ -85,7 +90,7 @@ describe("e2e", function test() {
       pollId: 0n,
       numQueueOps: "1",
       signer: Coordinator,
-      quiet: false,
+      quiet: !Debug,
     });
 
     await genAndSubmitProofs({
@@ -98,6 +103,7 @@ describe("e2e", function test() {
       circuitDirectory: circuitDirectory,
       maciTransactionHash: undefined,
       startBlock: startBlock,
+      quiet: !Debug,
     });
 
     const tallyFile = getTalyFilePath(outputDir);
@@ -133,13 +139,9 @@ describe("e2e", function test() {
       MACIQFStrategy,
       distributor: Coordinator,
       recipientTreeDepth: voteOptionTreeDepth,
-      recipients: [
-        "0xb543d56ee04f516602057429ec4f1c85c19b1319",
-        "0xe2bdf9f84be10b5d1f535c7c3d4544d08d4965b6",
-      ],
       roundId: roundId,
+      batchSize: distributeBatchSize,
     });
-
-    console.log("Distribute Response", distributeResponse);
+    expect(distributeResponse.poolAmountAfterDistribution).to.be.lessThan(distributeResponse.poolAmountBeforeDistribution);
   });
 });

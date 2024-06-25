@@ -387,8 +387,6 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
 
   const poolAddress = (await AlloContracts.Allo.getPool(1)).strategy;
 
-  console.log("Pool Address : ", poolAddress);
-
   const MACIQF_STRATEGY = await ethers.getContractAt("MACIQF", poolAddress);
 
   const maci = await MACIQF_STRATEGY.maci();

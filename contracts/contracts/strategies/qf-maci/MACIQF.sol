@@ -108,24 +108,25 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
     /// ======= Errors ======
     /// ======================
 
-    error MaciNotSet();
-    error VotesNotTallied();
-    error TallyHashNotPublished();
-    error NoVotes();
-    error UserAlreadySignedUp();
-    error EmptyTallyHash();
-    error IncorrectSpentVoiceCredits();
-    error IncorrectTallyResult();
     error IncorrectPerVOSpentVoiceCredits();
-    error InvalidAmount();
-    error AlreadyContributed();
-    error InvalidProof();
+    error IncorrectSpentVoiceCredits();
     error ContributionAmountTooLarge();
+    error TallyHashNotPublished();
+    error ContributionWithdrawn();
+    error IncorrectTallyResult();
+    error UserAlreadySignedUp();
+    error AlreadyContributed();
     error RoundNotCancelled();
-    error RoundCancelled();
     error RoundNotFinalized();
     error NothingToWithdraw();
-    error ContributionWithdrawn();
+    error VotesNotTallied();
+    error RoundCancelled();
+    error EmptyTallyHash();
+    error InvalidAmount();
+    error InvalidProof();
+    error MaciNotSet();
+    error NoVotes();
+
 
     /// ======================
     /// ======= Storage ======
@@ -231,7 +232,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         if (_proof.length != 0) {
 
             uint256 watermark = allowlistVerifier.validateAllowlist(_proof);
-            if (watermark != 0 && watermark != uint256(uint160(_sender))) {
+            if (watermark != uint256(uint160(_sender))) {
                 revert InvalidProof();
             }
             if (amount > maxContributionAllowlisted) {
@@ -299,7 +300,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
 
         address recipientId = recipientVoteIndexToAddress[index];
 
-        Recipient memory recipient = _recipients[recipientId];
+        Recipient memory recipient = recipients[recipientId];
 
         uint256 amount = _getAllocatedAmount(recipient.totalVotesReceived, claim.spent);
 
@@ -437,7 +438,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         uint256 _voiceCreditsToAllocate
     ) internal {
         address recipientId = recipientVoteIndexToAddress[_voteOptionIndex];
-        Recipient storage recipient = _recipients[recipientId];
+        Recipient storage recipient = recipients[recipientId];
 
         if (recipient.tallyVerified) {
             return;
