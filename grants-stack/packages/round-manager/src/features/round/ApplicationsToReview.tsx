@@ -35,7 +35,6 @@ import { errorModalDelayMs } from "../../constants";
 import ErrorModal from "../common/ErrorModal";
 import { getRoundStrategyType, renderToPlainText, useAllo } from "common";
 import { useWallet } from "../common/Auth";
-import { roundApplicationsToCSV } from "../api/exports";
 import { CheckIcon } from "@heroicons/react/solid";
 import { useApplicationsByRoundId } from "../common/useApplicationsByRoundId";
 import { exportAndDownloadCSV } from "./ApplicationsToApproveReject";

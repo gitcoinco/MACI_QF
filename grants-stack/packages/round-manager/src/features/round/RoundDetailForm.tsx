@@ -5,8 +5,8 @@ import {
 } from "@heroicons/react/solid";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { classNames } from "common";
-import { Button, Input } from "common/src/styles";
-import _, { get, round, set } from "lodash";
+import { Input } from "common/src/styles";
+import _ from "lodash";
 import moment from "moment";
 import { Fragment, useContext, useEffect, useState } from "react";
 import Datetime from "react-datetime";
@@ -21,7 +21,7 @@ import {
   useForm,
 } from "react-hook-form";
 
-import { Listbox, RadioGroup, Transition } from "@headlessui/react";
+import { Listbox, Transition } from "@headlessui/react";
 import { RoundCategory } from "data-layer";
 import ReactTooltip from "react-tooltip";
 import * as yup from "yup";
@@ -31,8 +31,7 @@ import { FormStepper } from "../common/FormStepper";
 import { FormContext } from "../common/FormWizard";
 
 // NEW CODE
-import { Keypair, PubKey } from "maci-domainobjs";
-import { useSearchParams } from "react-router-dom";
+import { PubKey } from "maci-domainobjs";
 
 export const RoundValidationSchema = yup.object().shape({
   roundMetadata: yup.object({
@@ -135,7 +134,6 @@ export const RoundValidationSchema = yup.object().shape({
         ),
     }),
 });
-
 interface RoundDetailFormProps {
   stepper: typeof FormStepper;
   initialData?: { program?: Program };
