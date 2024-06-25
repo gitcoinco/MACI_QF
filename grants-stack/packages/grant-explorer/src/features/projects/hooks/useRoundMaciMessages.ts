@@ -6,6 +6,7 @@ import { PCommand, PubKey } from "maci-domainobjs";
 import { getMACIKey, generatePubKeyWithSeed } from "../../api/keys";
 import { getContributorMessages } from "../../api/voting";
 import { GroupedMaciContributions, MACIContributions } from "../../api/types";
+import { chain } from "lodash";
 
 const abi = parseAbi([
   "function getPool(uint256) view returns ((bytes32 profileId, address strategy, address token, (uint256,string) metadata, bytes32 managerRole, bytes32 adminRole))",
@@ -201,4 +202,30 @@ const getContributions = async (
   }
 
   return MACIContributions;
+};
+
+export const useAlreadyContributed = (
+  dataLayer: DataLayer,
+  walletAddress: string,
+  chainId: number,
+  roundId: string
+) => {
+  const { data, error } = useSWR(
+    ["alreadyContributed", walletAddress, chainId, roundId],
+    async () => {
+      const voiceCreditBalance =
+        await dataLayer.getContributionsByChainIdAndRoundID({
+          contributorAddress: walletAddress.toLowerCase() as `0x${string}`,
+          chainId: chainId,
+          roundId: roundId,
+        });
+      return voiceCreditBalance !== undefined;
+    }
+  );
+
+  return {
+    isLoading: !data && !error,
+    isError: !!error,
+    alreadyContributed: data,
+  };
 };

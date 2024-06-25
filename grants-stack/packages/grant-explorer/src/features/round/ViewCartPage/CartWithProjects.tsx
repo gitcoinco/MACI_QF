@@ -8,32 +8,16 @@ import { RoundInCart } from "./RoundInCart";
 import { ChainId, useTokenPrice } from "common";
 import { useCartStorage } from "../../../store";
 import {
-  GroupedCreditsByRoundId,
   MACIContributionsByRoundId,
-  MACIDecryptedContributionsByRoundId,
 } from "../../api/types";
 
 type Props = {
   cart: GroupedCartProjectsByRoundId;
   maciContributions: MACIContributionsByRoundId | null;
-  decryptedContributions: MACIDecryptedContributionsByRoundId | null;
   chainId: ChainId;
-  needsSignature: {
-    [roundId: string]: boolean;
-  } | null;
-  groupedCredits: GroupedCreditsByRoundId;
-  handleDecrypt: () => Promise<void>;
 };
 
-export function CartWithProjects({
-  cart,
-  chainId,
-  maciContributions,
-  decryptedContributions,
-  needsSignature,
-  groupedCredits,
-  handleDecrypt,
-}: Props) {
+export function CartWithProjects({ cart, chainId, maciContributions }: Props) {
   const chain = CHAINS[chainId];
   const cartByRound = Object.values(cart);
 
@@ -84,21 +68,11 @@ export function CartWithProjects({
                 ? maciContributions[roundIds[key]]
                 : null
             }
-            decryptedContributions={
-              decryptedContributions && decryptedContributions[roundIds[key]]
-                ? decryptedContributions[roundIds[key]]
-                : null
-            }
-            voiceCredits={groupedCredits[roundIds[key]]}
             handleRemoveProjectFromCart={store.removeUserProject}
             selectedPayoutToken={selectedPayoutToken}
             payoutTokenPrice={payoutTokenPrice ?? 0}
             chainId={chainId}
             roundId={roundIds[key]}
-            needsSignature={
-              needsSignature ? needsSignature[roundIds[key]] : null
-            }
-            handleDecrypt={handleDecrypt}
           />
         </div>
       ))}

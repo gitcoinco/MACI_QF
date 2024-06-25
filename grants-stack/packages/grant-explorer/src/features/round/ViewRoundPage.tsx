@@ -75,6 +75,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { Box, Tab, Tabs } from "@chakra-ui/react";
 import GenericModal from "../common/GenericModal";
+import { useAlreadyContributed } from "../projects/hooks/useRoundMaciMessages";
 
 export default function ViewRound() {
   datadogLogs.logger.info("====> Route: /round/:chainId/:roundId");
@@ -698,6 +699,15 @@ function ProjectCard(props: {
   const { userProjects, addUserProject, removeUserProject } = useCartStorage();
   const { address } = useAccount();
 
+  const dataLayer = useDataLayer();
+
+  const { alreadyContributed, isLoading } = useAlreadyContributed(
+    dataLayer,
+    address ?? "",
+    Number(props.chainId),
+    props.roundId
+  );
+
   const projects = address ? userProjects[address] ?? [] : [];
 
   const isAlreadyInCart = projects.some(
@@ -772,22 +782,25 @@ function ProjectCard(props: {
                   total raised by {props.uniqueContributorsCount} contributors
                 </p>
               </div>
-              {props.isBeforeRoundEndDate && address && (
-                <CartButton
-                  project={project}
-                  isAlreadyInCart={isAlreadyInCart}
-                  removeFromCart={() => {
-                    removeUserProject(cartProject, address);
-                  }}
-                  addToCart={() => {
-                    addUserProject(cartProject, address);
-                  }}
-                  setCurrentProjectAddedToCart={
-                    props.setCurrentProjectAddedToCart
-                  }
-                  setShowCartNotification={props.setShowCartNotification}
-                />
-              )}
+              {props.isBeforeRoundEndDate &&
+                address &&
+                !alreadyContributed &&
+                !isLoading && (
+                  <CartButton
+                    project={project}
+                    isAlreadyInCart={isAlreadyInCart}
+                    removeFromCart={() => {
+                      removeUserProject(cartProject, address);
+                    }}
+                    addToCart={() => {
+                      addUserProject(cartProject, address);
+                    }}
+                    setCurrentProjectAddedToCart={
+                      props.setCurrentProjectAddedToCart
+                    }
+                    setShowCartNotification={props.setShowCartNotification}
+                  />
+                )}
             </div>
           </CardContent>
         </CardFooter>

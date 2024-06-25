@@ -25,9 +25,7 @@ export function Summary({
     selectedPayoutToken.redstoneTokenId
   );
 
-  const amount = alreadyContributed
-    ? formatAmount(totalDonation, selectedPayoutToken.decimal)
-    : formatEther(totalDonation);
+  const amount = formatEther(totalDonation);
   const totalDonationInUSD =
     payoutTokenPrice && Number(amount) * Number(payoutTokenPrice);
 
@@ -72,7 +70,7 @@ export function Summary({
         <div className="flex flex-col">
           <p className="text-right">
             <span data-testid={"totalDonation"} className="mr-2">
-              {formatAmount(totalDonation, selectedPayoutToken.decimal)}
+              {formatEther(totalDonation)}
             </span>
             <span data-testid={"summaryPayoutToken"}>
               {selectedPayoutToken.name}

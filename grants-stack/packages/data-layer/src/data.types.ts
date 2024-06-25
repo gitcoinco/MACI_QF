@@ -777,6 +777,8 @@ export type MACIContribution = {
   roundId: string;
   id: string;
   messages: Message[];
+  timestamp?: string;
+  transactionHash?: string;
 };
 
 export type Message = {

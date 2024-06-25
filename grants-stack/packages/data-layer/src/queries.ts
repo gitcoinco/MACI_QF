@@ -684,6 +684,8 @@ export const getContributionsByAddress = gql`
     ) {
       stateIndex
       contributorAddress
+      timestamp
+      transactionHash
       chainId
       roundId
       maciId

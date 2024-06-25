@@ -3,7 +3,6 @@ import { useEffect, useState, useCallback } from "react";
 import { Summary } from "./Summary";
 import ChainConfirmationModal from "../../common/ConfirmationModal";
 import { ChainConfirmationModalBody } from "./ChainConfirmationModalBody";
-import { MACIContributions } from "../../api/types";
 import { modalDelayMs } from "../../../constants";
 import { useNavigate } from "react-router-dom";
 import { useAccount, useWalletClient } from "wagmi";
@@ -20,17 +19,12 @@ import { parseChainId } from "common/src/chains";
 import { fetchBalance, getPublicClient } from "@wagmi/core";
 import { useAllo } from "../../api/AlloWrapper";
 import { useDataLayer } from "data-layer";
-import { PCommand } from "maci-domainobjs";
 import { NATIVE } from "common";
 
 export function SummaryContainer(props: {
   alreadyContributed: boolean;
-  maciMessages: MACIContributions | null;
   donatedAmount: bigint;
-  totalAmountAfterDecryption: bigint;
-  decryptedMessages: PCommand[] | null;
   payoutTokenPrice: number;
-  stateIndex: bigint;
   chainId: number;
   roundId: string;
   pcd: string | undefined;
@@ -52,12 +46,8 @@ export function SummaryContainer(props: {
 
   const {
     alreadyContributed,
-    maciMessages,
     donatedAmount,
-    totalAmountAfterDecryption,
-    decryptedMessages,
     payoutTokenPrice,
-    stateIndex,
     chainId,
     roundId,
     pcd,
@@ -145,22 +135,7 @@ export function SummaryContainer(props: {
       setOpenChainConfirmationModal(false);
     }, modalDelayMs);
     if (alreadyContributed) {
-      const voiceCreditsBalance = BigInt(
-        maciMessages?.encrypted.voiceCreditBalance ?? 0n
-      );
-      const isSuccess = await changeDonations(
-        parseChainId(chainId),
-        roundId,
-        voiceCreditsBalance,
-        walletClient,
-        decryptedMessages ?? [],
-        stateIndex,
-        dataLayer,
-        address as string
-      );
-      if (isSuccess) {
-        setOpenMRCProgressModal(false);
-      }
+      return;
     } else {
       const isSuccess = await checkoutMaci(
         parseChainId(chainId),
@@ -187,8 +162,7 @@ export function SummaryContainer(props: {
           !project.amount ||
           (Number(project.amount) === 0 && !alreadyContributed)
       ) ||
-      (donatedAmount < totalDonations &&
-        totalAmountAfterDecryption < totalDonations)
+      donatedAmount < totalDonations
     ) {
       return;
     }
@@ -199,7 +173,7 @@ export function SummaryContainer(props: {
     <>
       <ChainConfirmationModal
         title={"Checkout"}
-        confirmButtonText={alreadyContributed ? "Change Donations" : "Checkout"}
+        confirmButtonText={"Checkout"}
         confirmButtonAction={handleSubmitDonation}
         body={
           <div>
@@ -220,9 +194,7 @@ export function SummaryContainer(props: {
       <MRCProgressModal
         isOpen={openMRCProgressModal}
         subheading={
-          !alreadyContributed
-            ? "Please hold while we submit your donation."
-            : "Please hold while we change your donations. Keep in mind that each time you change your donations, gas fees grow exponentially."
+            "Please hold while we submit your donation."
         }
         body={
           <div className="flex flex-col items-center">
@@ -265,7 +237,7 @@ export function SummaryContainer(props: {
                 <p>
                   ${" "}
                   {(
-                    Number(formatUnits(donatedAmount, votingToken.decimal)) *
+                    Number(formatUnits(totalDonations, votingToken.decimal)) *
                     payoutTokenPrice
                   ).toFixed(2)}
                 </p>
@@ -305,7 +277,7 @@ export function SummaryContainer(props: {
             : donatedAmount < totalDonations
               ? "Exceeds donation limit"
               : alreadyContributed
-                ? "Change donations"
+                ? "You can only contribute once per round."
                 : "Submit your donation!"
           : "Connect wallet to continue"}
       </Button>

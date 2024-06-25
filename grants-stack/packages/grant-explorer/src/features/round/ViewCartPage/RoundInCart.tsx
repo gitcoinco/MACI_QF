@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { CartProject, MACIContributions } from "../../api/types";
 import { useRoundById } from "../../../context/RoundContext";
 import { ProjectInCart } from "./ProjectInCart";
-import { formatUnits, parseUnits } from "viem";
+import { formatUnits, parseEther, parseUnits } from "viem";
 import { useAccount } from "wagmi";
 import {
   Button,
@@ -16,39 +16,34 @@ import {
   ModalFooter,
 } from "@chakra-ui/react";
 import { VotingToken } from "common";
-import { PCommand } from "maci-domainobjs";
 import { SummaryContainer } from "./SummaryContainer";
 import { Switch } from "@headlessui/react";
 import { zuAuthPopup } from "@pcd/zuauth";
 import { fieldsToReveal } from "../../api/pcd";
+import { bnSqrt } from "../../api/voting";
 import { ZuzaluEvents } from "../../../constants/ZuzaluEvents";
 import { uuidToBigInt } from "@pcd/util";
+import { set } from "lodash";
 
 export function RoundInCart(
   props: React.ComponentProps<"div"> & {
     roundCart: CartProject[];
     maciContributions: MACIContributions | null;
-    decryptedContributions: PCommand[] | null;
     selectedPayoutToken: VotingToken;
     handleRemoveProjectFromCart: (
       project: CartProject,
       walletAddress: string
     ) => void;
-    voiceCredits: string | null;
     payoutTokenPrice: number;
     chainId: number;
     roundId: string;
-    needsSignature: boolean | null;
-    handleDecrypt: () => Promise<void>;
   }
 ) {
   const {
     chainId,
     roundId,
-    voiceCredits,
     selectedPayoutToken,
     roundCart,
-    decryptedContributions,
     handleRemoveProjectFromCart,
     maciContributions,
     payoutTokenPrice,
@@ -57,20 +52,41 @@ export function RoundInCart(
   const round = useRoundById(chainId, roundId).round;
   const { address } = useAccount();
 
-  const [totalAmountAfterDecryption, setTotalAmountAfterDecryption] =
-    useState(0n);
-  const [donationInput, setDonationInput] = useState("0");
   const [pcd, setPcd] = useState<string | undefined>(undefined);
   const [pcdFetched, setPcdFetched] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const alreadyContributed = Boolean(voiceCredits);
-  const votingToken = selectedPayoutToken;
-
-  const filteredProjects = roundCart.filter(
-    (project) => project.chainId === chainId && project.roundId === roundId
+  const [donationInput, setDonationInput] = useState<string>(
+    roundCart
+      .reduce(
+        (acc, project) =>
+          acc + (isNaN(Number(project.amount)) ? 0 : Number(project.amount)),
+        0
+      )
+      .toString()
   );
+  const [donatedAmount, setDonatedAmount] = useState<bigint>(
+    BigInt(Number(donationInput) * 1e18)
+  );
+  // const [voiceCreditBalance, setVoiceCreditBalance] = useState<number>(
+  //   Number(donatedAmount) / 1e13
+  // );
+
+  // const [usedVoiceCredits, setUsedVoiceCredits] = useState<bigint>(
+  //   roundCart.reduce(
+  //     (acc, project) =>
+  //       acc +
+  //       (isNaN(Number(project.amount)) || Number(project.amount) === 0
+  //         ? 0n
+  //         : bnSqrt(BigInt(Number(project.amount) * 1e5)) ** 2n),
+  //     0n
+  //   )
+  // );
+
+
+  const alreadyContributed =
+    (Number(maciContributions?.encrypted?.voiceCreditBalance) ?? 0) > 0;
+  const votingToken = selectedPayoutToken;
 
   const validObjEventIDs = round?.roundMetadata?.maciParameters?.validEventIDs;
   const array = validObjEventIDs
@@ -83,20 +99,8 @@ export function RoundInCart(
   );
   const eventsList = filteredEvents.map((event) => event.eventName).join("\n");
 
-  const [donatedAmount, setDonatedAmount] = useState<bigint>(0n);
-
   const currentTime = new Date();
   const isActiveRound = round && round.roundEndTime > currentTime;
-
-  useEffect(() => {
-    if (decryptedContributions) {
-      const totalAmount = decryptedContributions.reduce(
-        (acc, contribution) => acc + contribution.newVoteWeight,
-        0n
-      );
-      setTotalAmountAfterDecryption(totalAmount * 10n ** 13n);
-    }
-  }, [decryptedContributions]);
 
   const maxContributionAllowlisted = round
     ? BigInt(
@@ -125,7 +129,9 @@ export function RoundInCart(
 
     if (/^\d*\.?\d*$/.test(value)) {
       setDonationInput(value);
-      setDonatedAmount(BigInt(Number(value) * 10 ** 18));
+      const amountToDonate = parseUnits(value, votingToken.decimal);
+      setDonatedAmount(amountToDonate);
+      // setVoiceCreditBalance(Number((Number(amountToDonate) / 1e13).toFixed(0)));
     }
   };
 
@@ -146,31 +152,19 @@ export function RoundInCart(
   }, [address, filteredEvents]);
 
   useEffect(() => {
-    if (alreadyContributed && voiceCredits) {
-      console.log("voiceCredits", voiceCredits);
-      const donatedAmount = voiceCredits
-        ? BigInt(voiceCredits) * 10n ** 13n
-        : filteredProjects.reduce(
-            (acc, project) =>
-              acc +
-              parseUnits(
-                project.amount === ""
-                  ? "0"
-                  : isNaN(Number(project.amount))
-                    ? "0"
-                    : project.amount,
-                votingToken.decimal
-              ),
-            0n
-          );
+    // setUsedVoiceCredits(
+    //   roundCart.reduce(
+    //     (acc, project) =>
+    //       acc +
+    //       (isNaN(Number(project.amount)) || Number(project.amount) === 0
+    //         ? 0n
+    //         : bnSqrt(BigInt((Number(project.amount) ** 1e5).toFixed(0))) ** 2n),
+    //     0n
+    //   )
+    // );
+  }, [donatedAmount, donationInput, props.roundCart]);
 
-      setDonatedAmount(donatedAmount);
-      setDonationInput(formatUnits(donatedAmount, 18));
-    }
-  }, [alreadyContributed, voiceCredits, donatedAmount, donationInput]);
-
-  if (isActiveRound === false) {
-    // remove projects from cart if round is not active
+  if (alreadyContributed && !isActiveRound) {
     props.roundCart.forEach((project) => {
       props.handleRemoveProjectFromCart(project, address as string);
     });
@@ -194,64 +188,53 @@ export function RoundInCart(
                   ({roundCart.length})
                 </p>
               </div>
-              {!alreadyContributed && (
-                <div className="flex flex-row items-center">
-                  <div className="flex flex-col">
-                    {!pcdFetched ? (
-                      <p className="text-sm pt-2 italic mb-5 mr-2">
-                        Your max allowed contribution amount is{" "}
-                        {maxContributionNonAllowlisted} ETH.{" "}
-                        <Tooltip
-                          label="Click to join the allowlist"
-                          aria-label="Click to join the allowlist"
+              <div className="flex flex-row items-center">
+                <div className="flex flex-col">
+                  {!pcdFetched ? (
+                    <p className="text-sm pt-2 italic mb-5 mr-2">
+                      Your max allowed contribution amount is{" "}
+                      {maxContributionNonAllowlisted} ETH.{" "}
+                      <Tooltip
+                        label="Click to join the allowlist"
+                        aria-label="Click to join the allowlist"
+                      >
+                        <a
+                          onClick={openModal}
+                          className="text-md pt-2 font-bold mb-5 mr-2 cursor-pointer"
+                          style={{ color: "black", fontStyle: "normal" }}
                         >
-                          <a
-                            onClick={openModal}
-                            className="text-md pt-2 font-bold mb-5 mr-2 cursor-pointer"
-                            style={{ color: "black", fontStyle: "normal" }}
-                          >
-                            Join the allowlist
-                          </a>
-                        </Tooltip>
-                        to increase your limit to {maxContributionAllowlisted}{" "}
-                        ETH.
-                      </p>
-                    ) : (
-                      <p className="text-sm pt-2 italic mb-5 mr-2">
-                        You successfuly proved your Zuzalu commitment you can
-                        now contribute up to {maxContributionAllowlisted} ETH.
-                      </p>
-                    )}
-                  </div>
+                          Join the allowlist
+                        </a>
+                      </Tooltip>
+                      to increase your limit to {maxContributionAllowlisted}{" "}
+                      ETH.
+                    </p>
+                  ) : (
+                    <p className="text-sm pt-2 italic mb-5 mr-2">
+                      You successfuly proved your Zuzalu commitment you can now
+                      contribute up to {maxContributionAllowlisted} ETH.
+                    </p>
+                  )}
                 </div>
-              )}
-              {alreadyContributed && (
-                <p className="text-sm pt-2 italic mb-5">
-                  You have contributed {formatUnits(donatedAmount, 18)} ETH. You
-                  can now change the distributions of this amount until the
-                  round ends.
-                </p>
-              )}
-            </div>
-            {!alreadyContributed && !decryptedContributions && (
-              <div className="flex items-center pt-2  mb-5 mr-2">
-                <label
-                  htmlFor="totalDonationETH"
-                  className="text-lg font-semibold inline mr-2"
-                >
-                  Total Donation:{"  "}
-                </label>
-                <input
-                  type="text"
-                  id="totalDonationETH"
-                  value={donationInput}
-                  typeof="number"
-                  onChange={handleInputChange}
-                  className="px-3 py-2 w-20 bg-white border shadow-sm border-slate-300 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-sky-500 block rounded-md sm:text-sm focus:ring-1"
-                  placeholder="Enter amount in ETH"
-                />
               </div>
-            )}
+            </div>
+            <div className="flex items-center pt-2  mb-5 mr-2">
+              <label
+                htmlFor="totalDonationETH"
+                className="text-lg font-semibold inline mr-2"
+              >
+                Total Donation:{"  "}
+              </label>
+              <input
+                type="text"
+                id="totalDonationETH"
+                value={donationInput}
+                typeof="number"
+                onChange={handleInputChange}
+                className="px-3 py-2 w-20 bg-white border shadow-sm border-slate-300 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-sky-500 block rounded-md sm:text-sm focus:ring-1"
+                placeholder="Enter amount in ETH"
+              />
+            </div>
           </div>
           <div>
             {roundCart.map((project, key) => {
@@ -280,8 +263,12 @@ export function RoundInCart(
             <div className="flex flex-row gap-3 justify-center pt-1 pr-2">
               <div className="font-semibold">
                 <p>
-                  <span className="mr-2">Total donation</span>$
-                  {donationValue.toFixed(2)}
+                  <span className="mr-2">voiceCreditBalance</span>
+                  {voiceCreditBalance.toFixed(0)}
+                </p>
+                <p>
+                  <span className="mr-2">usedVoiceCredits</span>
+                  {usedVoiceCredits.toString()}
                 </p>
               </div>
             </div>
@@ -290,15 +277,9 @@ export function RoundInCart(
       </div>
       <div className="w-1/4 ml-[4%]">
         <SummaryContainer
-          alreadyContributed={
-            (maciContributions?.encrypted ? true : (false as boolean)) || false
-          }
+          alreadyContributed={alreadyContributed}
           payoutTokenPrice={payoutTokenPrice}
-          decryptedMessages={decryptedContributions}
-          stateIndex={BigInt(maciContributions?.encrypted?.stateIndex ?? "0")}
           donatedAmount={donatedAmount}
-          totalAmountAfterDecryption={totalAmountAfterDecryption}
-          maciMessages={maciContributions ?? null}
           roundId={roundId}
           chainId={chainId}
           walletAddress={address as `0x${string}`}

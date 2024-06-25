@@ -49,9 +49,10 @@ export function ProjectInCart(
   const groupedProjects = groupProjectsInCart(projects);
   const roundProjects = groupedProjects[project.chainId][project.roundId];
 
-  const _percentage = (Number(project.amount) / totalAmount) * 100;
   const [percentage, setPercentage] = useState<string>(
-    (isNaN(_percentage) ? 0.0 : _percentage).toFixed(10)
+    totalAmount === 0
+      ? "0"
+      : ((Number(project.amount) / totalAmount) * 100).toFixed(10)
   );
 
   const handlePercentageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,9 +95,9 @@ export function ProjectInCart(
   };
 
   useEffect(() => {
-    const newAmount = props.alreadyContributed
-      ? ((totalAmount * parseFloat(percentage)) / 100).toFixed(10)
-      : ((totalAmount * parseFloat(percentage)) / 100).toFixed(10);
+    const newAmount = ((totalAmount * parseFloat(percentage)) / 100).toFixed(
+      10
+    );
     store.updateUserDonationAmount(
       project.chainId,
       project.roundId,
@@ -107,8 +108,10 @@ export function ProjectInCart(
   }, [totalAmount, props.alreadyContributed]);
 
   useEffect(() => {
+    if (totalAmount === 0) return;
     setPercentage(((Number(project.amount) / totalAmount) * 100).toFixed(10));
   }, [project.amount]);
+
   return (
     <Box
       data-testid="cart-project"

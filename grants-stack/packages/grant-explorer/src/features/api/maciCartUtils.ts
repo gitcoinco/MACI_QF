@@ -1,22 +1,63 @@
-import { Application, DataLayer } from "data-layer";
+import { Application, Contribution, DataLayer } from "data-layer";
 import {
   CartProject,
   GroupedMACIDecryptedContributions,
   GroupedMaciContributions,
+  MACIContributions,
 } from "./types";
 import { PCommand } from "maci-domainobjs";
 import { getVoteIdMap } from "./projectsMatching";
 import { createCartProjectFromApplication } from "../discovery/ExploreProjectsPage";
 import { getMACIKey } from "./keys";
 import { formatEther } from "viem";
-import { tr } from "date-fns/locale";
+import { dateToEthereumTimestamp } from "common";
 
+function translateApplicationToContribution(
+  application: Application,
+  amount: string,
+  price: string | undefined,
+  walletAddress: string,
+  timestamp: string | undefined,
+  blockNumber: number,
+  transactionHash: string
+): Contribution {
+  return {
+    id: application.id,
+    chainId: parseInt(application.chainId, 10),
+    projectId: application.projectId,
+    roundId: application.roundId,
+    recipientAddress: application.metadata.application.recipient,
+    applicationId: application.id,
+    tokenAddress: application.round.matchTokenAddress,
+    donorAddress: walletAddress, // This should be replaced with the actual donor address if available
+    amount: (Number(amount) * 10 ** 18).toString(), // This should be replaced with the actual donation amount if available
+    amountInUsd: Number((Number(price) * Number(amount)).toFixed(2)), // This should be replaced with the actual donation amount in USD if available
+    transactionHash: transactionHash, // This should be replaced with the actual transaction hash if available
+    blockNumber: blockNumber, // This should be replaced with the actual block number if available
+    round: {
+      roundMetadata: application.round.roundMetadata,
+      donationsStartTime: application.round.donationsStartTime,
+      donationsEndTime: application.round.donationsEndTime,
+    },
+    application: {
+      project: {
+        name: application.project.metadata.title,
+      },
+    },
+    timestamp: dateToEthereumTimestamp(
+      timestamp ? new Date(timestamp) : new Date()
+    ),
+  };
+}
 interface Result {
   applicationId: string;
   newVoteWeight: string | undefined;
+  timestamp: string | undefined;
+  transactionHash: string | undefined;
 }
 
 async function getApplicationsByVoteOptionIndex(
+  maciContributions: MACIContributions | undefined,
   applications: Application[],
   votes: PCommand[],
   voteIdMap: {
@@ -26,6 +67,8 @@ async function getApplicationsByVoteOptionIndex(
           id: bigint;
           maxNonce: bigint | undefined;
           newVoteWeight: string | undefined;
+          timestamp: string | undefined;
+          transactionHash: string | undefined;
         };
       };
     };
@@ -44,6 +87,8 @@ async function getApplicationsByVoteOptionIndex(
           ...app,
           applicationId: voteInfo.id.toString(),
           newVoteWeight: "0",
+          timestamp: undefined,
+          transactionHash: undefined,
         };
       } else if (matchingVotes.length === 1) {
         maxNonceVote = matchingVotes[0];
@@ -76,6 +121,9 @@ async function getApplicationsByVoteOptionIndex(
         ...app,
         applicationId: voteInfo.id.toString(),
         newVoteWeight: voteWeight,
+        timestamp: maciContributions?.encrypted?.timestamp ?? undefined,
+        transactionHash:
+          maciContributions?.encrypted?.transactionHash ?? undefined,
       };
     })
     .filter((app) => {
@@ -105,6 +153,10 @@ const getContributed = async (
         ? groupedDecryptedContributions[chainId]?.[roundID] || []
         : [];
 
+      const maciContributionsForChainRound = groupedMaciContributions
+        ? (groupedMaciContributions[chainId]?.[roundID] as MACIContributions)
+        : undefined;
+
       const applicationsForChainRound = applications
         ? applications[chainId]?.[roundID] || []
         : [];
@@ -114,6 +166,7 @@ const getContributed = async (
         dataLayer
       );
       const contributed = await getApplicationsByVoteOptionIndex(
+        maciContributionsForChainRound,
         applicationsForChainRound,
         decryptedMessages,
         voteIdMap
@@ -229,6 +282,39 @@ function getApplicationRefs(
   }
   return applicationRefs;
 }
+
+export const getDonationHistory = async (
+  dataLayer: DataLayer,
+  walletAddress: string,
+  applications?: {
+    [chainId: number]: {
+      [roundId: string]: Application[];
+    };
+  } | null,
+  groupedMaciContributions?: GroupedMaciContributions,
+  groupedDecryptedContributions?: GroupedMACIDecryptedContributions,
+): Promise<Contribution[]> => {
+  const contributedTo = await getContributed(
+    dataLayer,
+    groupedMaciContributions,
+    groupedDecryptedContributions,
+    applications
+  );
+
+  const contributions: Contribution[] = contributedTo.map((app) =>
+    translateApplicationToContribution(
+      app,
+      app.newVoteWeight ?? "0",
+      app.newVoteWeight,
+      walletAddress,
+      app.timestamp, // Mock timestamp
+      123456, // Mock block number
+      app.transactionHash ?? "0xabcdef" // Mock transaction hash
+    )
+  );
+
+  return contributions;
+};
 
 export const areSignaturesPresent = (
   maciContributions: GroupedMaciContributions | undefined,

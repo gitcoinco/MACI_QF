@@ -208,7 +208,9 @@ export const useCheckoutStore = create<CheckoutState>()(
       get().setChainsToCheckout(
         uniq([...get().chainsToCheckout, ...chainIdsToCheckOut])
       );
-
+      get().setContributionStatusForChain(chainId, ProgressStatus.NOT_STARTED);
+      get().setMaciKeyStatusForChain(chainId, ProgressStatus.NOT_STARTED);
+      get().setVoteStatusForChain(chainId, ProgressStatus.NOT_STARTED);
       get().setIsDonationOrChangeDonationInProgress(false);
 
       const projectsToCheckOut = useCartStorage
@@ -704,7 +706,7 @@ const allocate = async ({
 
   const data = transaction.logs;
 
-  const [stateIndex, , ] = decodeAbiParameters(
+  const [stateIndex, ,] = decodeAbiParameters(
     parseAbiParameters("uint256,uint256,uint256"),
     data[0].data
   );

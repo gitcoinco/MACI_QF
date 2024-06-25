@@ -285,6 +285,7 @@ export async function getTokenPrice(tokenId: string) {
   const tokenPriceEndpoint = `https://api.redstone.finance/prices?symbol=${tokenId}&provider=redstone&limit=1`;
   const resp = await fetch(tokenPriceEndpoint);
   const data = await resp.json();
+  console.log("data", data);
   return data[0].value;
 }
 

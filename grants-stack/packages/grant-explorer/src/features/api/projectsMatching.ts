@@ -11,7 +11,8 @@ export const getVoteIdMap = async (
         id: bigint;
         maxNonce: bigint | undefined;
         newVoteWeight: string | undefined;
-        isNew?: boolean;
+        timestamp: string | undefined;
+        transactionHash: string | undefined;
         chainId: number;
         roundId: string;
       };
@@ -25,7 +26,8 @@ export const getVoteIdMap = async (
           id: bigint;
           maxNonce: bigint | undefined;
           newVoteWeight: string | undefined;
-          isNew?: boolean;
+          timestamp: string | undefined;
+          transactionHash: string | undefined;
           chainId: number;
           roundId: string;
         };
@@ -61,7 +63,8 @@ export const getVoteIdMap = async (
       id: voteOption,
       maxNonce: undefined,
       newVoteWeight: undefined,
-      isNew: false,
+      timestamp: undefined,
+      transactionHash: undefined,
       chainId: chainId,
       roundId: app.roundId,
     };
