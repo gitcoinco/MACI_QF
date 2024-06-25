@@ -4,7 +4,6 @@ import { zeroAddress, formatEther } from "viem";
 import { useAccount, useBalance } from "wagmi";
 import { InformationCircleIcon } from "@heroicons/react/24/solid";
 import { Tooltip } from "@chakra-ui/react";
-import { formatAmount } from "../../api/formatAmount";
 
 type SummaryProps = {
   totalDonation: bigint;

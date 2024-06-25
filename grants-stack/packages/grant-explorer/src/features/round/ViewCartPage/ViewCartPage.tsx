@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { ChainId } from "common";
 import { groupProjectsInCart } from "../../api/utils";
 import Footer from "common/src/components/Footer";
@@ -11,10 +11,10 @@ import { CartWithProjects } from "./CartWithProjects";
 import { useDataLayer } from "data-layer";
 import { useMACIContributions } from "../../projects/hooks/useRoundMaciMessages";
 import { useAccount } from "wagmi";
-import { MACIContributionsByRoundId, GroupedCredits } from "../../api/types";
+import { MACIContributionsByRoundId } from "../../api/types";
 
 export default function ViewCart() {
-  const { userProjects, setUserCart, removeUserProject } = useCartStorage();
+  const { userProjects } = useCartStorage();
   const { address: walletAddress } = useAccount();
 
   const projects = useMemo(
@@ -27,10 +27,6 @@ export default function ViewCart() {
   const { data: maciContributions } = useMACIContributions(
     walletAddress?.toLowerCase() as string,
     dataLayer
-  );
-
-  const maciContributionsByChainId = Object.keys(
-    maciContributions?.groupedMaciContributions ?? {}
   );
 
   const groupedCartProjects = groupProjectsInCart(projects);

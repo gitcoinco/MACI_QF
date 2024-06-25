@@ -18,7 +18,6 @@ import {
 import { useRoundsApprovedApplications } from "../projects/hooks/useRoundApplications";
 import { WalletClient, getWalletClient } from "@wagmi/core";
 import { signAndStoreSignatures } from "../api/keys";
-import { GroupedCredits } from "../api/types";
 import { areSignaturesPresent, getDonationHistory } from "../api/maciCartUtils";
 import { Spinner } from "../common/Spinner";
 
@@ -33,7 +32,6 @@ export function ViewContributionHistoryPage() {
   const [loadingMessage, setLoadingMessage] = useState<string>(
     "Checking needed signatures..."
   );
-  const [groupedCredits, setGroupedCredits] = useState<GroupedCredits>({});
   const [contributions, setContributions] = useState<Contribution[]>([]);
 
   const chainIds = getChainIds();
@@ -125,10 +123,6 @@ export function ViewContributionHistoryPage() {
       DecryptedContributions?.decryptedMessagesByRound
     );
     setContributions(donations);
-    const credits = await dataLayer.getVoiceCreditsByChainIdAndRoundId({
-      contributorAddress: walletAddress?.toLowerCase() as string,
-    });
-    setGroupedCredits(credits);
   }, [
     dataLayer,
     applications,

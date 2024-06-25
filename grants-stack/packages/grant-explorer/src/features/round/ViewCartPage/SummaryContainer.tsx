@@ -38,7 +38,7 @@ export function SummaryContainer(props: {
     getVotingTokenForChain,
     removeUserProject: removeProjectFromCart,
   } = useCartStorage();
-  const { checkoutMaci, changeDonations } = useCheckoutStore();
+  const { checkoutMaci } = useCheckoutStore();
   const dataLayer = useDataLayer();
   const { openConnectModal } = useConnectModal();
   const allo = useAllo();
@@ -193,9 +193,7 @@ export function SummaryContainer(props: {
       />
       <MRCProgressModal
         isOpen={openMRCProgressModal}
-        subheading={
-            "Please hold while we submit your donation."
-        }
+        subheading={"Please hold while we submit your donation."}
         body={
           <div className="flex flex-col items-center">
             <MRCProgressModalBody

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { CartProject } from "../../api/types";
 import DefaultLogoImage from "../../../assets/default_logo.png";
 import { Link } from "react-router-dom";

@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { CartProject, MACIContributions } from "../../api/types";
 import { useRoundById } from "../../../context/RoundContext";
 import { ProjectInCart } from "./ProjectInCart";
-import { formatUnits, parseEther, parseUnits } from "viem";
+import { parseUnits } from "viem";
 import { useAccount } from "wagmi";
 import {
   Button,
@@ -23,7 +23,6 @@ import { fieldsToReveal } from "../../api/pcd";
 import { bnSqrt } from "../../api/voting";
 import { ZuzaluEvents } from "../../../constants/ZuzaluEvents";
 import { uuidToBigInt } from "@pcd/util";
-import { set } from "lodash";
 
 export function RoundInCart(
   props: React.ComponentProps<"div"> & {
@@ -83,9 +82,10 @@ export function RoundInCart(
   //   )
   // );
 
+  const alreadyContributed = useMemo(() => {
+    return (Number(maciContributions?.encrypted?.voiceCreditBalance) ?? 0) > 0;
+  }, [maciContributions?.encrypted?.voiceCreditBalance]);
 
-  const alreadyContributed =
-    (Number(maciContributions?.encrypted?.voiceCreditBalance) ?? 0) > 0;
   const votingToken = selectedPayoutToken;
 
   const validObjEventIDs = round?.roundMetadata?.maciParameters?.validEventIDs;
