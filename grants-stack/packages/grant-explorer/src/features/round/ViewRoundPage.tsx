@@ -14,7 +14,6 @@ import {
   formatUTCDateAsISOString,
   getRoundStrategyTitle,
   getUTCTime,
-  isRoundUsingPassportLite,
   renderToPlainText,
   truncateDescription,
   useTokenPrice,
@@ -23,13 +22,11 @@ import {
 import { Button, Input } from "common/src/styles";
 import AlloV1 from "common/src/icons/AlloV1";
 import AlloV2 from "common/src/icons/AlloV2";
-
 import { ReactComponent as CartCircleIcon } from "../../assets/icons/cart-circle.svg";
 import { ReactComponent as CheckedCircleIcon } from "../../assets/icons/checked-circle.svg";
 import { ReactComponent as Search } from "../../assets/search-grey.svg";
 import { ReactComponent as WarpcastIcon } from "../../assets/warpcast-logo.svg";
 import { ReactComponent as TwitterBlueIcon } from "../../assets/x-logo.svg";
-
 import { useRoundById } from "../../context/RoundContext";
 import { CartProject, Project, Requirement, Round } from "../api/types";
 import {
@@ -55,9 +52,6 @@ import {
   CardTitle,
 } from "../common/styles";
 import Breadcrumb, { BreadcrumbItem } from "../common/Breadcrumb";
-
-const builderURL = process.env.REACT_APP_BUILDER_URL;
-
 import CartNotification from "../common/CartNotification";
 import { useCartStorage } from "../../store";
 import { useAccount, useToken } from "wagmi";
@@ -76,6 +70,8 @@ import {
 import { Box, Tab, Tabs } from "@chakra-ui/react";
 import GenericModal from "../common/GenericModal";
 import { useAlreadyContributed } from "../projects/hooks/useRoundMaciMessages";
+
+const builderURL = process.env.REACT_APP_BUILDER_URL;
 
 export default function ViewRound() {
   datadogLogs.logger.info("====> Route: /round/:chainId/:roundId");
@@ -207,20 +203,14 @@ function AfterRoundStart(props: {
   isAfterRoundEndDate?: boolean;
 }) {
   const { round, chainId, roundId } = props;
-
   const [searchQuery, setSearchQuery] = useState("");
   const [projects, setProjects] = useState<Project[]>();
   const [randomizedProjects, setRandomizedProjects] = useState<Project[]>();
-  const { address: walletAddress } = useAccount();
-  const isSybilDefenseEnabled =
-    round.roundMetadata?.quadraticFundingConfig?.sybilDefense === true;
-
   const [showCartNotification, setShowCartNotification] = useState(false);
   const [currentProjectAddedToCart, setCurrentProjectAddedToCart] =
     useState<Project>({} as Project);
   const [isProjectsLoading, setIsProjectsLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState(0);
-
   const disableAddToCartButton =
     (alloVersion === "allo-v2" && roundId.startsWith("0x")) ||
     props.isAfterRoundEndDate;

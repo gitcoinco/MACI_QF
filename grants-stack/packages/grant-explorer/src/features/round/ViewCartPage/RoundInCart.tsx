@@ -20,7 +20,6 @@ import { SummaryContainer } from "./SummaryContainer";
 import { Switch } from "@headlessui/react";
 import { zuAuthPopup } from "@pcd/zuauth";
 import { fieldsToReveal } from "../../api/pcd";
-import { bnSqrt } from "../../api/voting";
 import { ZuzaluEvents } from "../../../constants/ZuzaluEvents";
 import { uuidToBigInt } from "@pcd/util";
 
