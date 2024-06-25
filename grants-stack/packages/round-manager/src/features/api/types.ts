@@ -9,7 +9,6 @@ import { BigNumber } from "ethers";
 import { Address } from "viem";
 import { SchemaQuestion } from "./utils";
 import { RoundForManager } from "data-layer";
-import { Keypair } from "maci-domainobjs";
 
 export type Network = "optimism" | "fantom" | "pgn";
 

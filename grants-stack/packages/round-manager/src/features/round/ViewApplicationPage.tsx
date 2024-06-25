@@ -39,7 +39,6 @@ import {
 } from "../api/types";
 import { VerifiableCredential } from "@gitcoinco/passport-sdk-types";
 import { Lit } from "../api/lit";
-import { utils } from "ethers";
 import NotFoundPage from "../common/NotFoundPage";
 import AccessDenied from "../common/AccessDenied";
 import { Spinner } from "../common/Spinner";
@@ -69,8 +68,6 @@ import { getPayoutRoundDescription } from "../common/Utils";
 import moment from "moment";
 import ApplicationDirectPayout from "./ApplicationDirectPayout";
 import { useApplicationsByRoundId } from "../common/useApplicationsByRoundId";
-import { getAddress } from "ethers/lib/utils.js";
-import { getAlloAddress } from "common/dist/allo/backends/allo-v2";
 
 type Status = "done" | "current" | "rejected" | "approved" | undefined;
 
