@@ -7,7 +7,6 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 export interface NavbarProps {
   programCta?: boolean;
-  alloVersionSwitcherVisible?: boolean;
 }
 
 export default function Navbar({ programCta: programCta = true }: NavbarProps) {
