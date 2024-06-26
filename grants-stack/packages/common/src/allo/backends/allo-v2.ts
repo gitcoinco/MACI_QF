@@ -3,10 +3,8 @@ import {
   Allo as AlloV2Contract,
   CreateProfileArgs,
   DirectGrantsStrategy,
-  DirectGrantsStrategyTypes,
   DonationVotingMerkleDistributionDirectTransferStrategyAbi,
   DonationVotingMerkleDistributionStrategy,
-  DonationVotingMerkleDistributionStrategyTypes,
   Registry,
   RegistryAbi,
   TransactionData,
@@ -30,7 +28,6 @@ import {
   PublicClient,
   getAddress,
   zeroAddress,
-  isAddress,
 } from "viem";
 import { AnyJson, ChainId } from "../..";
 import { UpdateRoundParams, MatchingStatsData, VotingToken } from "../../types";
@@ -51,9 +48,7 @@ import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
 import { buildUpdatedRowsOfApplicationStatuses } from "../application";
 import { generateMerkleTree } from "./allo-v1";
 import { BigNumber, ethers, utils } from "ethers";
-
-import { Keypair, PubKey } from "maci-domainobjs";
-import { isValid } from "zod";
+import { PubKey } from "maci-domainobjs";
 
 function getStrategyAddress(strategy: RoundCategory, chainId: ChainId): string {
   let strategyAddresses;
@@ -74,8 +69,13 @@ function getStrategyAddress(strategy: RoundCategory, chainId: ChainId): string {
   return strategyAddresses[strategy];
 }
 
-const ClonableMACIFactoryAddress = "0xFDF4230931E0B659000D86973B85e997805D0b45";
-const ZuPassRegistryAddress = "0x611709bEB6A7D413d1F5Eb3213Bd65221685C293";
+const ClonableMACIFactoryAddress = getAddress(
+  "0x272DfA1B365E4e72690F834c6e0a2823Fa5120e5"
+);
+const ZuPassRegistryAddress = getAddress(
+  "0x455cC27badb067cb9b7cdE52F153DfebC83B1A99"
+);
+const NonAllowlistGatingAddress = getAddress(zeroAddress);
 
 function applicationStatusToNumber(status: ApplicationStatus) {
   switch (status) {
@@ -479,10 +479,13 @@ export class AlloV2 implements Allo {
       // Choose only the unique event IDs create a map and then convert it to an array again
       const eventIDs = Array.from(new Set(array));
 
-      let encodedEventIDs = new ethers.utils.AbiCoder().encode(
+      let allowlistGatingContractInitData = new ethers.utils.AbiCoder().encode(
         ["uint256[]"],
         [eventIDs]
       );
+
+      // In the future we might support more than one MACI instance
+      const maciID = 0n;
 
       let MaciParams = [
         // coordinator:
@@ -490,11 +493,16 @@ export class AlloV2 implements Allo {
         // coordinatorPubKey:
         [BigInt(pubk.asContractParam().x), BigInt(pubk.asContractParam().y)],
         ClonableMACIFactoryAddress,
+        // Allowlist gating verifier address
         ZuPassRegistryAddress,
+        // Non-allowlist gating verifier address
+        NonAllowlistGatingAddress,
         // maci_id
-        0n,
-        // VALID_EVENT_IDS
-        encodedEventIDs,
+        maciID,
+        // AllowlistGatingContractInitData
+        allowlistGatingContractInitData,
+        // NonAllowlistGatingContractInitData
+        "0x00",
         // maxContributionAmountForZupass
         maxContributionAmountAllowlisted,
         // maxContributionAmountForNonZupass
@@ -504,7 +512,7 @@ export class AlloV2 implements Allo {
       let initStruct = [initStrategyData, MaciParams];
 
       let types = parseAbiParameters(
-        "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,uint8,bytes,uint256,uint256))"
+        "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,address,uint8,bytes,bytes,uint256,uint256))"
       );
 
       const encoded: `0x${string}` = encodeAbiParameters(types, [
@@ -523,7 +531,7 @@ export class AlloV2 implements Allo {
       const managers = args.roundData.roundOperators.map((address) =>
         getAddress(address)
       );
-      console.log("Managers", managers);
+
       const createPoolArgs: CreatePoolArgs = {
         profileId: profileId as Hex,
         strategy: getStrategyAddress(
