@@ -63,7 +63,7 @@ function getStrategyAddress(strategy: RoundCategory, chainId: ChainId): string {
         [RoundCategory.QuadraticFunding]:
           "0x000000000000000000000000000000000000000",
         [RoundCategory.Direct]: "0x000000000000000000000000000000000000000",
-        [RoundCategory.Maci]: "0x4FaaB0e37B1f4A6c761A3736a9F1849C180589a8",
+        [RoundCategory.Maci]: "0xF59618C80d3D624edB91c56d200675cD9a4837fc",
       };
       break;
 
