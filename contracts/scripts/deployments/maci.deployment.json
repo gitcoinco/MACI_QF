@@ -32,7 +32,7 @@
     },
     "ZuPassRegistry": {
       "name": "ZuPassRegistry",
-      "ZuPassRegistryAddress": "0x5b498551F04FA6Bb411aA488e5250A4caC43324B"
+      "ZuPassRegistryAddress": "0x455cC27badb067cb9b7cdE52F153DfebC83B1A99"
     },
     "PollFactory": {
       "name": "PollFactory",
@@ -52,11 +52,11 @@
     },
     "ClonableMACIFactory": {
       "name": "ClonableMACIFactory",
-      "ClonableMACIFactoryAddress": "0x3B1dF8C7Be283fE8Ba0C6F71C36eb90326C58d24"
+      "ClonableMACIFactoryAddress": "0x272DfA1B365E4e72690F834c6e0a2823Fa5120e5"
     },
     "MACIQFStrategy": {
       "name": "MACIQFStrategy",
-      "MACIQFStrategyAddress": "0x931761803458a041030fc032dA57dcC4823Fbaeb"
+      "MACIQFStrategyAddress": "0xF59618C80d3D624edB91c56d200675cD9a4837fc"
     }
   }
 }

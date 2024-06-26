@@ -128,6 +128,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
     error EmptyTallyHash();
     error InvalidAmount();
     error InvalidProof();
+    error NoAllowlist();
     error MaciNotSet();
     error NoVotes();
 
@@ -248,12 +249,15 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         // Validate allowlist proof if provided GAS optimization
         // Don't check if the proof is empty
         if (isAllowlisted) {
-            if (!_isAddressZero(address(allowlistVerifier))) {
-                bool verified = allowlistVerifier.validateUser(_proof, _sender);
-                if (!verified) {
-                    revert InvalidProof();
-                }
+            if (_isAddressZero(address(allowlistVerifier))) {
+                revert NoAllowlist();
             }
+            bool verified = allowlistVerifier.validateUser(_proof, _sender);
+
+            if (!verified) {
+                revert InvalidProof();
+            }
+            
             if (amount > maxContributionAllowlisted) {
                 revert ContributionAmountTooLarge();
             }
@@ -544,6 +548,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         alpha = calcAlpha(poolAmount, totalVotesSquares, _totalSpent);
         matchingPoolSize = poolAmount - _totalSpent * voiceCreditFactor;
 
+        finalizedAt = uint64(block.timestamp);
         isFinalized = true;
     }
 

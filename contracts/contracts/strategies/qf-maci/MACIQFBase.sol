@@ -146,6 +146,9 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @notice The total amount spent from the pool
     uint256 public totalSpent;
 
+    /// @notice The timestamp when the pool was finalized
+    uint64 public finalizedAt;
+
     /// @notice Flag to indicate if the pool has been finalized
     bool public isFinalized;
 
@@ -168,6 +171,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     uint256 public constant MAX_VOICE_CREDITS = 10 ** 9; // MACI allows 2 ** 32 voice credits max
     uint256 public constant MAX_CONTRIBUTION_AMOUNT = 10 ** 4; // In tokens
     uint256 public constant ALPHA_PRECISION = 10 ** 18; // to account for loss of precision in division
+    uint256 public constant EMERGENCY_WITHDRAWAL_DELAY = 30 days;
 
     /// @notice Mapping from vote index to recipient address
     mapping(uint256 => address) public recipientVoteIndexToAddress;
@@ -348,7 +352,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
 
     /// @notice Withdraws tokens from the pool
     /// @param _token The token to withdraw
-    function withdraw(address _token) external onlyPoolManager(msg.sender) {
+    function withdraw(address _token) external onlyCoordinator {
         // If the token is not the pool token, transfer the token to the sender
         // This is to ensure that accidentally sent tokens can be withdrawn by the pool manager
         if (allo.getPool(poolId).token != _token) {
@@ -365,6 +369,18 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
             uint256 amount = _getBalance(_token, address(this)) - totalContributed;
             _transferAmount(_token, msg.sender, amount);        
         }        
+    }
+
+    /// @notice Emergency withdraw of tokens from the pool in case of recipient Distributions fail 
+    /// @dev This can only be called after the pool has been finalized and the emergency withdrawal
+    /// delay has passed only the coordinator can call this function
+    /// @param _token The token to withdraw
+    function emergencyWithdraw(address _token) external onlyCoordinator {
+        bool isEmergencyTime = block.timestamp > finalizedAt + EMERGENCY_WITHDRAWAL_DELAY;
+        if (isCancelled || !isEmergencyTime || !isFinalized) {
+            revert INVALID();
+        }
+        _transferAmount(_token, msg.sender, _getBalance(_token, address(this)));
     }
 
     /// @notice Allows the contract to receive native currency
