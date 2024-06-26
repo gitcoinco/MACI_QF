@@ -249,11 +249,8 @@ function InnerTable(props: {
                           </td>
                           {/* Display donations */}
                           <td className="py-4 truncate lg:pr-16">
-                            <span className="font-bold">
-                              {formattedAmount}{" "}
-                            </span>
                             <span className="text-grey-400">
-                              / ${amountInUsd.toFixed(2)}
+                              ${amountInUsd.toFixed(2)}
                             </span>
                           </td>
                         </tr>
@@ -340,9 +337,8 @@ function Table(props: {
           </td>
           {/* Display donations */}
           <td className="py-4 truncate w-2/5 pl-8">
-            <span className="font-bold">{formattedAmount} </span>
             <span className="text-grey-400">
-              / ${totalContributionAmountInUsd.toFixed(2)}
+              ${totalContributionAmountInUsd.toFixed(2)}
             </span>
           </td>
           <td className="truncate w-1/5 pl-48">
