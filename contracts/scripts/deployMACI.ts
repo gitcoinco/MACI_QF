@@ -472,7 +472,7 @@ async function main() {
     console.log("MACIQFStrategy deployed at:", MACIQFStrategyAddress);
 
     DeployedContracts.MACIQFStrategy = {
-      name: "MACIQFStrategy",
+      name: "MACIQFStrategyv1.0",
       MACIQFStrategyAddress: MACIQFStrategyAddress,
     };
     deployments.write(DeployedContracts);
