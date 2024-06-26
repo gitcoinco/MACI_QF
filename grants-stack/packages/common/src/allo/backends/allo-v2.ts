@@ -63,7 +63,7 @@ function getStrategyAddress(strategy: RoundCategory, chainId: ChainId): string {
         [RoundCategory.QuadraticFunding]:
           "0x000000000000000000000000000000000000000",
         [RoundCategory.Direct]: "0x000000000000000000000000000000000000000",
-        [RoundCategory.Maci]: "0x8A81103524b1c006BcD9a7239375A818D7F7492f",
+        [RoundCategory.Maci]: "0x4FaaB0e37B1f4A6c761A3736a9F1849C180589a8",
       };
       break;
 
@@ -74,8 +74,8 @@ function getStrategyAddress(strategy: RoundCategory, chainId: ChainId): string {
   return strategyAddresses[strategy];
 }
 
-const ClonableMACIFactoryAddress = "0x1E2F10C546e8Bf24adB3C927b582eE7F91DB4E5c";
-const ZuPassRegistryAddress = "0xB9B19aF74CC70c8F9Ea6d782C94C058235d7d3bD";
+const ClonableMACIFactoryAddress = "0xFDF4230931E0B659000D86973B85e997805D0b45";
+const ZuPassRegistryAddress = "0x611709bEB6A7D413d1F5Eb3213Bd65221685C293";
 
 function applicationStatusToNumber(status: ApplicationStatus) {
   switch (status) {
