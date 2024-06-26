@@ -464,7 +464,7 @@ async function main() {
 
     const MACIQFStrategy = await MACIQFStrategyFactory.deploy(
       Allo,
-      "MACIQF_STRATEGY_V1",
+      "MACIQFStrategyv1.0",
     );
 
     const MACIQFStrategyAddress = await MACIQFStrategy.getAddress();
