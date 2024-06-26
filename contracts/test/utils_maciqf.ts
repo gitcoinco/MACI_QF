@@ -7,7 +7,7 @@ import {
   deployVerifier,
 } from "maci-contracts";
 import { ethers, upgrades } from "hardhat";
-import { BigNumberish, Signer } from "ethers";
+import { BigNumberish, Signer,ZeroAddress } from "ethers";
 import {
   Allo,
   Registry,
@@ -343,10 +343,12 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
     ],
     ClonableMACIFactoryAddress,
     AlloContracts.ZuPassRegistryAddress,
+    ZeroAddress,
     // maci_id
     0,
     // VALID_EVENT_IDS
     encodedEventIDs,
+    "0x",
     // maxContributionAmountForZupass
     10n ** 18n * 100n,
     // maxContributionAmountForNonZupass
@@ -356,13 +358,14 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
   let initStruct = [initializeParams, MaciParams];
 
   let types = [
-    "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,uint8,bytes,uint256,uint256))",
+    "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,address,uint8,bytes,bytes,uint256,uint256))",
   ];
 
 
   let bytes = AbiCoder.encode(types, [initStruct]);
 
-  const createPool = await AlloContracts.Allo.createPool(
+  let createPool =
+    await AlloContracts.Allo.createPool(
     profileId,
     MACIQFStrategyAddress,
     bytes,

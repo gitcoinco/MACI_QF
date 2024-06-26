@@ -10,7 +10,7 @@ import {Tally} from "maci-contracts/contracts/Tally.sol";
 import {Poll} from "maci-contracts/contracts/Poll.sol";
 
 // Interfaces
-import {IAlowlistVerifier} from "./interfaces/IAlowlistVerifier.sol";
+import {IGatingVerifier} from "./interfaces/IGatingVerifier.sol";
 
 import {IAllo} from "../../core/interfaces/IAllo.sol";
 
@@ -37,17 +37,21 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         PubKey coordinatorPubKey;
         // The MACI factory is used to deploy the MACI contracts
         address maciFactory;
-        // The verifier contract is used to verify the proof of attendance
-        // In ZuZalu events
-        address verifier;
+        // The verifier contract is used to verify the proof of the allowlist inclusion
+        address allowlistVerifier;
+        // The verifier contract is used to verify the proof of the non allowlist inclusion
+        address nonAllowlistVerifier;
         // The MACI ID is used to differentiate between different MACI instances
         // Each instance is using a different set of circuits and verification keys
         // Different circuits define how many vote options are available how many 
         // signups how many votes messages can get handled
         uint8 maciId;
         // The AllowlistDetails are used in a modular way to create the allowlist 
-        // Based on the verifier contract logic.
+        // Based on the allowlistVerifier contract logic.
         bytes allowlistDetails;
+        // The nonAllowlistDetails are used in a modular way to create the non allowlist gating
+        // Based on the nonAllowlistVerifier contract logic.
+        bytes nonAllowlistDetails;
         // The maximum contribution amount for users in allowlist
         uint256 maxContributionAllowlisted;
         // The maximum contribution amount for users not in allowlist
@@ -144,8 +148,11 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
     /// @notice Address of the MACI factory
     address public maciFactory;
 
-    /// @notice The verifier contract instance
-    IAlowlistVerifier public allowlistVerifier;
+    /// @notice The verifier contract instance for the allowlist
+    IGatingVerifier public allowlistVerifier;
+
+    /// @notice The Verifier contract instance for non allowlist users gating
+    IGatingVerifier public nonAllowlistVerifier;
 
     /// @notice Mapping from contributor address to total credits
     mapping(address => Contributor) public contributorInfo;
@@ -178,9 +185,19 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
     function _maciQFStrategy_init(uint256 _poolId, InitializeParamsMACI memory _params) internal {
         _maciQFBaseStrategy_init(_poolId, _params.initializeParams);
         // Initialize the allowlistVerifier contract
-        allowlistVerifier = IAlowlistVerifier(_params.maciParams.verifier);
-        // Round Whitelisted events registration
-        allowlistVerifier.setRoundAllowlist(_params.maciParams.allowlistDetails);
+        address allowlistVerifierAddress = _params.maciParams.allowlistVerifier;
+        if(!_isAddressZero(allowlistVerifierAddress)){
+            allowlistVerifier = IGatingVerifier(allowlistVerifierAddress);
+            // Set the allowlist gating details
+            allowlistVerifier.setRoundVerifier(_params.maciParams.allowlistDetails);
+        }
+        // Initialize the nonAllowlistVerifier contract
+        address nonAllowlistVerifierAddress = _params.maciParams.nonAllowlistVerifier;
+        if(!_isAddressZero(nonAllowlistVerifierAddress)){
+            nonAllowlistVerifier = IGatingVerifier(nonAllowlistVerifierAddress);
+            // Set the non allowlist gating details
+            nonAllowlistVerifier.setRoundVerifier(_params.maciParams.nonAllowlistDetails);
+        }
         // Set the maximum contribution amounts for Zupass and non-Zupass users
         maxContributionAllowlisted = _params.maciParams.maxContributionAllowlisted;
         maxContributionNotAllowlisted= _params.maciParams.maxContributionNotAllowlisted;
@@ -219,8 +236,9 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         (
             PubKey memory pubKey,
             uint256 amount,
+            bool isAllowlisted,
             bytes memory _proof
-        ) = abi.decode(_data, (PubKey, uint256, bytes));
+        ) = abi.decode(_data, (PubKey, uint256, bool, bytes));
 
         if (_isAddressZero(maci)) revert MaciNotSet();
         if (isFinalized) revert RoundAlreadyFinalized();
@@ -229,16 +247,23 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
 
         // Validate allowlist proof if provided GAS optimization
         // Don't check if the proof is empty
-        if (_proof.length != 0) {
-
-            uint256 watermark = allowlistVerifier.validateAllowlist(_proof);
-            if (watermark != uint256(uint160(_sender))) {
-                revert InvalidProof();
+        if (isAllowlisted) {
+            if (!_isAddressZero(address(allowlistVerifier))) {
+                bool verified = allowlistVerifier.validateUser(_proof, _sender);
+                if (!verified) {
+                    revert InvalidProof();
+                }
             }
             if (amount > maxContributionAllowlisted) {
                 revert ContributionAmountTooLarge();
             }
         } else {
+            if (!_isAddressZero(address(nonAllowlistVerifier))) {
+                bool verified = nonAllowlistVerifier.validateUser(_proof, _sender);
+                if (!verified) {
+                    revert InvalidProof();
+                }
+            }
             if (amount > maxContributionNotAllowlisted) {
                 revert ContributionAmountTooLarge();
             }

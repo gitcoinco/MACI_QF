@@ -33,6 +33,7 @@ export const allocate = async ({
   const contributeEncodedData = (await prepareAllocationData({
     publicKey: keypair.pubKey.serialize(),
     amount: contributionAmount,
+    isAllowlisted: false,
     proof: emptyProof,
   })) as string;
 

@@ -19,11 +19,13 @@ import {
   Allo,
 } from "../typechain-types";
 
-import { deployTestContracts } from "./utils_maciqf";
+import { deployTestContracts, timeTravel } from "./utils_maciqf";
 
 import path from "path";
 
 import dotenv from "dotenv";
+import { time } from "console";
+import { EthereumProvider } from "hardhat/types";
 
 dotenv.config();
 
@@ -97,6 +99,9 @@ describe("e2e", function test() {
   });
 
   it("Should allow the contribution to gain tokens and allocate", async () => {
+    const provider = allocator.provider! as unknown as EthereumProvider;
+    // Go to the allocation phase
+    await timeTravel(provider, 210);
     // Donate to the pool without proof
     await allocate({
       AlloContract: AlloContract,

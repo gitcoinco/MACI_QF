@@ -171,6 +171,7 @@ export const publishBatch = async ({
 export const prepareAllocationData = async ({
   publicKey,
   amount,
+  isAllowlisted,
   proof,
 }: IAllocateArgs) => {
   if (!PubKey.isValidSerializedPubKey(publicKey)) {
@@ -184,7 +185,9 @@ export const prepareAllocationData = async ({
     "(uint256,uint256)",
     // Contribution amount
     "uint256",
-    // ZK Proof for Zuzalu circuit
+    // isAllowlisted or not allowlisted proof we send to the contract
+    "bool",
+    // gating proof
     "bytes",
   ];
   let data;
@@ -192,6 +195,7 @@ export const prepareAllocationData = async ({
     data = AbiCoder.defaultAbiCoder().encode(types, [
       [userMaciPubKey.asContractParam().x, userMaciPubKey.asContractParam().y],
       amount,
+      isAllowlisted,
       "0x",
     ]);
   } catch (e) {

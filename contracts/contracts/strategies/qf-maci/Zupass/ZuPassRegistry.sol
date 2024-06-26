@@ -7,7 +7,9 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {IZuPassVerifier} from "../interfaces/IZuPassVerifier.sol";
 
-contract ZuPassRegistry is Ownable {
+import {IGatingVerifier} from "../interfaces/IGatingVerifier.sol";
+
+contract ZuPassRegistry is Ownable, IGatingVerifier {
 
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -67,7 +69,7 @@ contract ZuPassRegistry is Ownable {
         }
     }
 
-    function setRoundAllowlist(bytes memory encodedEventIds) external {
+    function setRoundVerifier(bytes memory encodedEventIds) external {
         (uint256[] memory _eventIds) = abi.decode(encodedEventIds, (uint256[]));
         for (uint256 i = 0; i < _eventIds.length;) {
             uint256 eventId = _eventIds[i];
@@ -104,9 +106,10 @@ contract ZuPassRegistry is Ownable {
 
     /// @notice Validate proof of attendance
     /// @param _EncodedProof Proof
-    function validateAllowlist(
-        bytes memory _EncodedProof
-    ) external returns (uint256) {
+    function validateUser(
+        bytes calldata _EncodedProof,
+        address _sender
+    ) external returns (bool) {
         // Decode the proof
         (
             uint[2] memory _pA,
@@ -120,7 +123,7 @@ contract ZuPassRegistry is Ownable {
 
         // Validate that the event ID used in the proof is whitelisted
         // for the FundingRound (Strategy) that is validating the proof
-        if (!contractToEventIds[msg.sender].contains(eventID)) return 0;
+        if (!contractToEventIds[msg.sender].contains(eventID)) return false;
 
         // Get the Zupass signer used in the proof publicSignals[13] and publicSignals[14]
         ZUPASS_SIGNER memory signer = ZUPASS_SIGNER({G1: _pubSignals[13], G2: _pubSignals[14]});
@@ -131,12 +134,12 @@ contract ZuPassRegistry is Ownable {
             signer.G1 != eventToZupassSigner[eventID].G1 ||
             signer.G2 != eventToZupassSigner[eventID].G2
         ) {
-            return 0;
+            return false;
         }
 
         // Validate the proof with the Groth16 verifier
         if (!zupassVerifier.verifyProof(_pA, _pB, _pC, _pubSignals)) {
-            return 0;
+            return false;
         }
 
         // Preventing frontrunning the transaction by adding the watermark as the transaction origin
@@ -146,12 +149,16 @@ contract ZuPassRegistry is Ownable {
         uint256 ZupassNullifier = _pubSignals[9];
 
         // Validate that the nullifier has not been used before
-        if (usedRoundNullifiers[msg.sender][ZupassNullifier]) return 0;
+        if (usedRoundNullifiers[msg.sender][ZupassNullifier]) return false;
 
         // Mark the nullifier as used
         usedRoundNullifiers[msg.sender][ZupassNullifier] = true;
 
-        return getWaterMarkFromPublicSignals(_pubSignals);
+        if(getWaterMarkFromPublicSignals(_pubSignals) != uint256(uint160(_sender))) {
+            return false;
+        }
+
+        return true;
     }
     
     function getWaterMarkFromPublicSignals(
