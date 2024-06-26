@@ -355,8 +355,9 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     function withdraw(address _token) external onlyCoordinator {
         // If the token is not the pool token, transfer the token to the sender
         // This is to ensure that accidentally sent tokens can be withdrawn by the pool manager
-        if (allo.getPool(poolId).token != _token) {
-            _transferAmount(_token, msg.sender, _getBalance(_token, address(this)));
+        if (getPoolToken() != _token) {
+            uint256 amount = _getBalance(_token, address(this));
+            _transferAmount(_token, msg.sender,amount);
         } else {
             // Only if the pool is cancelled the funds can be withdrawn
             // Otherwise the funds will be taken from the winners of the pool
@@ -597,6 +598,10 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @return True if the distribution is valid, otherwise false
     function _validateDistribution(address _recipient) internal view returns (bool) {
         return !paidOut[_recipient];
+    }
+
+    function getPoolToken() internal view returns (address) {
+        return allo.getPool(poolId).token;
     }
 
     /// ====================================

@@ -273,7 +273,7 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
             }
         }
 
-        address token = allo.getPool(poolId).token;
+        address token = getPoolToken();
 
         if (token != NATIVE) {
             _transferAmountFrom(token, TransferData(_sender, address(this), amount));
@@ -342,11 +342,11 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
         }
 
         paidOut[recipientId] = true;
-        IAllo.Pool memory pool = allo.getPool(poolId);
+        address token = getPoolToken();
 
-        _transferAmount(pool.token, recipient.recipientAddress, amount);
+        _transferAmount(token, recipient.recipientAddress, amount);
 
-        emit FundsDistributed(amount, recipient.recipientAddress, pool.token, recipientId);
+        emit FundsDistributed(amount, recipient.recipientAddress, token, recipientId);
     }
 
     /// =======================================
@@ -624,10 +624,11 @@ contract MACIQF is MACIQFBase, DomainObjs, Params {
                 // Decrease the total contributed amount
                 totalContributed -= amount;
                 // Reset before sending funds the contributor credits to prevent Re-entrancy
-                contributorInfo[contributor].voiceCredits = 0;                
-                _transferAmountFrom(
-                    allo.getPool(poolId).token,
-                    TransferData(address(this), contributor, amount)
+                contributorInfo[contributor].voiceCredits = 0; 
+                _transferAmount(
+                    getPoolToken(),
+                    contributor,
+                    amount
                 );
                 result[i] = true;
             } else {

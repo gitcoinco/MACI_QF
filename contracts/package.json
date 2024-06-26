@@ -5,7 +5,10 @@
         "test:solidity": "hardhat test ./test/e2e.finalize.ts --network sepolia",
         "test:live": "hardhat test ./test/e2e.test_maciqf.ts --network localhost",
         "test:3.1.1": "hardhat test ./test/3_1_1.test.ts --network localhost",
-        "test:3.3.5": "hardhat test ./test/3_3_5.test.ts --network localhost"
+        "test:3.3.5": "hardhat test ./test/3_3_5.test.ts --network localhost",
+        "test:emergency": "hardhat test ./test/emergencyWithdraw.test.ts --network localhost",
+        "test:cancel": "hardhat test ./test/cancelRound.test.ts --network localhost"
+
     },
     "devDependencies": {
         "@nomicfoundation/hardhat-chai-matchers": "^2.0.6",
