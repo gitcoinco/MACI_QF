@@ -30,7 +30,6 @@ import { groupBy, uniq } from "lodash-es";
 import { getEnabledChains } from "./app/chainConfig";
 import { WalletClient, PublicClient } from "wagmi";
 import { getPublicClient } from "@wagmi/core";
-
 import { decodeAbiParameters, parseAbiParameters } from "viem";
 
 // NEW CODE

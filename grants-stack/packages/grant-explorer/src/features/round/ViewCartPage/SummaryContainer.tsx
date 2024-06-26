@@ -126,6 +126,7 @@ export function SummaryContainer(props: {
     } else if (alreadyContributed) {
       setTotalDonations(donatedAmount);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects, votingToken, props]);
 
   const handleSubmitDonation = async () => {

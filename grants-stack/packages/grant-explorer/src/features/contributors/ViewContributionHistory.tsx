@@ -112,6 +112,7 @@ export function ViewContributionHistoryPage() {
         address: walletAddress as string,
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maciContributions, walletAddress, signaturesRequested, hasDonations]);
 
   const fetchDonationHistory = useCallback(async () => {
@@ -123,6 +124,7 @@ export function ViewContributionHistoryPage() {
       DecryptedContributions?.decryptedMessagesByRound
     );
     setContributions(donations);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     dataLayer,
     applications,
@@ -159,6 +161,7 @@ export function ViewContributionHistoryPage() {
         getNeededSignatures();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maciContributions, walletAddress, getNeededSignatures, hasDonations]);
 
   useEffect(() => {
@@ -277,7 +280,7 @@ export function ViewContributionHistory(props: {
   ensName?: string | null;
   breadCrumbs: BreadcrumbItem[];
 }) {
-  const { data: price, error, loading } = useTokenPrice("ETH");
+  const { data: price } = useTokenPrice("ETH");
 
   const [totalDonations, totalUniqueContributions, totalProjectsFunded] =
     useMemo(() => {

@@ -16,6 +16,14 @@ const abi = parseAbi([
 
 const alloContractAddress = "0x1133ea7af70876e64665ecd07c0a0476d09465a1";
 
+/**
+ * Hook to get all MACI contributions for a given address
+ *
+ * @param address - The address of the user
+ * @param dataLayer - The data layer
+ *
+ * @returns The MACI contributions for a given address
+ */
 export function useMACIContributions(address: string, dataLayer: DataLayer) {
   return useSWR(["allContributions", address], async () => {
     const response: GroupedMaciContributions = {};
@@ -55,6 +63,15 @@ export function useMACIContributions(address: string, dataLayer: DataLayer) {
   });
 }
 
+/**
+ * Hook to decrypt MACI messages for a given round on a given network
+ *
+ * @param maciMessages - The MACI messages for a given round on a given network
+ * @param walletAddress - The address of the user
+ * @param signaturesReady - Whether the signatures for the MACI messages are ready
+ *
+ * @returns The decrypted MACI messages for a given round on a given network
+ */
 export const useDecryptMessages = (
   maciMessages: GroupedMaciContributions | undefined,
   walletAddress: string,
@@ -77,7 +94,7 @@ export const useDecryptMessages = (
       decryptedMessagesByRound[chainID] = {};
       needSignature[chainID] = {};
       for (const roundID in maciMessages[chainID]) {
-        const signature = getMACIKey({
+        const signature: string = getMACIKey({
           chainID: Number(chainID),
           roundID: roundID,
           walletAddress: walletAddress,

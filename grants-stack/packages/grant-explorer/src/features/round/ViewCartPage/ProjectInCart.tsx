@@ -105,11 +105,13 @@ export function ProjectInCart(
       newAmount,
       props.walletAddress
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalAmount, props.alreadyContributed]);
 
   useEffect(() => {
     if (totalAmount === 0) return;
     setPercentage(((Number(project.amount) / totalAmount) * 100).toFixed(10));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.amount]);
 
   return (
