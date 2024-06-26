@@ -8,6 +8,8 @@ import { ethers, upgrades } from "hardhat";
 import { MaciParameters } from "../test/utils/maciParameters";
 import { Deployments, verifyContract } from "./utils/scripts";
 import { BigNumberish } from "ethers";
+import { ZuzaluEvents } from "./constants/ZuzaluEvents";
+import {uuidToBigInt, hexToBigInt} from "@pcd/util"
 
 async function main() {
   const deployParams = await MaciParameters.getMACIParameters();
@@ -204,14 +206,16 @@ async function main() {
       G2: BigNumberish;
     };
 
+    const eventIDs = ZuzaluEvents.map((event) => uuidToBigInt(event.eventId)) as BigNumberish[];
+
+    const eventsSigners = ZuzaluEvents.map((event) => ({
+      G1: hexToBigInt(event.publicKey[0]),
+      G2: hexToBigInt(event.publicKey[1]),
+    })) as ZUPASS_SIGNERStruct[];
+
     const setEvents = await ZuPassFactory.setEvents(
-      ["192993346581360151154216832563903227660"] as BigNumberish[],
-      [
-        {
-          G1: "2658696990997679927259430495938453033612384821046330804164935913637421782846",
-          G2: "18852953264765021758165045442761617487242246681540213362114332008455443692095",
-        },
-      ] as ZUPASS_SIGNERStruct[],
+      eventIDs,
+      eventsSigners,
       {
         gasLimit: 1000000,
       }
@@ -460,7 +464,7 @@ async function main() {
 
     const MACIQFStrategy = await MACIQFStrategyFactory.deploy(
       Allo,
-      "MACIQF_TEST"
+      "MACIQF_STRATEGY_V1",
     );
 
     const MACIQFStrategyAddress = await MACIQFStrategy.getAddress();

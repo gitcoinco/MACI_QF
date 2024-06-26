@@ -6,7 +6,6 @@
         "test:live": "hardhat test ./test/e2e.test_maciqf.ts --network localhost",
         "test:3.1.1": "hardhat test ./test/3_1_1.test.ts --network localhost",
         "test:3.3.5": "hardhat test ./test/3_3_5.test.ts --network localhost"
-
     },
     "devDependencies": {
         "@nomicfoundation/hardhat-chai-matchers": "^2.0.6",
@@ -32,12 +31,14 @@
         "ipfs-only-hash": "^4.0.0",
         "maci-cli": "1.2.3",
         "maci-contracts": "1.2.3",
-        "maci-domainobjs": "1.2.3",
         "maci-core": "1.2.3",
+        "maci-domainobjs": "1.2.3",
         "solidity-coverage": "^0.8.12",
         "ts-node": "^10.9.2",
         "typechain": "^8.3.2",
         "typescript": "^5.4.5"
+    },
+    "dependencies": {
+        "@pcd/util": "^0.5.2"
     }
-
 }
