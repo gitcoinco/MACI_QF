@@ -1014,7 +1014,7 @@ const Stats = ({
 
   return (
     <div className="max-w-5xl m-auto w-full">
-      <div className={`xl:grid-cols-3 grid grid-cols-2 gap-2 sm:gap-4`}>
+      <div className={`xl:grid-cols-4 grid grid-cols-2 gap-2 sm:gap-4`}>
         <StatCard
           statValue={`${formatAmount(tokenAmount, false)} ${tokenSymbol}`}
           secondaryStatValue={`${
