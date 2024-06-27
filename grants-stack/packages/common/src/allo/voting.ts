@@ -1,3 +1,4 @@
+import { parseAbi } from "viem";
 import { VotingToken } from "../types";
 
 export type PermitSignature = {
@@ -23,3 +24,17 @@ export const getPermitType = (token: VotingToken): PermitType => {
 };
 
 export type PermitType = "dai" | "eip2612";
+
+export const getMACIABI = () => {
+  const abi = parseAbi([
+    "function getPool(uint256) view returns ((bytes32 profileId, address strategy, address token, (uint256,string) metadata, bytes32 managerRole, bytes32 adminRole))",
+    "function pollContracts() view returns ((address poll, address messageProcessor,address tally,address subsidy))",
+    "function coordinatorPubKey() view returns (uint256 x, uint256 y)",
+    "function allocate(uint256, bytes) external payable",
+    "function usedRoundNullifiers(address, uint256) view returns (bool)",
+    "function publishMessageBatch((uint256 msgType,uint256[10] data)[] _messages,(uint256 x,uint256 y)[] _pubKeys)",
+    "function maxValues() view returns (uint256 maxVoteOptions)",
+    "function coordinatorPubKey() view returns ((uint256, uint256))",
+  ]);
+  return abi;
+}

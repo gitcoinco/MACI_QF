@@ -11,11 +11,19 @@ import {
   TypedDataDomain,
   zeroAddress,
 } from "viem";
-import { CartProject, ProofArgs, IAllocateArgs, bigintArray38 } from "./types";
+import {
+  CartProject,
+  ProofArgs,
+  IAllocateArgs,
+  bigintArray38,
+  PoolInfo,
+} from "./types";
 import { WalletClient } from "wagmi";
 import { VotingToken } from "common";
 import { NATIVE } from "common/dist/allo/common";
-
+import { getPublicClient } from "@wagmi/core";
+import { getMACIABI } from "common/src/allo/voting";
+import { getZupassRegistryAddress } from "common/src/allowlist";
 type SignPermitProps = {
   walletClient: WalletClient;
   contractAddress: Hex;
@@ -266,7 +274,7 @@ export const prepareAllocationData = ({
         dt._pubSignals as bigintArray38,
       ])
     : "0x";
-  
+
   const isAllowlistedProof = dt ? true : false;
 
   const pubKey = [
@@ -283,6 +291,42 @@ export const prepareAllocationData = ({
   return data;
 };
 
+const abi = getMACIABI();
+
+export const isRoundZuProofReused = async (
+  pcd: string,
+  chainId: number,
+  roundId: string
+) => {
+  const alloContractAddress = getAlloAddress(chainId);
+
+  const ZuPassRegistryAddress = getZupassRegistryAddress(chainId);
+
+  const publicClient = getPublicClient({
+    chainId,
+  });
+  const [Pool] = await Promise.all([
+    publicClient.readContract({
+      abi: abi,
+      address: alloContractAddress as Hex,
+      functionName: "getPool",
+      args: [BigInt(roundId)],
+    }),
+  ]);
+
+  const pool = Pool as PoolInfo;
+  const proof = generateWitness(JSON.parse(pcd));
+  const emailHash = proof._pubSignals[9];
+  const isUsed = await publicClient.readContract({
+    address: ZuPassRegistryAddress,
+    abi,
+    functionName: "usedRoundNullifiers",
+    args: [pool.strategy as `0x${string}`, emailHash],
+  });
+
+  return isUsed;
+};
+
 import { utils } from "ethers";
 import {
   Keypair as MaciKeypair,
@@ -292,6 +336,7 @@ import {
   Message,
 } from "maci-domainobjs";
 import { generateWitness } from "./pcd";
+import { getAlloAddress } from "common/dist/allo/backends/allo-v2";
 
 /**
  * Convert to MACI Message object

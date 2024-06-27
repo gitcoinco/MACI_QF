@@ -31,12 +31,12 @@ import { getEnabledChains } from "./app/chainConfig";
 import { WalletClient } from "wagmi";
 import { getPublicClient } from "@wagmi/core";
 import { decodeAbiParameters, parseAbiParameters } from "viem";
-
-// NEW CODE
 import { Keypair, PCommand, PubKey, PrivKey } from "maci-domainobjs";
 import { genRandomSalt } from "maci-crypto";
 import { DataLayer } from "data-layer";
 import { generatePubKey } from "./features/api/keys";
+import { getAlloAddress } from "common/dist/allo/backends/allo-v2";
+import { getMACIABI } from "common/src/allo/voting";
 
 type ChainMap<T> = Record<ChainId, T>;
 
@@ -110,19 +110,7 @@ const defaultProgressStatusForAllChains = Object.fromEntries(
   ])
 ) as ChainMap<ProgressStatus>;
 
-const abi = parseAbi([
-  "function getPool(uint256) view returns ((bytes32 profileId, address strategy, address token, (uint256,string) metadata, bytes32 managerRole, bytes32 adminRole))",
-  "function pollContracts() view returns ((address poll, address messageProcessor,address tally,address subsidy))",
-  "function coordinatorPubKey() view returns (uint256 x, uint256 y)",
-  "function allocate(uint256, bytes) external payable",
-
-  "function publishMessageBatch((uint256 msgType,uint256[10] data)[] _messages,(uint256 x,uint256 y)[] _pubKeys)",
-  "function maxValues() view returns (uint256 maxVoteOptions)",
-  "function coordinatorPubKey() view returns ((uint256, uint256))",
-]);
-
-const alloContractAddress =
-  "0x1133ea7af70876e64665ecd07c0a0476d09465a1" as `0x${string}`;
+const abi = getMACIABI();
 
 export const useCheckoutStore = create<CheckoutState>()(
   devtools((set, get) => ({
@@ -442,6 +430,8 @@ export const useCheckoutStore = create<CheckoutState>()(
           chainId,
         });
 
+        const alloContractAddress = getAlloAddress(chainId);
+
         const [Pool] = await Promise.all([
           publicClient.readContract({
             abi: abi,
@@ -688,6 +678,8 @@ const allocate = async ({
   const publicClient = getPublicClient({
     chainId,
   });
+
+  const alloContractAddress = getAlloAddress(chainId);
 
   const [Pool] = await Promise.all([
     publicClient.readContract({
