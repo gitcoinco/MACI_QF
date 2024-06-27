@@ -201,7 +201,6 @@ function InnerTable(props: {
                       const token = props.tokens[tokenId];
 
                       let formattedAmount = "N/A";
-
                       let amountInUsd = 0;
 
                       if (token) {
