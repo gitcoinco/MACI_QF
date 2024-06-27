@@ -14,8 +14,6 @@ import {
   ModalBody,
   ModalCloseButton,
   ModalFooter,
-  Box,
-  Flex,
 } from "@chakra-ui/react";
 import { VotingToken } from "common";
 import { SummaryContainer } from "./SummaryContainer";
@@ -50,6 +48,7 @@ export function RoundInCart(
   } = props;
 
   const round = useRoundById(chainId, roundId).round;
+
   const { address } = useAccount();
 
   const [pcd, setPcd] = useState<string | undefined>(undefined);
@@ -105,10 +104,18 @@ export function RoundInCart(
   const currentTime = new Date();
   const isActiveRound = round && round.roundEndTime > currentTime;
 
-  const maxAllow = round && round.roundMetadata?.maciParameters?.maxContributionAmountAllowlisted
-
-  const maxContributionAllowlisted = "0.3";
-  const maxContributionNonAllowlisted = "0.01";
+  const maxContributionAllowlisted = round
+    ? Number(
+        round.roundMetadata?.maciParameters?.maxContributionAmountAllowlisted ??
+          2n 
+      ).toString()
+    : "1.0";
+  const maxContributionNonAllowlisted = round
+    ? Number(
+        round.roundMetadata?.maciParameters
+          ?.maxContributionAmountNonAllowlisted ?? 1n
+      ).toString()
+    : "0.1";
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     let value = event.target.value;
@@ -202,7 +209,7 @@ export function RoundInCart(
                           Join the allowlist
                         </a>
                       </Tooltip>
-                      <div className="text-sm italic mb-5 mr-2">
+                      <div className="text-sm pt-2 italic mb-5 mr-2">
                         to contribute up to {maxContributionAllowlisted} ETH.
                       </div>
                     </p>
@@ -259,42 +266,22 @@ export function RoundInCart(
             })}
           </div>
         </div>
-        <Box p={4} bg="gray.100" rounded="xl" fontWeight="medium" fontSize="lg">
-          <Flex
-            flexDirection="row"
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <Flex
-              flexDirection="row"
-              gap={3}
-              justifyContent="center"
-              pt={1}
-              pr={2}
-            >
-              <Box fontWeight="semibold">
-                <Tooltip
-                  label="Voice credits represent your voting power. 1e5 voice credits equal 1 ETH."
-                  aria-label="Voice credits tooltip"
-                >
-                  <p>
-                    Voice Credit Balance: {voiceCreditBalance} (
-                    {(voiceCreditBalance / 1e5).toFixed(5)} ETH)
-                  </p>
-                </Tooltip>
-                <Tooltip
-                  label="Used voice credits show how many of your voice credits have been used."
-                  aria-label="Used voice credits tooltip"
-                >
-                  <p>
-                    Used Voice Credits: {usedVoiceCredits.toString()} (
-                    {(Number(usedVoiceCredits) / 1e5).toFixed(5)} ETH)
-                  </p>
-                </Tooltip>
-              </Box>
-            </Flex>
-          </Flex>
-        </Box>
+        <div className="p-4 bg-grey-100 rounded-b-xl font-medium text-lg">
+          <div className="flex flex-row justify-between items-center">
+            <div className="flex flex-row gap-3 justify-center pt-1 pr-2">
+              <div className="font-semibold">
+                <p>
+                  <span className="mr-2">voiceCreditBalance</span>
+                  {voiceCreditBalance}
+                </p>
+                <p>
+                  <span className="mr-2">usedVoiceCredits</span>
+                  {usedVoiceCredits.toString()}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <div className="w-1/4 ml-[4%]">
         <SummaryContainer
