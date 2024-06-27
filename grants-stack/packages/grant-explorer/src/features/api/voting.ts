@@ -11,7 +11,7 @@ import {
   TypedDataDomain,
   zeroAddress,
 } from "viem";
-import { CartProject } from "./types";
+import { CartProject, ProofArgs, IAllocateArgs, bigintArray38 } from "./types";
 import { WalletClient } from "wagmi";
 import { VotingToken } from "common";
 import { NATIVE } from "common/dist/allo/common";
@@ -237,28 +237,6 @@ export function bnSqrt(val: bigint) {
   return x;
 }
 
-// NEW CODE
-export interface ProofArgs {
-  _pA: string[];
-  _pB: string[][];
-  _pC: string[];
-  _pubSignals: bigint[];
-}
-
-/**
- * Interface for the arguments to the batch publish command
- */
-export interface IAllocateArgs {
-  /**
-   * The public key of the user
-   */
-  publicKey: PubKey;
-
-  amount: bigint;
-
-  proof?: string;
-}
-
 export const prepareAllocationData = ({
   publicKey,
   amount,
@@ -268,7 +246,7 @@ export const prepareAllocationData = ({
   // uint[2][2] memory _pB,
   // uint[2] memory _pC,
   // uint[38] memory _pubSignals
-  const types = "(uint256,uint256),uint256,bytes";
+  const types = "(uint256,uint256),uint256,bool,bytes";
 
   let dt: ProofArgs | null = null;
   if (proof) {
@@ -285,48 +263,11 @@ export const prepareAllocationData = ({
         ],
         dt._pC.map((str) => BigInt(str)) as [bigint, bigint],
         // add 38 bigint in the as [bigint, bigint, ...] format
-        dt._pubSignals as [
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-          bigint,
-        ],
+        dt._pubSignals as bigintArray38,
       ])
     : "0x";
+  
+  const isAllowlistedProof = dt ? true : false;
 
   const pubKey = [
     publicKey.asContractParam().x,
@@ -335,6 +276,7 @@ export const prepareAllocationData = ({
   const data = encodeAbiParameters(parseAbiParameters(types), [
     pubKey,
     amount as bigint,
+    isAllowlistedProof,
     proofData,
   ]);
 

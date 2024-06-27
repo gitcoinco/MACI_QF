@@ -182,8 +182,6 @@ export interface MACIContributions {
   };
 }
 
-
-
 export interface GroupedMaciContributions {
   [chainId: number]: { [roundId: string]: MACIContributions };
 }
@@ -209,3 +207,65 @@ export interface GroupedCredits {
 export interface GroupedCreditsByRoundId {
   [roundId: string]: string;
 }
+
+export interface ProofArgs {
+  _pA: string[];
+  _pB: string[][];
+  _pC: string[];
+  _pubSignals: bigint[];
+}
+
+/**
+ * Interface for the arguments to the batch publish command
+ */
+export interface IAllocateArgs {
+  /**
+   * The public key of the user
+   */
+  publicKey: PubKey;
+
+  amount: bigint;
+
+  proof?: string;
+}
+
+export type bigintArray38 = [
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+];

@@ -5,7 +5,7 @@ import {
 } from "@heroicons/react/solid";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { classNames } from "common";
-import { Input } from "common/src/styles";
+import { Button, Input } from "common/src/styles";
 import _ from "lodash";
 import moment from "moment";
 import { Fragment, useContext, useEffect, useState } from "react";
@@ -21,7 +21,7 @@ import {
   useForm,
 } from "react-hook-form";
 
-import { Listbox, Transition } from "@headlessui/react";
+import { Dialog, Listbox, Switch, Transition } from "@headlessui/react";
 import { RoundCategory } from "data-layer";
 import ReactTooltip from "react-tooltip";
 import * as yup from "yup";
@@ -31,7 +31,7 @@ import { FormStepper } from "../common/FormStepper";
 import { FormContext } from "../common/FormWizard";
 
 // NEW CODE
-import { PubKey } from "maci-domainobjs";
+import { PubKey, Keypair } from "maci-domainobjs";
 
 export const RoundValidationSchema = yup.object().shape({
   roundMetadata: yup.object({
@@ -232,7 +232,32 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
       setApplicationEndDate(roundEndDate);
     }
   }, [rollingApplications, roundEndDate, setValue]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [hasKey, setHasKey] = useState(false);
+  const [pubKey, setPubKey] = useState("");
+  const closeModal = () => setIsOpen(false);
+  const openModal = () => setIsOpen(true);
 
+  const generateKeyPair = () => {
+    // Assuming Keypair is a part of your cryptographic utilities
+    const keypair = new Keypair();
+    const rawPrivKey = keypair.privKey.serialize();
+    const jsonString = JSON.stringify(keypair.toJSON(), null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const link = document.createElement("a");
+    link.download = "coordinatorKey.json";
+    link.href = URL.createObjectURL(blob);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setPubKey(keypair.pubKey.serialize());
+    setHasKey(true);
+    setValue(
+      "roundMetadata.maciParameters.coordinatorKeyPair",
+      keypair.pubKey.serialize()
+    );
+    openModal(); // Open the alert dialog
+  };
   return (
     <div>
       <div className="md:grid md:grid-cols-3 md:gap-10">
@@ -273,31 +298,117 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
                     private keys!
                   </p>
                 </div>
-                <div className="flex justify-between">
-                  <label
-                    htmlFor="roundMetadata.support.info"
-                    className="text-sm"
+                <div className="flex flex-col space-y-4 mb-2">
+                  <div className="flex justify-between">
+                    <label
+                      htmlFor="roundMetadata.maciParameters.coordinatorKeyPair"
+                      className="text-sm"
+                    >
+                      Coordinator MACI Public Key
+                    </label>
+
+                    <span className="text-right text-violet-400 float-right text-xs mt-1">
+                      *Required
+                    </span>
+                  </div>
+                  {hasKey ? (
+                    <>
+                      <Switch.Group as="div" className="flex items-center">
+                        <Switch.Label as="span" className="mr-3">
+                          Have a keypair?
+                        </Switch.Label>
+                        <Switch
+                          as="button"
+                          checked={!hasKey}
+                          onChange={() => setHasKey(!hasKey)}
+                          className={`${hasKey ? "bg-purple-600" : "bg-gray-200"} relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2`}
+                        >
+                          <span
+                            className={`${hasKey ? "translate-x-6" : "translate-x-1"} inline-block w-4 h-4 transform bg-white rounded-full transition-transform`}
+                          />
+                        </Switch>
+                      </Switch.Group>
+                      <Input
+                        type="text"
+                        placeholder="Enter the MACI Coordinator Public Key"
+                        // value={pubKey}
+                        // onChange={(e) => setPubKey(e.target.value)}
+                        value={watch(
+                          "roundMetadata.maciParameters.coordinatorKeyPair"
+                        )}
+                        id="roundMetadata.maciParameters.coordinatorKeyPair"
+                        {...register(
+                          "roundMetadata.maciParameters.coordinatorKeyPair"
+                        )}
+                        className="h-10 mt-2"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <Switch.Group as="div" className="flex items-center">
+                        <Switch.Label as="span" className="mr-3">
+                          Have a keypair?
+                        </Switch.Label>
+                        <Switch
+                          as="button"
+                          checked={!hasKey}
+                          onChange={() => setHasKey(!hasKey)}
+                          className={`${hasKey ? "bg-purple-600" : "bg-gray-200"} relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2`}
+                        >
+                          <span
+                            className={`${hasKey ? "translate-x-6" : "translate-x-1"} inline-block w-4 h-4 transform bg-white rounded-full transition-transform`}
+                          />
+                        </Switch>
+                      </Switch.Group>
+                      <Button
+                        type="button"
+                        className="float-left w-1/4 mb-3 py-2 px-4 text-sm"
+                        onClick={generateKeyPair}
+                      >
+                        Generate Key Pair
+                      </Button>
+                    </>
+                  )}
+                  <Dialog
+                    as="div"
+                    className="fixed inset-0 z-10 overflow-y-auto"
+                    open={isOpen}
+                    onClose={closeModal}
                   >
-                    Coordinator MACI Public Key
-                  </label>
-                  <span className="text-right text-violet-400 float-right text-xs mt-1">
-                    *Required
-                  </span>
+                    <div className="min-h-screen px-4 text-center">
+                      <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
+                      <span
+                        className="inline-block h-screen align-middle"
+                        aria-hidden="true"
+                      >
+                        &#8203;
+                      </span>
+                      <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+                        <Dialog.Title
+                          as="h3"
+                          className="text-lg font-medium leading-6 text-gray-900"
+                        >
+                          Key Generation Complete
+                        </Dialog.Title>
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-500">
+                            Your new Coordinator Key Pair has been generated and
+                            saved. Please ensure to store it securely.
+                          </p>
+                        </div>
+                        <div className="mt-4">
+                          <button
+                            type="button"
+                            className="inline-flex justify-center px-4 py-2 text-sm font-medium text-purple-900 bg-purple-100 border border-transparent rounded-md hover:bg-purple-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
+                            onClick={closeModal}
+                          >
+                            Close
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </Dialog>
                 </div>
-
-                <Input
-                  type="text"
-                  placeholder="Enter the MACI Coordinator Public Key"
-                  value={watch(
-                    "roundMetadata.maciParameters.coordinatorKeyPair"
-                  )}
-                  id="roundMetadata.maciParameters.coordinatorKeyPair"
-                  {...register(
-                    "roundMetadata.maciParameters.coordinatorKeyPair"
-                  )}
-                  className="h-10 mt-2"
-                />
-
                 <div className="flex justify-between">
                   <label
                     htmlFor="roundMetadata.support.info"

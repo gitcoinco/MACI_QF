@@ -9,8 +9,8 @@ import { GroupedMaciContributions, MACIContributions } from "../../api/types";
 
 const abi = parseAbi([
   "function getPool(uint256) view returns ((bytes32 profileId, address strategy, address token, (uint256,string) metadata, bytes32 managerRole, bytes32 adminRole))",
-  "function _maci() public view returns (address)",
-  "function _pollContracts() public view returns ((address,address,address,address))",
+  "function maci() public view returns (address)",
+  "function pollContracts() public view returns ((address,address,address,address))",
   "function coordinatorPubKey() public view returns ((uint256,uint256))",
 ]);
 
@@ -168,12 +168,12 @@ async function getMaciAddress(chainID: number, roundID: string) {
     publicClient.readContract({
       abi,
       address: pool.strategy as `0x${string}`,
-      functionName: "_pollContracts",
+      functionName: "pollContracts",
     }),
     publicClient.readContract({
       abi,
       address: pool.strategy as `0x${string}`,
-      functionName: "_maci",
+      functionName: "maci",
     }),
   ]);
 

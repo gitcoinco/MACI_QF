@@ -3,10 +3,8 @@ import {
   Allo as AlloV2Contract,
   CreateProfileArgs,
   DirectGrantsStrategy,
-  DirectGrantsStrategyTypes,
   DonationVotingMerkleDistributionDirectTransferStrategyAbi,
   DonationVotingMerkleDistributionStrategy,
-  DonationVotingMerkleDistributionStrategyTypes,
   Registry,
   RegistryAbi,
   TransactionData,
@@ -23,15 +21,7 @@ import {
   RoundApplicationAnswers,
   RoundCategory,
 } from "data-layer";
-import {
-  Abi,
-  Address,
-  Hex,
-  PublicClient,
-  getAddress,
-  zeroAddress,
-  isAddress,
-} from "viem";
+import { Abi, Address, Hex, PublicClient, getAddress, zeroAddress } from "viem";
 import { AnyJson, ChainId } from "../..";
 import { UpdateRoundParams, MatchingStatsData, VotingToken } from "../../types";
 import { Allo, AlloError, AlloOperation, CreateRoundArguments } from "../allo";
@@ -51,9 +41,7 @@ import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
 import { buildUpdatedRowsOfApplicationStatuses } from "../application";
 import { generateMerkleTree } from "./allo-v1";
 import { BigNumber, ethers, utils } from "ethers";
-
-import { Keypair, PubKey } from "maci-domainobjs";
-import { isValid } from "zod";
+import { PubKey } from "maci-domainobjs";
 
 function getStrategyAddress(strategy: RoundCategory, chainId: ChainId): string {
   let strategyAddresses;
@@ -63,7 +51,7 @@ function getStrategyAddress(strategy: RoundCategory, chainId: ChainId): string {
         [RoundCategory.QuadraticFunding]:
           "0x000000000000000000000000000000000000000",
         [RoundCategory.Direct]: "0x000000000000000000000000000000000000000",
-        [RoundCategory.Maci]: "0x8A81103524b1c006BcD9a7239375A818D7F7492f",
+        [RoundCategory.Maci]: "0xB84be727Ff04B64D5f85e0a669Af0ef8e14f530B",
       };
       break;
 
@@ -74,8 +62,13 @@ function getStrategyAddress(strategy: RoundCategory, chainId: ChainId): string {
   return strategyAddresses[strategy];
 }
 
-const ClonableMACIFactoryAddress = "0x1E2F10C546e8Bf24adB3C927b582eE7F91DB4E5c";
-const ZuPassRegistryAddress = "0xB9B19aF74CC70c8F9Ea6d782C94C058235d7d3bD";
+const ClonableMACIFactoryAddress = getAddress(
+  "0x272DfA1B365E4e72690F834c6e0a2823Fa5120e5"
+);
+const ZuPassRegistryAddress = getAddress(
+  "0x455cC27badb067cb9b7cdE52F153DfebC83B1A99"
+);
+const NonAllowlistGatingAddress = getAddress(zeroAddress);
 
 function applicationStatusToNumber(status: ApplicationStatus) {
   switch (status) {
@@ -479,10 +472,13 @@ export class AlloV2 implements Allo {
       // Choose only the unique event IDs create a map and then convert it to an array again
       const eventIDs = Array.from(new Set(array));
 
-      let encodedEventIDs = new ethers.utils.AbiCoder().encode(
+      let allowlistGatingContractInitData = new ethers.utils.AbiCoder().encode(
         ["uint256[]"],
         [eventIDs]
       );
+
+      // In the future we might support more than one MACI instance
+      const maciID = 0n;
 
       let MaciParams = [
         // coordinator:
@@ -490,11 +486,16 @@ export class AlloV2 implements Allo {
         // coordinatorPubKey:
         [BigInt(pubk.asContractParam().x), BigInt(pubk.asContractParam().y)],
         ClonableMACIFactoryAddress,
+        // Allowlist gating verifier address
         ZuPassRegistryAddress,
+        // Non-allowlist gating verifier address
+        NonAllowlistGatingAddress,
         // maci_id
-        0n,
-        // VALID_EVENT_IDS
-        encodedEventIDs,
+        maciID,
+        // AllowlistGatingContractInitData
+        allowlistGatingContractInitData,
+        // NonAllowlistGatingContractInitData
+        "0x00",
         // maxContributionAmountForZupass
         maxContributionAmountAllowlisted,
         // maxContributionAmountForNonZupass
@@ -504,7 +505,7 @@ export class AlloV2 implements Allo {
       let initStruct = [initStrategyData, MaciParams];
 
       let types = parseAbiParameters(
-        "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,uint8,bytes,uint256,uint256))"
+        "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,address,uint8,bytes,bytes,uint256,uint256))"
       );
 
       const encoded: `0x${string}` = encodeAbiParameters(types, [
@@ -523,7 +524,7 @@ export class AlloV2 implements Allo {
       const managers = args.roundData.roundOperators.map((address) =>
         getAddress(address)
       );
-      console.log("Managers", managers);
+
       const createPoolArgs: CreatePoolArgs = {
         profileId: profileId as Hex,
         strategy: getStrategyAddress(
@@ -787,6 +788,9 @@ export class AlloV2 implements Allo {
     applicationsToUpdate: {
       address: string;
       status: ApplicationStatus;
+      statusSnapshots?: {
+        updatedAt: Date;
+      }[];
     }[];
   }): AlloOperation<
     Result<void>,
@@ -802,6 +806,7 @@ export class AlloV2 implements Allo {
       }
 
       let recipients: string[] = [];
+      let latestUpdateTimes: bigint[] = [];
       let statuses: bigint[] = [];
 
       // Process the applicationsToUpdate array
@@ -809,16 +814,29 @@ export class AlloV2 implements Allo {
         (acc, app) => {
           acc.recipients.push(app.address);
           acc.statuses.push(applicationStatusToNumber(app.status));
+          acc.latestUpdateTimes.push(
+            !app.statusSnapshots || app.statusSnapshots.length <= 1
+              ? 0n
+              : BigInt(
+                  app.statusSnapshots[
+                    app.statusSnapshots.length - 1
+                  ].updatedAt.getTime() / 1000
+                )
+          );
           return acc;
         },
-        { recipients: recipients, statuses: statuses }
+        {
+          recipients: recipients,
+          statuses: statuses,
+          latestUpdateTimes: latestUpdateTimes,
+        }
       );
 
       const txResult = await sendTransaction(this.transactionSender, {
         address: args.strategyAddress,
         abi: MACIQF as Abi,
         functionName: "reviewRecipients",
-        args: [recipients, statuses],
+        args: [recipients, latestUpdateTimes, statuses],
       });
 
       emit("transaction", txResult);
