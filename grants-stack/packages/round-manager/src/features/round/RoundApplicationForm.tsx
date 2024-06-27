@@ -81,80 +81,6 @@ export const initialQuestionsQF: SchemaQuestion[] = [
   },
 ];
 
-export const initialQuestionsDirect: SchemaQuestion[] = [
-  {
-    id: 1,
-    title: "Email Address",
-    required: true,
-    encrypted: true,
-    hidden: true,
-    type: "email",
-    fixed: true,
-  },
-  {
-    id: 2,
-    title: "Application detail",
-    required: true,
-    encrypted: false,
-    hidden: false,
-    type: "paragraph",
-    fixed: false,
-  },
-  {
-    id: 3,
-    title: "Amount requested",
-    required: true,
-    encrypted: false,
-    hidden: true,
-    type: "number",
-    fixed: false,
-  },
-  {
-    id: 4,
-    title: "Payout token",
-    required: true,
-    encrypted: false,
-    hidden: true,
-    type: "dropdown",
-    choices: ["DAI"], // ETH is not supported.
-    fixed: false,
-  },
-  {
-    id: 5,
-    title: "Payout wallet address",
-    required: true,
-    encrypted: false,
-    hidden: true,
-    type: "address",
-    fixed: true,
-    metadataExcluded: true,
-  },
-  {
-    id: 6,
-    title: "Milestones",
-    required: true,
-    encrypted: false,
-    hidden: false,
-    type: "paragraph",
-  },
-  {
-    id: 7,
-    title: "Funding Sources",
-    required: true,
-    encrypted: false,
-    hidden: false,
-    type: "short-answer",
-  },
-  {
-    id: 8,
-    title: "Team Size",
-    required: true,
-    encrypted: false,
-    hidden: false,
-    type: "number",
-  },
-];
-
 export const initialRequirements: ProjectRequirements = {
   twitter: {
     required: false,
@@ -186,18 +112,15 @@ export function RoundApplicationForm(props: {
   const [openAddQuestionModal, setOpenAddQuestionModal] = useState(false);
   const [toEdit, setToEdit] = useState<EditQuestion | undefined>();
   const { signer: walletSigner } = useWallet();
-
   const { currentStep, setCurrentStep, stepsCount, formData } =
     useContext(FormContext);
+
   const Steps = props.stepper;
   const [openErrorModal, setOpenErrorModal] = useState(false);
-
   const search = useLocation().search;
   /* Reasonable to assume programId is non-null since we would redirect to 404 otherwise */
   const programId = new URLSearchParams(search).get("programId") as string;
-
   const navigate = useNavigate();
-
   const roundCategory =
     props.configuration?.roundCategory ?? RoundCategory.QuadraticFunding;
 
@@ -205,9 +128,7 @@ export function RoundApplicationForm(props: {
   const questionsArg = formData?.applicationMetadata?.questions;
   const defaultQuestions: ApplicationMetadata["questions"] = questionsArg
     ? questionsArg
-    : roundCategory === RoundCategory.QuadraticFunding
-    ? initialQuestionsQF
-    : initialQuestionsDirect;
+    : initialQuestionsQF;
 
   const { control, handleSubmit } = useForm<Round>({
     defaultValues: {

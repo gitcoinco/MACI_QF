@@ -501,5 +501,6 @@ export const payoutTokens = [
 
 export const getPayoutTokenOptions = (chainId: ChainId): PayoutToken[] => {
   const tokens = payoutTokens.filter((token) => token.chainId === chainId);
-  return tokens.length > 0 ? tokens : MAINNET_TOKENS;
+  
+  return tokens.filter((token) => token.name === "ETH");
 };
