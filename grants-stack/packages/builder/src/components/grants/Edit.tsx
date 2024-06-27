@@ -4,11 +4,7 @@ import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { useSwitchNetwork } from "wagmi";
 import { fetchGrantData } from "../../actions/grantsMetadata";
-import {
-  credentialsSaved,
-  formReset,
-  metadataSaved,
-} from "../../actions/projectForm";
+import { formReset, metadataSaved } from "../../actions/projectForm";
 import { RootState } from "../../reducers";
 import { Status as GrantsMetadataStatus } from "../../reducers/grantsMetadata";
 import colors from "../../styles/colors";
@@ -20,7 +16,6 @@ import Preview from "../base/Preview";
 import ProjectForm from "../base/ProjectForm";
 import PurpleNotificationBox from "../base/PurpleNotificationBox";
 import SwitchNetworkModal from "../base/SwitchNetworkModal";
-import VerificationForm from "../base/VerificationForm";
 import Cross from "../icons/Cross";
 
 function EditProject() {
@@ -86,10 +81,6 @@ function EditProject() {
           ...props.projectMetadata,
         })
       );
-
-      if (props.projectMetadata.credentials !== undefined) {
-        dispatch(credentialsSaved(props.projectMetadata.credentials));
-      }
     }
 
     return () => {
@@ -162,12 +153,6 @@ function EditProject() {
       case ProjectFormStatus.Metadata:
         return (
           <ProjectForm
-            setVerifying={(verifyUpdate) => setFormStatus(verifyUpdate)}
-          />
-        );
-      case ProjectFormStatus.Verification:
-        return (
-          <VerificationForm
             setVerifying={(verifyUpdate) => setFormStatus(verifyUpdate)}
           />
         );
