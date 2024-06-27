@@ -245,3 +245,27 @@ export const useAlreadyContributed = (
     alreadyContributed: data,
   };
 };
+
+export const useGetContributions = (
+  dataLayer: DataLayer,
+  chainId: number,
+  roundId: string
+) => {
+  const { data, error } = useSWR(
+    ["alreadyContributed", chainId, roundId],
+    async () => {
+      const voiceCreditBalance =
+        await dataLayer.getContributionsByChainIdAndRoundIDWithoutAddress({
+          chainId: chainId,
+          roundId: roundId,
+        });
+      return voiceCreditBalance;
+    }
+  );
+
+  return {
+    isLoading: !data && !error,
+    isError: !!error,
+    totalDonations: data,
+  };
+};

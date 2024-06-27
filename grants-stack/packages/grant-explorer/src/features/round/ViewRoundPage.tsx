@@ -69,7 +69,10 @@ import {
 } from "@heroicons/react/24/outline";
 import { Box, Tab, Tabs } from "@chakra-ui/react";
 import GenericModal from "../common/GenericModal";
-import { useAlreadyContributed } from "../projects/hooks/useRoundMaciMessages";
+import {
+  useAlreadyContributed,
+  useGetContributions,
+} from "../projects/hooks/useRoundMaciMessages";
 
 const builderURL = process.env.REACT_APP_BUILDER_URL;
 
@@ -979,8 +982,8 @@ const Stats = ({
   chainId: number;
   token?: VotingToken;
   tokenSymbol?: string;
-  totalDonations: number;
-  totalDonors: number;
+  totalDonations?: number;
+  totalDonors?: number;
   statsLoading: boolean;
 }): JSX.Element => {
   const tokenAmount =
@@ -990,6 +993,24 @@ const Stats = ({
   const matchingPoolUSD = poolTokenPrice
     ? Number(poolTokenPrice) * tokenAmount
     : undefined;
+
+  const dataLayer = useDataLayer();
+  const { totalDonations, isLoading } = useGetContributions(
+    dataLayer,
+    round.chainId!,
+    round.id!
+  );
+
+  let donationsCount: number = 0;
+  if (totalDonations) {
+    donationsCount = totalDonations.reduce(
+      (acc, contribution) =>
+        acc + Number(contribution.voiceCreditBalance) / 1e5,
+      0
+    );
+  }
+  const totalDonationsUSD = donationsCount * Number(poolTokenPrice);
+  const totalContributors = totalDonations?.length;
 
   return (
     <div className="max-w-5xl m-auto w-full">
@@ -1005,6 +1026,21 @@ const Stats = ({
         <StatCard
           statValue={formatAmount(totalProjects, true)}
           statName="Total Projects"
+          isValueLoading={statsLoading}
+        />
+        <StatCard
+          statValue={`${formatAmount(donationsCount, false)} ETH`}
+          secondaryStatValue={`${
+            totalDonationsUSD
+              ? `($${formatAmount(totalDonationsUSD ?? 0)})`
+              : ""
+          }`}
+          statName="Total ETH Crowdfunded"
+          isValueLoading={statsLoading}
+        />
+        <StatCard
+          statValue={totalContributors?.toString() ?? "0"}
+          statName="Total contributors"
           isValueLoading={statsLoading}
         />
       </div>
