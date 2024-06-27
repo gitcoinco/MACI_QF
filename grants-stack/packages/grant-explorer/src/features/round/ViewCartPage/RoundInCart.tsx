@@ -108,7 +108,7 @@ export function RoundInCart(
   const maxAllow = round && round.roundMetadata?.maciParameters?.maxContributionAmountAllowlisted
 
   const maxContributionAllowlisted = "1.0";
-  const maxContributionNonAllowlisted = "0.1";
+  const maxContributionNonAllowlisted = "0.01";
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     let value = event.target.value;
