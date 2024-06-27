@@ -546,18 +546,8 @@ function Sidebar(props: {
 }
 
 export function ProjectStats() {
-  const { chainId, roundId, applicationId } = useProjectDetailsParams();
+  const { chainId, roundId } = useProjectDetailsParams();
   const { round } = useRoundById(Number(chainId), roundId);
-  const dataLayer = useDataLayer();
-  const { data: application } = useApplication(
-    {
-      chainId: Number(chainId as string),
-      roundId,
-      applicationId: applicationId,
-    },
-    dataLayer
-  );
-
   const timeRemaining =
     round?.roundEndTime && !isInfiniteDate(round?.roundEndTime)
       ? formatDistanceToNowStrict(round.roundEndTime)
@@ -568,16 +558,6 @@ export function ProjectStats() {
 
   return (
     <div className="rounded-3xl flex-auto p-3 md:p-4 gap-4 flex flex-col text-blue-800">
-      <Stat
-        isLoading={!application}
-        value={`$${application?.totalAmountDonatedInUsd.toFixed(2)}`}
-      >
-        funding received in current round
-      </Stat>
-      <Stat isLoading={!application} value={application?.uniqueDonorsCount}>
-        contributors
-      </Stat>
-
       <Stat
         isLoading={isBeforeRoundEndDate === undefined}
         value={timeRemaining}
@@ -593,8 +573,8 @@ export function ProjectStats() {
           isBeforeRoundEndDate === undefined
             ? ""
             : isBeforeRoundEndDate
-            ? "to go"
-            : "Round ended"
+              ? "to go"
+              : "Round ended"
         }
       </Stat>
     </div>

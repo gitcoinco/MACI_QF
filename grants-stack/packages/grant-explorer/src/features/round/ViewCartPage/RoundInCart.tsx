@@ -166,6 +166,7 @@ export function RoundInCart(
         0n
       )
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [donatedAmount, donationInput, props.roundCart]);
 
   if (alreadyContributed && !isActiveRound) {

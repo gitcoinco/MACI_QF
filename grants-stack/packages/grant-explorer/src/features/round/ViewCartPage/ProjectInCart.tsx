@@ -12,11 +12,8 @@ import {
   Image,
   Text,
   Input,
-  InputGroup,
-  InputRightElement,
 } from "@chakra-ui/react";
 import { groupProjectsInCart } from "../../api/utils";
-import { parseEther } from "viem";
 
 export function ProjectInCart(
   props: React.ComponentProps<"div"> & {

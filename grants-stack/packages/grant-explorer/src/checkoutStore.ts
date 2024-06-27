@@ -28,7 +28,7 @@ import {
 } from "./features/api/voting";
 import { groupBy, uniq } from "lodash-es";
 import { getEnabledChains } from "./app/chainConfig";
-import { WalletClient, PublicClient } from "wagmi";
+import { WalletClient } from "wagmi";
 import { getPublicClient } from "@wagmi/core";
 import { decodeAbiParameters, parseAbiParameters } from "viem";
 
@@ -269,7 +269,6 @@ export const useCheckoutStore = create<CheckoutState>()(
           string,
           Record<string, bigint>
         > = {};
-        const SINGLEVOTE = 10n ** 5n;
 
         const voteIdMap: { [key: string]: bigint } = {};
 

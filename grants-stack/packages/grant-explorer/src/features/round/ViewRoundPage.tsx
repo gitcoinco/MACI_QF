@@ -930,7 +930,6 @@ const RoundStatsTabContent = ({
               token={token}
               tokenSymbol={tokenSymbol}
               round={round}
-              totalCrowdfunded={totalUSDCrowdfunded}
               totalDonations={totalDonations}
               totalDonors={round.uniqueDonorsCount ?? 0}
               totalProjects={applications?.length ?? 0}
@@ -970,16 +969,12 @@ const formatAmount = (amount: string | number, noDigits?: boolean) => {
 
 const Stats = ({
   round,
-  totalCrowdfunded,
   totalProjects,
   token,
   tokenSymbol,
-  totalDonations,
-  totalDonors,
   statsLoading,
 }: {
   round: Round;
-  totalCrowdfunded: number;
   totalProjects: number;
   chainId: number;
   token?: VotingToken;
@@ -992,19 +987,15 @@ const Stats = ({
     round.roundMetadata?.quadraticFundingConfig?.matchingFundsAvailable ?? 0;
 
   const { data: poolTokenPrice } = useTokenPrice(token?.redstoneTokenId);
-
   const matchingPoolUSD = poolTokenPrice
     ? Number(poolTokenPrice) * tokenAmount
     : undefined;
-  const matchingCapPercent =
-    round.roundMetadata?.quadraticFundingConfig?.matchingCapAmount ?? 0;
-  const matchingCapTokenValue = (tokenAmount * matchingCapPercent) / 100;
 
   return (
     <div className="max-w-5xl m-auto w-full">
       <div className={`xl:grid-cols-3 grid grid-cols-2 gap-2 sm:gap-4`}>
         <StatCard
-          statValue={`${formatAmount(tokenAmount, true)} ${tokenSymbol}`}
+          statValue={`${formatAmount(tokenAmount, false)} ${tokenSymbol}`}
           secondaryStatValue={`${
             matchingPoolUSD ? `($${formatAmount(matchingPoolUSD ?? 0)})` : ""
           }`}
@@ -1012,36 +1003,8 @@ const Stats = ({
           isValueLoading={statsLoading}
         />
         <StatCard
-          statValue={`$${formatAmount(totalCrowdfunded.toFixed(2))}`}
-          statName="Total USD Crowdfunded"
-          isValueLoading={statsLoading}
-        />
-        {!!matchingCapPercent && (
-          <StatCard
-            statValue={`${matchingCapPercent.toFixed()}% `}
-            secondaryStatValue={`(${formatAmount(
-              matchingCapTokenValue,
-              true
-            )} ${tokenSymbol})`}
-            statName="Matching Cap"
-            isValueLoading={statsLoading}
-          />
-        )}
-
-        <StatCard
           statValue={formatAmount(totalProjects, true)}
           statName="Total Projects"
-          isValueLoading={statsLoading}
-        />
-
-        <StatCard
-          statValue={formatAmount(totalDonations, true)}
-          statName="Total Donations"
-          isValueLoading={statsLoading}
-        />
-        <StatCard
-          statValue={formatAmount(totalDonors, true)}
-          statName="Total Donors"
           isValueLoading={statsLoading}
         />
       </div>
