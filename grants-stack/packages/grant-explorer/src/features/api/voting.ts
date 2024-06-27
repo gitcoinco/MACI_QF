@@ -4,7 +4,6 @@ import {
   Hex,
   hexToNumber,
   pad,
-  parseAbi,
   parseAbiParameters,
   parseUnits,
   slice,
@@ -22,10 +21,9 @@ import {
 import { WalletClient } from "wagmi";
 import { VotingToken } from "common";
 import { NATIVE } from "common/dist/allo/common";
-import { P } from "vitest/dist/reporters-5f784f42";
-import { get } from "lodash";
 import { getPublicClient } from "@wagmi/core";
-
+import { getMACIABI } from "common/src/allo/voting";
+import { getZupassRegistryAddress } from "common/src/allowlist";
 type SignPermitProps = {
   walletClient: WalletClient;
   contractAddress: Hex;
@@ -293,21 +291,17 @@ export const prepareAllocationData = ({
   return data;
 };
 
-const abi = parseAbi([
-  "function getPool(uint256) view returns ((bytes32 profileId, address strategy, address token, (uint256,string) metadata, bytes32 managerRole, bytes32 adminRole))",
-  "function usedRoundNullifiers(address, uint256) view returns (bool)",
-]);
-const alloContractAddress =
-  "0x1133ea7af70876e64665ecd07c0a0476d09465a1" as `0x${string}`;
+const abi = getMACIABI();
 
-const ZuPassRegistryAddress = getAddress(
-  "0x455cC27badb067cb9b7cdE52F153DfebC83B1A99"
-);
 export const isRoundZuProofReused = async (
   pcd: string,
   chainId: number,
   roundId: string
 ) => {
+  const alloContractAddress = getAlloAddress(chainId);
+
+  const ZuPassRegistryAddress = getZupassRegistryAddress(chainId);
+
   const publicClient = getPublicClient({
     chainId,
   });
@@ -329,7 +323,7 @@ export const isRoundZuProofReused = async (
     functionName: "usedRoundNullifiers",
     args: [pool.strategy as `0x${string}`, emailHash],
   });
-  console.log("isAlreadyUsedZupass In Round?  ", isUsed);
+
   return isUsed;
 };
 
@@ -342,6 +336,7 @@ import {
   Message,
 } from "maci-domainobjs";
 import { generateWitness } from "./pcd";
+import { getAlloAddress } from "common/dist/allo/backends/allo-v2";
 
 /**
  * Convert to MACI Message object
