@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { CartProject, MACIContributions } from "../../api/types";
 import { useRoundById } from "../../../context/RoundContext";
 import { ProjectInCart } from "./ProjectInCart";
-import { parseUnits } from "viem";
+import { formatEther, parseUnits } from "viem";
 import { useAccount } from "wagmi";
 import {
   Button,
@@ -105,19 +105,12 @@ export function RoundInCart(
   const currentTime = new Date();
   const isActiveRound = round && round.roundEndTime > currentTime;
 
-  const maxContributionAllowlisted = round
-    ? BigInt(
-        round.roundMetadata?.maciParameters?.maxContributionAmountAllowlisted ??
-          2n
-      ).toString()
-    : "1.0";
-  const maxContributionNonAllowlisted = round
-    ? BigInt(
-        round.roundMetadata?.maciParameters
-          ?.maxContributionAmountNonAllowlisted ?? 1n
-      ).toString()
-    : "0.1";
+  const maxAllow =
+    round &&
+    round.roundMetadata?.maciParameters?.maxContributionAmountAllowlisted;
 
+  const maxContributionAllowlisted = "1.0";
+  const maxContributionNonAllowlisted = "0.1";
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     let value = event.target.value;
     value =
@@ -125,7 +118,7 @@ export function RoundInCart(
         ? maxContributionAllowlisted
         : pcdFetched === true
           ? value
-          : Number(value) >= Number(maxContributionNonAllowlisted)
+          : formatEther(BigInt(value)) >= maxContributionNonAllowlisted
             ? maxContributionNonAllowlisted
             : value;
     value = value === "" ? "0.0" : value;
@@ -197,7 +190,7 @@ export function RoundInCart(
                   {!pcdFetched ? (
                     <p className="text-sm pt-2 italic mb-5 mr-2">
                       Your max allowed contribution amount is{" "}
-                      {maxContributionNonAllowlisted} ETH.{" "}
+                      {Number(maxContributionNonAllowlisted) / 1e18} ETH.{" "}
                       <Tooltip
                         label="Click to join the allowlist"
                         aria-label="Click to join the allowlist"
@@ -211,7 +204,8 @@ export function RoundInCart(
                         </a>
                       </Tooltip>
                       <div className="text-sm italic mb-5 mr-2">
-                        to contribute up to {maxContributionAllowlisted} ETH.
+                        to contribute up to{" "}
+                        {Number(maxContributionAllowlisted) / 1e18} ETH.
                       </div>
                     </p>
                   ) : (
@@ -220,7 +214,8 @@ export function RoundInCart(
                         You successfuly proved your Zuzalu commitment you can
                       </p>
                       <p className="text-sm italic mb-5 mr-2">
-                        now contribute up to {maxContributionAllowlisted} ETH.
+                        now contribute up to{" "}
+                        {Number(maxContributionAllowlisted) / 1e18} ETH.
                       </p>
                     </div>
                   )}
