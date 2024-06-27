@@ -14,6 +14,8 @@ import {
   ModalBody,
   ModalCloseButton,
   ModalFooter,
+  Box,
+  Flex,
 } from "@chakra-ui/react";
 import { VotingToken } from "common";
 import { SummaryContainer } from "./SummaryContainer";
@@ -55,31 +57,32 @@ export function RoundInCart(
   const [enabled, setEnabled] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [donationInput, setDonationInput] = useState<string>(
-    roundCart
-      .reduce(
+    (
+      roundCart.reduce(
         (acc, project) =>
           acc + (isNaN(Number(project.amount)) ? 0 : Number(project.amount)),
         0
-      )
-      .toString()
+      ) / 1e5
+    ).toString()
   );
   const [donatedAmount, setDonatedAmount] = useState<bigint>(
     BigInt(Number(donationInput) * 1e18)
   );
-  // const [voiceCreditBalance, setVoiceCreditBalance] = useState<number>(
-  //   Number(donatedAmount) / 1e13
-  // );
 
-  // const [usedVoiceCredits, setUsedVoiceCredits] = useState<bigint>(
-  //   roundCart.reduce(
-  //     (acc, project) =>
-  //       acc +
-  //       (isNaN(Number(project.amount)) || Number(project.amount) === 0
-  //         ? 0n
-  //         : bnSqrt(BigInt(Number(project.amount) * 1e5)) ** 2n),
-  //     0n
-  //   )
-  // );
+  const [voiceCreditBalance, setVoiceCreditBalance] = useState<number>(
+    Number(donatedAmount) / 1e13
+  );
+
+  const [usedVoiceCredits, setUsedVoiceCredits] = useState<bigint>(
+    roundCart.reduce(
+      (acc, project) =>
+        acc +
+        (isNaN(Number(project.amount)) || Number(project.amount) === 0
+          ? 0n
+          : BigInt(Number(project.amount))),
+      0n
+    )
+  );
 
   const alreadyContributed = useMemo(() => {
     return (Number(maciContributions?.encrypted?.voiceCreditBalance) ?? 0) > 0;
@@ -88,6 +91,7 @@ export function RoundInCart(
   const votingToken = selectedPayoutToken;
 
   const validObjEventIDs = round?.roundMetadata?.maciParameters?.validEventIDs;
+
   const array = validObjEventIDs
     ? validObjEventIDs.map((eventId) => BigInt(eventId.eventID))
     : [];
@@ -130,7 +134,9 @@ export function RoundInCart(
       setDonationInput(value);
       const amountToDonate = parseUnits(value, votingToken.decimal);
       setDonatedAmount(amountToDonate);
-      // setVoiceCreditBalance(Number((Number(amountToDonate) / 1e13).toFixed(0)));
+      setVoiceCreditBalance(
+        parseInt((Number(amountToDonate) / 1e13).toString())
+      );
     }
   };
 
@@ -151,16 +157,16 @@ export function RoundInCart(
   }, [address, filteredEvents]);
 
   useEffect(() => {
-    // setUsedVoiceCredits(
-    //   roundCart.reduce(
-    //     (acc, project) =>
-    //       acc +
-    //       (isNaN(Number(project.amount)) || Number(project.amount) === 0
-    //         ? 0n
-    //         : bnSqrt(BigInt((Number(project.amount) ** 1e5).toFixed(0))) ** 2n),
-    //     0n
-    //   )
-    // );
+    setUsedVoiceCredits(
+      roundCart.reduce(
+        (acc, project) =>
+          acc +
+          (isNaN(Number(project.amount)) || Number(project.amount) === 0
+            ? 0n
+            : BigInt(Number(project.amount))),
+        0n
+      )
+    );
   }, [donatedAmount, donationInput, props.roundCart]);
 
   if (alreadyContributed && !isActiveRound) {
@@ -168,7 +174,6 @@ export function RoundInCart(
       props.handleRemoveProjectFromCart(project, address as string);
     });
   }
-
   if (!isActiveRound) {
     return null;
   }
@@ -187,7 +192,7 @@ export function RoundInCart(
                   ({roundCart.length})
                 </p>
               </div>
-              <div className="flex flex-row items-center">
+              <div className="flex flex-col items-center">
                 <div className="flex flex-col">
                   {!pcdFetched ? (
                     <p className="text-sm pt-2 italic mb-5 mr-2">
@@ -205,14 +210,19 @@ export function RoundInCart(
                           Join the allowlist
                         </a>
                       </Tooltip>
-                      to increase your limit to {maxContributionAllowlisted}{" "}
-                      ETH.
+                      <div className="text-sm italic mb-5 mr-2">
+                        to contribute up to {maxContributionAllowlisted} ETH.
+                      </div>
                     </p>
                   ) : (
-                    <p className="text-sm pt-2 italic mb-5 mr-2">
-                      You successfuly proved your Zuzalu commitment you can now
-                      contribute up to {maxContributionAllowlisted} ETH.
-                    </p>
+                    <div className="flex flex-col">
+                      <p className="text-sm pt-2 italic ">
+                        You successfuly proved your Zuzalu commitment you can
+                      </p>
+                      <p className="text-sm italic mb-5 mr-2">
+                        now contribute up to {maxContributionAllowlisted} ETH.
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -257,22 +267,42 @@ export function RoundInCart(
             })}
           </div>
         </div>
-        {/* <div className="p-4 bg-grey-100 rounded-b-xl font-medium text-lg">
-          <div className="flex flex-row justify-between items-center">
-            <div className="flex flex-row gap-3 justify-center pt-1 pr-2">
-              <div className="font-semibold">
-                <p>
-                  <span className="mr-2">voiceCreditBalance</span>
-                  {voiceCreditBalance.toFixed(0)}
-                </p>
-                <p>
-                  <span className="mr-2">usedVoiceCredits</span>
-                  {usedVoiceCredits.toString()}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div> */}
+        <Box p={4} bg="gray.100" rounded="xl" fontWeight="medium" fontSize="lg">
+          <Flex
+            flexDirection="row"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Flex
+              flexDirection="row"
+              gap={3}
+              justifyContent="center"
+              pt={1}
+              pr={2}
+            >
+              <Box fontWeight="semibold">
+                <Tooltip
+                  label="Voice credits represent your voting power. 1e5 voice credits equal 1 ETH."
+                  aria-label="Voice credits tooltip"
+                >
+                  <p>
+                    Voice Credit Balance: {voiceCreditBalance} (
+                    {(voiceCreditBalance / 1e5).toFixed(5)} ETH)
+                  </p>
+                </Tooltip>
+                <Tooltip
+                  label="Used voice credits show how many of your voice credits have been used."
+                  aria-label="Used voice credits tooltip"
+                >
+                  <p>
+                    Used Voice Credits: {usedVoiceCredits.toString()} (
+                    {(Number(usedVoiceCredits) / 1e5).toFixed(5)} ETH)
+                  </p>
+                </Tooltip>
+              </Box>
+            </Flex>
+          </Flex>
+        </Box>
       </div>
       <div className="w-1/4 ml-[4%]">
         <SummaryContainer

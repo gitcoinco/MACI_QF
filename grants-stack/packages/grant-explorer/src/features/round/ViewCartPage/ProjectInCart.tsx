@@ -16,6 +16,7 @@ import {
   InputRightElement,
 } from "@chakra-ui/react";
 import { groupProjectsInCart } from "../../api/utils";
+import { parseEther } from "viem";
 
 export function ProjectInCart(
   props: React.ComponentProps<"div"> & {
@@ -49,31 +50,29 @@ export function ProjectInCart(
   const groupedProjects = groupProjectsInCart(projects);
   const roundProjects = groupedProjects[project.chainId][project.roundId];
 
-  const [percentage, setPercentage] = useState<string>(
+  const [votes, setVotes] = useState<string>(
     totalAmount === 0
       ? "0"
-      : ((Number(project.amount) / totalAmount) * 100).toFixed(10)
+      : Number(
+          project.amount === "" ? "0" : Math.sqrt(Number(project.amount))
+        ).toString()
   );
 
-  const handlePercentageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newPercentage = e.target.value;
-    if (parseFloat(newPercentage) > 100 || parseFloat(newPercentage) < 0) {
-      return;
-    }
-    updateProjectAmount(index, parseFloat(newPercentage));
+  const handleVotesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVotes = e.target.value === "" ? "0" : e.target.value;
+
+    updateProjectAmount(index, parseInt(newVotes));
   };
 
-  const updateProjectAmount = (currentIndex: number, newPercentage: number) => {
-    const newAmount = (totalAmount * newPercentage) / 100;
+  const updateProjectAmount = (currentIndex: number, votes: number) => {
+    const voiceCredits = votes ** 2;
+    const newAmount = voiceCredits;
 
     // find the total amount of all projects in the round except the current project
     const totalAmountOfOtherProjects = roundProjects
       .filter((_, i) => i !== currentIndex)
-      .reduce(
-        (acc, project) => acc + Number(parseFloat(project.amount).toFixed(10)),
-        0
-      );
-    if (totalAmountOfOtherProjects + newAmount > totalAmount) {
+      .reduce((acc, project) => acc + Number(project.amount), 0);
+    if (totalAmountOfOtherProjects + newAmount > totalAmount * 1e5) {
       store.updateUserDonationAmount(
         project.chainId,
         project.roundId,
@@ -88,31 +87,39 @@ export function ProjectInCart(
       project.chainId,
       project.roundId,
       project.grantApplicationId,
-      newAmount.toFixed(10),
+      newAmount.toString(),
       props.walletAddress
     );
-    setPercentage(newPercentage.toFixed(10));
+    setVotes(votes.toString());
   };
+  // function printPerfectSquaresWithMapping(n: number): void {
+  //   const results: string[] = [];
 
-  useEffect(() => {
-    const newAmount = ((totalAmount * parseFloat(percentage)) / 100).toFixed(
-      10
-    );
-    store.updateUserDonationAmount(
-      project.chainId,
-      project.roundId,
-      project.grantApplicationId,
-      newAmount,
-      props.walletAddress
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totalAmount, props.alreadyContributed]);
+  //   for (let i = 1; i <= n; i++) {
+  //     const square = i * i;
+  //     const mappedValue = (square / 1e5) * props.payoutTokenPrice;
+  //     results.push(`Square of ${i} is ${square}, mapped value: ${mappedValue}`);
+  //   }
 
+  //   console.log(results.join("\n"));
+  // }
   useEffect(() => {
-    if (totalAmount === 0) return;
-    setPercentage(((Number(project.amount) / totalAmount) * 100).toFixed(10));
+    if (totalAmount === 0) {
+      store.updateUserDonationAmount(
+        project.chainId,
+        project.roundId,
+        project.grantApplicationId,
+        "0",
+        props.walletAddress
+      );
+      setVotes("0");
+
+      return;
+    }
+    setVotes(votes);
+    // printPerfectSquaresWithMapping(10);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project.amount]);
+  }, [project.amount, votes, totalAmount]);
 
   return (
     <Box
@@ -187,28 +194,28 @@ export function ProjectInCart(
         </Flex>
         <Flex align="center">
           <Box>
-            <InputGroup size="sm">
-              <Input
-                aria-label={`Donation percentage for project ${project.projectMetadata?.title}`}
-                value={Number(percentage).toFixed(0)}
-                onChange={handlePercentageChange}
-                className="rounded-xl"
-                min={0}
-                max={100}
-                type="number"
-                width="80px"
-                textAlign="center"
-              />
-              <InputRightElement width="2.5rem" children="%" />
-            </InputGroup>
+            {/* <InputGroup size="sm"> */}
+            <Input
+              aria-label={`Donation votes for project ${project.projectMetadata?.title}`}
+              value={votes}
+              onChange={handleVotesChange}
+              className="rounded-xl"
+              min={0}
+              type="number"
+              width="80px"
+              textAlign="center"
+            />
+            {/* <InputRightElement width="2.5rem" children="%" />
+            </InputGroup> */}
           </Box>
           {props.payoutTokenPrice && (
             <Box ml={2}>
               <Text fontSize="sm" color="gray.400">
                 ${" "}
-                {(parseFloat(project.amount) * props.payoutTokenPrice).toFixed(
-                  2
-                )}
+                {(
+                  (Number(project.amount) / 1e5) *
+                  props.payoutTokenPrice
+                ).toFixed(2)}
               </Text>
             </Box>
           )}

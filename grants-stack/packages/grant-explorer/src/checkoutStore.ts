@@ -82,7 +82,6 @@ interface CheckoutState {
     chainId: ChainId,
     roundId: string,
     walletClient: WalletClient,
-    publicClient: PublicClient,
     dataLayer: DataLayer,
     walletAddress: string,
     pcd?: string
@@ -113,7 +112,7 @@ const defaultProgressStatusForAllChains = Object.fromEntries(
 
 const abi = parseAbi([
   "function getPool(uint256) view returns ((bytes32 profileId, address strategy, address token, (uint256,string) metadata, bytes32 managerRole, bytes32 adminRole))",
-  "function _pollContracts() view returns ((address poll, address messageProcessor,address tally,address subsidy))",
+  "function pollContracts() view returns ((address poll, address messageProcessor,address tally,address subsidy))",
   "function coordinatorPubKey() view returns (uint256 x, uint256 y)",
   "function allocate(uint256, bytes) external payable",
 
@@ -198,7 +197,6 @@ export const useCheckoutStore = create<CheckoutState>()(
       chainId: ChainId,
       roundId: string,
       walletClient: WalletClient,
-      publicClient: PublicClient,
       dataLayer: DataLayer,
       walletAddress: string,
       pcd?: string
@@ -259,7 +257,12 @@ export const useCheckoutStore = create<CheckoutState>()(
         groupedDonations[roundId].forEach((donation) => {
           groupedAmounts[roundId] =
             (groupedAmounts[roundId] || 0n) +
-            parseUnits(donation.amount, token.decimal);
+            parseUnits(
+              (
+                Number(donation.amount === "" ? "0" : donation.amount) / 1e5
+              ).toString(),
+              token.decimal
+            );
         });
 
         const DonationVotesEachRound: Record<
@@ -286,10 +289,9 @@ export const useCheckoutStore = create<CheckoutState>()(
 
         // Process each donation
         groupedDonations[roundId].forEach((donation) => {
-          const donationAmount = parseUnits(donation.amount, token.decimal);
-
-          // Calculate the vote weight
-          const voteWeight = (SINGLEVOTE * donationAmount) / 10n ** 18n;
+          const voteWeight = BigInt(
+            donation.amount === "" ? "0" : donation.amount
+          );
 
           // Ensure DonationVotesEachRound is correctly updated
           if (!DonationVotesEachRound[donation.roundId]) {
@@ -326,6 +328,8 @@ export const useCheckoutStore = create<CheckoutState>()(
         });
 
         messagesPerRound[roundId] = messages;
+
+        console.log("Messages", messages);
 
         get().setContributionStatusForChain(
           chainId,
@@ -480,7 +484,18 @@ export const useCheckoutStore = create<CheckoutState>()(
         );
 
         const totalDonationAmount = donations.reduce(
-          (acc, donation) => acc + parseUnits(donation.amount, token.decimal),
+          (acc, project) =>
+            acc +
+            parseUnits(
+              project.amount === ""
+                ? "0"
+                : isNaN(Number(project.amount))
+                  ? "0"
+                  : (
+                      Number(project.amount === "" ? "0" : project.amount) / 1e5
+                    ).toString(),
+              token.decimal
+            ),
           0n
         );
         const groupedAmounts: Record<string, bigint> = {};
@@ -546,7 +561,9 @@ export const useCheckoutStore = create<CheckoutState>()(
           ] as bigint;
           messages.push({
             stateIndex: 1n,
-            voteOptionIndex: BigInt(voteIdMap[donation.anchorAddress ?? ""]),
+            voteOptionIndex: BigInt(
+              voteIdMap[donation.anchorAddress ?? ""] ?? 0n
+            ),
             nonce: maxNonce,
             newVoteWeight: amount === 0n ? 0n : bnSqrt(amount),
           });
@@ -566,7 +583,7 @@ export const useCheckoutStore = create<CheckoutState>()(
         const pollContracts = await publicClient.readContract({
           abi: abi,
           address: pool.strategy as Hex,
-          functionName: "_pollContracts",
+          functionName: "pollContracts",
         });
 
         const poll = pollContracts as MACIPollContracts;
@@ -686,7 +703,7 @@ const allocate = async ({
   const pollContracts = await publicClient.readContract({
     abi: abi,
     address: pool.strategy as Hex,
-    functionName: "_pollContracts",
+    functionName: "pollContracts",
   });
 
   const poll = pollContracts as MACIPollContracts;
@@ -718,6 +735,7 @@ const allocate = async ({
       newVoteWeight: message.newVoteWeight,
     };
   });
+  console.log("Messages", Messages);
 
   return {
     messages: Messages,

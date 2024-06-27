@@ -13,13 +13,14 @@ import useSWR from "swr";
 import MRCProgressModal from "../../common/MRCProgressModal";
 import { MRCProgressModalBody } from "./MRCProgressModalBody";
 import { useCheckoutStore } from "../../../checkoutStore";
-import { formatUnits, parseUnits, zeroAddress } from "viem";
+import { formatEther, formatUnits, parseUnits, zeroAddress } from "viem";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { parseChainId } from "common/src/chains";
 import { fetchBalance, getPublicClient } from "@wagmi/core";
 import { useAllo } from "../../api/AlloWrapper";
 import { useDataLayer } from "data-layer";
 import { NATIVE } from "common";
+import { bigint } from "zod";
 
 export function SummaryContainer(props: {
   alreadyContributed: boolean;
@@ -113,7 +114,9 @@ export function SummaryContainer(props: {
                 ? "0"
                 : isNaN(Number(project.amount))
                   ? "0"
-                  : project.amount,
+                  : (
+                      Number(project.amount === "" ? "0" : project.amount) / 1e5
+                    ).toString(),
               votingToken.decimal
             ),
           0n
@@ -142,9 +145,6 @@ export function SummaryContainer(props: {
         parseChainId(chainId),
         roundId,
         walletClient,
-        getPublicClient({
-          chainId: Number(chainId),
-        }),
         dataLayer,
         address as string,
         pcd
@@ -233,16 +233,32 @@ export function SummaryContainer(props: {
                 <p className="mb-2">Your total contribution</p>
               </div>
               <div className="flex justify-end mt-4">
-                <p>
-                  ${" "}
-                  {(
-                    Number(formatUnits(totalDonations, votingToken.decimal)) *
-                    payoutTokenPrice
-                  ).toFixed(2)}
-                </p>
+                <div className="flex flex-col">
+                  <p className="text-right">
+                    <span data-testid={"totalDonation"} className="mr-2">
+                      {Number(formatEther(donatedAmount)).toFixed(5)}
+                    </span>
+                    <span data-testid={"summaryPayoutToken"}>
+                      {votingToken.name}
+                    </span>
+                  </p>
+                  {payoutTokenPrice && (
+                    <div className="flex justify-end mt-2">
+                      <p className="text-[14px] text-[#979998] font-bold">
+                        ${" "}
+                        {(
+                          Number(
+                            formatUnits(totalDonations, votingToken.decimal)
+                          ) * payoutTokenPrice
+                        ).toFixed(2)}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
+
           {filteredProjects.some(
             (project) => !project.amount || Number(project.amount) === 0
           ) &&
@@ -274,10 +290,8 @@ export function SummaryContainer(props: {
           ? totalDonations > tokenBalance && !alreadyContributed
             ? "Not enough funds to donate"
             : donatedAmount < totalDonations
-              ? "Exceeds donation limit"
-              : alreadyContributed
-                ? "You can only contribute once per round."
-                : "Submit your donation!"
+              ? "Exceeds donation amount"
+              : "Submit your donation!"
           : "Connect wallet to continue"}
       </Button>
       <PayoutModals />

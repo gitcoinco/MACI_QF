@@ -66,7 +66,7 @@ export function Summary({
             </Tooltip>
           </div>
         </div>
-        <div className="flex flex-col">
+        {/* <div className="flex flex-col">
           <p className="text-right">
             <span data-testid={"totalDonation"} className="mr-2">
               {formatEther(totalDonation)}
@@ -82,7 +82,7 @@ export function Summary({
               </p>
             </div>
           )}
-        </div>
+        </div> */}
       </div>
       {insufficientFunds && !alreadyContributed && (
         <p
