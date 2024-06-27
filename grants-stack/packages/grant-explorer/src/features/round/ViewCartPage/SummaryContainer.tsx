@@ -16,11 +16,10 @@ import { useCheckoutStore } from "../../../checkoutStore";
 import { formatEther, formatUnits, parseUnits, zeroAddress } from "viem";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { parseChainId } from "common/src/chains";
-import { fetchBalance, getPublicClient } from "@wagmi/core";
+import { fetchBalance } from "@wagmi/core";
 import { useAllo } from "../../api/AlloWrapper";
 import { useDataLayer } from "data-layer";
 import { NATIVE } from "common";
-import { bigint } from "zod";
 
 export function SummaryContainer(props: {
   alreadyContributed: boolean;

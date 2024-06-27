@@ -759,22 +759,11 @@ function ProjectCard(props: {
       </Link>
       {!isDirectRound(round) && (
         <CardFooter className="bg-white">
-          <CardContent className="px-2 text-xs ">
-            <div className="border-t pt-1 flex items-center justify-between ">
-              <div>
-                <p>
-                  $
-                  {props.crowdfundedUSD?.toLocaleString("en-US", {
-                    maximumFractionDigits: 2,
-                  })}
-                </p>
-                <p className="text-[11px] font-mono">
-                  total raised by {props.uniqueContributorsCount} contributors
-                </p>
-              </div>
+          <CardContent className="px-2 text-xs">
+            <div className="border-t pt-1 flex items-center justify-end mt-3">
               {props.isBeforeRoundEndDate &&
                 address &&
-                !alreadyContributed &&
+                alreadyContributed &&
                 !isLoading && (
                   <CartButton
                     project={project}

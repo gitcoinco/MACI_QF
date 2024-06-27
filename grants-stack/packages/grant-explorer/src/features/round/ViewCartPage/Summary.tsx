@@ -1,6 +1,6 @@
-import { ChainId, useTokenPrice, VotingToken } from "common";
+import { ChainId, VotingToken } from "common";
 import { CHAINS } from "../../api/utils";
-import { zeroAddress, formatEther } from "viem";
+import { zeroAddress } from "viem";
 import { useAccount, useBalance } from "wagmi";
 import { InformationCircleIcon } from "@heroicons/react/24/solid";
 import { Tooltip } from "@chakra-ui/react";
@@ -20,16 +20,7 @@ export function Summary({
   alreadyContributed,
   roundName,
 }: SummaryProps) {
-  const { data: payoutTokenPrice } = useTokenPrice(
-    selectedPayoutToken.redstoneTokenId
-  );
-
-  const amount = formatEther(totalDonation);
-  const totalDonationInUSD =
-    payoutTokenPrice && Number(amount) * Number(payoutTokenPrice);
-
   const { address } = useAccount();
-
   const { data: balance } = useBalance({
     address,
     token:
