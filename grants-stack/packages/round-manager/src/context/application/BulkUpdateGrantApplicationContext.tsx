@@ -216,10 +216,24 @@ async function _bulkUpdateGrantApplication({
           })
           .execute();
       } else if (roundStrategy === "MACIQF") {
+        // iterate through selected applications and add the statusSnapshot property of applications to it
+        const updatedSelectedApplications = selectedApplications.map(
+          (selectedApplication) => {
+            const application = applications.find(
+              (app) =>
+                app.applicationIndex === selectedApplication.applicationIndex
+            );
+            return {
+              ...selectedApplication,
+              statusSnapshots: application?.statusSnapshots,
+            };
+          }
+        );
+
         result = await allo
           .bulkMACIUpdateApplicationStatus({
             roundId,
-            applicationsToUpdate: selectedApplications.map((a) => ({
+            applicationsToUpdate: updatedSelectedApplications.map((a) => ({
               address: a.id as string,
               status: a.status,
             })),

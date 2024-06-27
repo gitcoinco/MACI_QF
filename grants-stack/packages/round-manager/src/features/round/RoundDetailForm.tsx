@@ -242,8 +242,7 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
     // Assuming Keypair is a part of your cryptographic utilities
     const keypair = new Keypair();
     const rawPrivKey = keypair.privKey.serialize();
-    const KP = { coordinatorKey: rawPrivKey };
-    const jsonString = JSON.stringify(KP, null, 2);
+    const jsonString = JSON.stringify(keypair.toJSON(), null, 2);
     const blob = new Blob([jsonString], { type: "application/json" });
     const link = document.createElement("a");
     link.download = "coordinatorKey.json";
@@ -253,6 +252,10 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
     document.body.removeChild(link);
     setPubKey(keypair.pubKey.serialize());
     setHasKey(true);
+    setValue(
+      "roundMetadata.maciParameters.coordinatorKeyPair",
+      keypair.pubKey.serialize()
+    );
     openModal(); // Open the alert dialog
   };
   return (
@@ -328,8 +331,15 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
                       <Input
                         type="text"
                         placeholder="Enter the MACI Coordinator Public Key"
-                        value={pubKey}
-                        onChange={(e) => setPubKey(e.target.value)}
+                        // value={pubKey}
+                        // onChange={(e) => setPubKey(e.target.value)}
+                        value={watch(
+                          "roundMetadata.maciParameters.coordinatorKeyPair"
+                        )}
+                        id="roundMetadata.maciParameters.coordinatorKeyPair"
+                        {...register(
+                          "roundMetadata.maciParameters.coordinatorKeyPair"
+                        )}
                         className="h-10 mt-2"
                       />
                     </>

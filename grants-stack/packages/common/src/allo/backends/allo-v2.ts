@@ -21,14 +21,7 @@ import {
   RoundApplicationAnswers,
   RoundCategory,
 } from "data-layer";
-import {
-  Abi,
-  Address,
-  Hex,
-  PublicClient,
-  getAddress,
-  zeroAddress,
-} from "viem";
+import { Abi, Address, Hex, PublicClient, getAddress, zeroAddress } from "viem";
 import { AnyJson, ChainId } from "../..";
 import { UpdateRoundParams, MatchingStatsData, VotingToken } from "../../types";
 import { Allo, AlloError, AlloOperation, CreateRoundArguments } from "../allo";
@@ -795,6 +788,9 @@ export class AlloV2 implements Allo {
     applicationsToUpdate: {
       address: string;
       status: ApplicationStatus;
+      statusSnapshots?: {
+        updatedAt: Date;
+      }[];
     }[];
   }): AlloOperation<
     Result<void>,
@@ -810,6 +806,7 @@ export class AlloV2 implements Allo {
       }
 
       let recipients: string[] = [];
+      let latestUpdateTimes: bigint[] = [];
       let statuses: bigint[] = [];
 
       // Process the applicationsToUpdate array
@@ -817,16 +814,29 @@ export class AlloV2 implements Allo {
         (acc, app) => {
           acc.recipients.push(app.address);
           acc.statuses.push(applicationStatusToNumber(app.status));
+          acc.latestUpdateTimes.push(
+            !app.statusSnapshots || app.statusSnapshots.length <= 1
+              ? 0n
+              : BigInt(
+                  app.statusSnapshots[
+                    app.statusSnapshots.length - 1
+                  ].updatedAt.getTime() / 1000
+                )
+          );
           return acc;
         },
-        { recipients: recipients, statuses: statuses }
+        {
+          recipients: recipients,
+          statuses: statuses,
+          latestUpdateTimes: latestUpdateTimes,
+        }
       );
 
       const txResult = await sendTransaction(this.transactionSender, {
         address: args.strategyAddress,
         abi: MACIQF as Abi,
         functionName: "reviewRecipients",
-        args: [recipients, statuses],
+        args: [recipients, latestUpdateTimes, statuses],
       });
 
       emit("transaction", txResult);
