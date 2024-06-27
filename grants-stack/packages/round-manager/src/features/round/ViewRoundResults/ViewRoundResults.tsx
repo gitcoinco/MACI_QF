@@ -423,8 +423,7 @@ function ViewRoundResults({
                 </span>
                 <span className="text-sm leading-5 text-gray-400 text-left">
                   Download the CSV file of vote coefficients for a detailed
-                  breakdown of transactions, passport scores, and donation
-                  amounts.
+                  breakdown of transactions and donation amounts.
                 </span>
               </div>
               <div className="flex flex-col mt-4 w-min">

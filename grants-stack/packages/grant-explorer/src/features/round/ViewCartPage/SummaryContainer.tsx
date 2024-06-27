@@ -8,7 +8,6 @@ import { useNavigate } from "react-router-dom";
 import { useAccount, useWalletClient } from "wagmi";
 import { Button } from "common/src/styles";
 import { InformationCircleIcon } from "@heroicons/react/24/solid";
-import { getClassForPassportColor } from "../../api/passport";
 import useSWR from "swr";
 import MRCProgressModal from "../../common/MRCProgressModal";
 import { MRCProgressModalBody } from "./MRCProgressModalBody";
@@ -215,9 +214,6 @@ export function SummaryContainer(props: {
     <div className="block font-semibold sticky top-20">
       <div className="px-4 pt-6 pb-4 rounded-t-3xl bg-grey-50 border border-grey-50">
         <h2 className="text-2xl border-b-2 pb-2 font-bold">Summary</h2>
-        <div
-          className={`flex flex-row items-center justify-between mt-2 font-semibold italic ${getClassForPassportColor("black")}`}
-        ></div>
         <div>
           <Summary
             chainId={parseChainId(chainId)}

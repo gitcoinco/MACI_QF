@@ -54,6 +54,7 @@ import { ethers } from "ethers";
 import { getConfig } from "common/src/config";
 import { zeroAddress } from "viem";
 import { NATIVE } from "common/dist/allo/common";
+import { Link } from "react-router-dom";
 
 type EditMode = {
   canEdit: boolean;
@@ -1747,21 +1748,6 @@ function Funding(props: {
           )}
         </div>
       </div>
-      <div
-        className={
-          props.editedRound?.roundMetadata?.quadraticFundingConfig
-            ?.minDonationThreshold
-            ? ""
-            : "hidden"
-        }
-      >
-        <span className="mt-4 inline-flex text-sm text-gray-600 mb-8 bg-grey-50 p-2 w-full rounded-lg">
-          Each donation has to be a minimum of{" "}
-          {props.editedRound?.roundMetadata?.quadraticFundingConfig
-            ?.minDonationThresholdAmount ?? 0}{" "}
-          USD equivalent for it to be eligible for matching.
-        </span>
-      </div>
       <div>
         <span className="mt-2 inline-flex font-light text-gray-400 mb-2">
           Sybil Defense
@@ -1769,113 +1755,9 @@ function Funding(props: {
       </div>
       <div>
         <span className="inline-flex text-sm font-light text-gray-600 mb-4">
-          Ensure that project supporters are not bots or sybil with Gitcoin
-          Passport. Learn more about Gitcoin Passport here.
+          Ensure that project supporters are not bots or sybil with Zupass.
+          Learn more about Zupass <Link to="https://zupass.org/">here</Link>.
         </span>
-      </div>
-      <div className="grid grid-cols-1 gap-4 mb-4">
-        <div>
-          <div
-            className={"text-sm leading-5 pb-1 flex items-center gap-1 mb-2"}
-          >
-            <Controller
-              control={props.control}
-              name="roundMetadata.quadraticFundingConfig.sybilDefense"
-              render={({ field }) => (
-                <input
-                  {...field}
-                  {...props.register(
-                    "roundMetadata.quadraticFundingConfig.sybilDefense"
-                  )}
-                  type="radio"
-                  value="yes"
-                  disabled={
-                    !props.editMode.canEdit &&
-                    !props.editedRound?.roundMetadata?.quadraticFundingConfig
-                      ?.sybilDefense
-                  }
-                  checked={
-                    props.editedRound?.roundMetadata?.quadraticFundingConfig
-                      ?.sybilDefense
-                  }
-                  onChange={(e) => {
-                    field.onChange(e.target.value);
-                    props.setEditedRound({
-                      ...props.editedRound,
-                      roundMetadata: {
-                        ...props.editedRound?.roundMetadata,
-                        quadraticFundingConfig: {
-                          ...props.editedRound?.roundMetadata
-                            .quadraticFundingConfig,
-                          sybilDefense: e.target.value === "yes",
-                        },
-                      },
-                    });
-                  }}
-                />
-              )}
-            />
-            Yes, enable Gitcoin Passport (Recommended)
-            <br />
-            Allow matching only for donation from project supporters that have
-            verified their identity on Gitcoin Passport.
-          </div>
-          <div
-            className={"text-sm leading-5 pb-1 flex items-center gap-1 mb-2"}
-          >
-            <Controller
-              control={props.control}
-              name="roundMetadata.quadraticFundingConfig.sybilDefense"
-              render={({ field }) => (
-                <input
-                  {...field}
-                  {...props.register(
-                    "roundMetadata.quadraticFundingConfig.sybilDefense"
-                  )}
-                  type="radio"
-                  value="no"
-                  checked={
-                    !props.editedRound?.roundMetadata?.quadraticFundingConfig
-                      ?.sybilDefense
-                  }
-                  disabled={
-                    !props.editMode.canEdit &&
-                    props.editedRound?.roundMetadata?.quadraticFundingConfig
-                      ?.sybilDefense
-                  }
-                  onChange={(e) => {
-                    field.onChange(e.target.value);
-                    props.setEditedRound({
-                      ...props.editedRound,
-                      roundMetadata: {
-                        ...props.editedRound?.roundMetadata,
-                        quadraticFundingConfig: {
-                          ...props.editedRound?.roundMetadata
-                            .quadraticFundingConfig,
-                          sybilDefense: e.target.value === "yes",
-                        },
-                      },
-                    });
-                  }}
-                />
-              )}
-            />
-            No, disable Gitcoin Passport
-            <br />
-            Allow matching for all donation, including potentially sybil ones.
-          </div>
-        </div>
-        {props.errors.roundMetadata && (
-          <p
-            className="text-xs text-pink-500 mt-1"
-            data-testid="sybil-defense-error"
-          >
-            {
-              props.errors.roundMetadata?.quadraticFundingConfig?.sybilDefense
-                ?.message
-            }
-          </p>
-        )}
       </div>
     </div>
   );

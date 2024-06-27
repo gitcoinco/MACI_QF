@@ -52,7 +52,6 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@gitcoinco/passport-sdk-types": "^0.2.0",
     "cross-fetch": "^4.0.0",
     "debug": "^4.3.4",
     "dotenv-flow": "^3.3.0",

@@ -7,8 +7,6 @@ import { XCircle } from "../../assets/icons";
 import { RootState } from "../../reducers";
 import { ChangeHandlers, ProjectFormStatus } from "../../types";
 import { TextInput } from "../grants/inputs";
-import Github from "../providers/Github";
-import Twitter from "../providers/Twitter";
 import Button, { ButtonVariants } from "./Button";
 import { validateVerificationForm } from "./formValidation";
 import FormValidationErrorList from "./FormValidationErrorList";
@@ -114,11 +112,6 @@ export default function VerificationForm({
               }
               prefixBoxText="@"
             />
-            <Twitter
-              handle={props.formMetaData.projectTwitter ?? ""}
-              verificationError={(providerError) => setFailed(providerError)}
-              canVerify={!!props.formMetaData.projectTwitter}
-            />
           </div>
         </div>
       </div>
@@ -152,23 +145,12 @@ export default function VerificationForm({
               value={props.formMetaData.projectGithub}
               changeHandler={handleInput}
               required={false}
-              tooltip={`In order to successfully verify,
-          please make sure that you are a public member of the GitHub organization.
-          GitHub organization and usernames are case sensitive.`}
               feedback={
                 feedback.find((fb) => fb.title === "projectGithub") ?? {
                   type: "none",
                   message: "",
                 }
               }
-            />
-            <Github
-              org={props.formMetaData.projectGithub ?? ""}
-              canVerify={
-                !!props.formMetaData.projectGithub &&
-                !!props.formMetaData.userGithub
-              }
-              verificationError={(providerError) => setFailed(providerError)}
             />
           </div>
         </div>

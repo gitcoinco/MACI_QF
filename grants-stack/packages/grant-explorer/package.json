@@ -137,7 +137,6 @@
     "@babel/preset-react": "^7.18.6",
     "@babel/preset-typescript": "^7.21.0",
     "@faker-js/faker": "^7.5.0",
-    "@gitcoinco/passport-sdk-types": "^0.2.0",
     "@testing-library/dom": ">=7.21.4 ",
     "@types/dompurify": "^2.4.0",
     "@types/ethereum-blockies": "^0.1.0",
