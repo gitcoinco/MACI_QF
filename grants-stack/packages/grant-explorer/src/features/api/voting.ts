@@ -4,6 +4,7 @@ import {
   Hex,
   hexToNumber,
   pad,
+  parseAbi,
   parseAbiParameters,
   parseUnits,
   slice,
@@ -11,10 +12,19 @@ import {
   TypedDataDomain,
   zeroAddress,
 } from "viem";
-import { CartProject, ProofArgs, IAllocateArgs, bigintArray38 } from "./types";
+import {
+  CartProject,
+  ProofArgs,
+  IAllocateArgs,
+  bigintArray38,
+  PoolInfo,
+} from "./types";
 import { WalletClient } from "wagmi";
 import { VotingToken } from "common";
 import { NATIVE } from "common/dist/allo/common";
+import { P } from "vitest/dist/reporters-5f784f42";
+import { get } from "lodash";
+import { getPublicClient } from "@wagmi/core";
 
 type SignPermitProps = {
   walletClient: WalletClient;
@@ -266,7 +276,7 @@ export const prepareAllocationData = ({
         dt._pubSignals as bigintArray38,
       ])
     : "0x";
-  
+
   const isAllowlistedProof = dt ? true : false;
 
   const pubKey = [
@@ -281,6 +291,46 @@ export const prepareAllocationData = ({
   ]);
 
   return data;
+};
+
+const abi = parseAbi([
+  "function getPool(uint256) view returns ((bytes32 profileId, address strategy, address token, (uint256,string) metadata, bytes32 managerRole, bytes32 adminRole))",
+  "function usedRoundNullifiers(address, uint256) view returns (bool)",
+]);
+const alloContractAddress =
+  "0x1133ea7af70876e64665ecd07c0a0476d09465a1" as `0x${string}`;
+
+const ZuPassRegistryAddress = getAddress(
+  "0x455cC27badb067cb9b7cdE52F153DfebC83B1A99"
+);
+export const isRoundZuProofReused = async (
+  pcd: string,
+  chainId: number,
+  roundId: string
+) => {
+  const publicClient = getPublicClient({
+    chainId,
+  });
+  const [Pool] = await Promise.all([
+    publicClient.readContract({
+      abi: abi,
+      address: alloContractAddress as Hex,
+      functionName: "getPool",
+      args: [BigInt(roundId)],
+    }),
+  ]);
+
+  const pool = Pool as PoolInfo;
+  const proof = generateWitness(JSON.parse(pcd));
+  const emailHash = proof._pubSignals[9];
+  const isUsed = await publicClient.readContract({
+    address: ZuPassRegistryAddress,
+    abi,
+    functionName: "usedRoundNullifiers",
+    args: [pool.strategy as `0x${string}`, emailHash],
+  });
+  console.log("isAlreadyUsedZupass In Round?  ", isUsed);
+  return isUsed;
 };
 
 import { utils } from "ethers";

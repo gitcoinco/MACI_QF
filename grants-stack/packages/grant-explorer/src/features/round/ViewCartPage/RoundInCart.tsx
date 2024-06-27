@@ -22,6 +22,7 @@ import { zuAuthPopup } from "@pcd/zuauth";
 import { fieldsToReveal } from "../../api/pcd";
 import { ZuzaluEvents } from "../../../constants/ZuzaluEvents";
 import { uuidToBigInt } from "@pcd/util";
+import { isRoundZuProofReused } from "../../api/voting";
 
 export function RoundInCart(
   props: React.ComponentProps<"div"> & {
@@ -83,6 +84,8 @@ export function RoundInCart(
     )
   );
 
+  const [isZupasReused, setIsZupasReused] = useState(false);
+
   const alreadyContributed = useMemo(() => {
     return (Number(maciContributions?.encrypted?.voiceCreditBalance) ?? 0) > 0;
   }, [maciContributions?.encrypted?.voiceCreditBalance]);
@@ -107,7 +110,7 @@ export function RoundInCart(
   const maxContributionAllowlisted = round
     ? Number(
         round.roundMetadata?.maciParameters?.maxContributionAmountAllowlisted ??
-          2n 
+          2n
       ).toString()
     : "1.0";
   const maxContributionNonAllowlisted = round
@@ -149,9 +152,15 @@ export function RoundInCart(
       watermark: address,
       config: filteredEvents,
     });
+    const isReused = await isRoundZuProofReused(
+      JSON.parse(result.pcdStr).pcd,
+      chainId,
+      roundId
+    );
     if (result.type === "pcd") {
       setPcd(JSON.parse(result.pcdStr).pcd);
       setPcdFetched(true);
+      setIsZupasReused(isReused);
     }
   }, [address, filteredEvents]);
 
@@ -190,40 +199,13 @@ export function RoundInCart(
                 <p className="text-lg font-bold ml-2 inline">
                   ({roundCart.length})
                 </p>
-              </div>
-              <div className="flex flex-col items-center">
-                <div className="flex flex-col">
-                  {!pcdFetched ? (
-                    <p className="text-sm pt-2 italic mb-5 mr-2">
-                      Your max allowed contribution amount is{" "}
-                      {maxContributionNonAllowlisted} ETH.{" "}
-                      <Tooltip
-                        label="Click to join the allowlist"
-                        aria-label="Click to join the allowlist"
-                      >
-                        <a
-                          onClick={openModal}
-                          className="text-md pt-2 font-bold mb-5 mr-2 cursor-pointer"
-                          style={{ color: "black", fontStyle: "normal" }}
-                        >
-                          Join the allowlist
-                        </a>
-                      </Tooltip>
-                      <div className="text-sm pt-2 italic mb-5 mr-2">
-                        to contribute up to {maxContributionAllowlisted} ETH.
-                      </div>
-                    </p>
-                  ) : (
-                    <div className="flex flex-col">
-                      <p className="text-sm pt-2 italic ">
-                        You successfuly proved your Zuzalu commitment you can
-                      </p>
-                      <p className="text-sm italic mb-5 mr-2">
-                        now contribute up to {maxContributionAllowlisted} ETH.
-                      </p>
-                    </div>
-                  )}
-                </div>
+                <RoundAllowlist
+                  pcdFetched={pcdFetched}
+                  maxContributionAllowlisted={maxContributionAllowlisted}
+                  maxContributionNonAllowlisted={maxContributionNonAllowlisted}
+                  openModal={openModal}
+                  isZupasReused={isZupasReused}
+                />
               </div>
             </div>
             <div className="flex items-center pt-2  mb-5 mr-2">
@@ -291,7 +273,7 @@ export function RoundInCart(
           roundId={roundId}
           chainId={chainId}
           walletAddress={address as `0x${string}`}
-          pcd={pcdFetched ? pcd : undefined}
+          pcd={pcdFetched && !isZupasReused ? pcd : undefined}
           roundName={round?.roundMetadata?.name ?? ""}
         />
       </div>
@@ -356,7 +338,7 @@ export function RoundInCart(
               </Switch.Group>
             )}
 
-            {pcdFetched && (
+            {pcdFetched && !isZupasReused && (
               <div className="mt-4 text-green-600">
                 You can now contribute up to {maxContributionAllowlisted} ETH.
               </div>
@@ -376,3 +358,63 @@ export function RoundInCart(
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
 }
+
+const RoundAllowlist = ({
+  pcdFetched,
+  maxContributionAllowlisted,
+  maxContributionNonAllowlisted,
+  openModal,
+  isZupasReused,
+}: {
+  pcdFetched: boolean;
+  maxContributionAllowlisted: string;
+  maxContributionNonAllowlisted: string;
+  openModal: () => void;
+  isZupasReused: boolean;
+}) => {
+  return (
+    <div className="flex flex-col items-center">
+      <div className="flex flex-col">
+        {!pcdFetched ? (
+          <p className="text-sm pt-2 italic mb-5 mr-2">
+            Your max allowed contribution amount is{" "}
+            {maxContributionNonAllowlisted} ETH.{" "}
+            <Tooltip
+              label="Click to join the allowlist"
+              aria-label="Click to join the allowlist"
+            >
+              <a
+                onClick={openModal}
+                className="text-md pt-2 font-bold mb-5 mr-2 cursor-pointer"
+                style={{ color: "black", fontStyle: "normal" }}
+              >
+                Join the allowlist
+              </a>
+            </Tooltip>
+            <div className="text-sm italic mb-5 mr-2">
+              to contribute up to {maxContributionAllowlisted} ETH.
+            </div>
+          </p>
+        ) : !isZupasReused ? (
+          <div className="flex flex-col">
+            <p className="text-sm pt-2 italic ">
+              You successfuly proved your Zuzalu commitment you can
+            </p>
+            <p className="text-sm italic mb-5 mr-2">
+              now contribute up to {maxContributionAllowlisted} ETH.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col">
+            <p className="text-sm pt-2 italic ">
+              You have already used your Zupass for this round. You can
+            </p>
+            <p className="text-sm italic mb-5 mr-2">
+              contribute up to {maxContributionNonAllowlisted} ETH.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

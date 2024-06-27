@@ -763,7 +763,7 @@ function ProjectCard(props: {
             <div className="border-t pt-1 flex items-center justify-end mt-3">
               {props.isBeforeRoundEndDate &&
                 address &&
-                alreadyContributed &&
+                !alreadyContributed &&
                 !isLoading && (
                   <CartButton
                     project={project}
