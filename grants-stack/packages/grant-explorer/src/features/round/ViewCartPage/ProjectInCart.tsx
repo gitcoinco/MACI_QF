@@ -6,13 +6,7 @@ import { EyeIcon } from "@heroicons/react/24/solid";
 import { TrashIcon } from "@heroicons/react/24/outline";
 import { renderToPlainText, VotingToken } from "common";
 import { useCartStorage } from "../../../store";
-import {
-  Box,
-  Flex,
-  Image,
-  Text,
-  Input,
-} from "@chakra-ui/react";
+import { Box, Flex, Image, Text, Input } from "@chakra-ui/react";
 import { groupProjectsInCart } from "../../api/utils";
 
 export function ProjectInCart(
@@ -216,15 +210,11 @@ export function ProjectInCart(
               </Text>
             </Box>
           )}
-          {!props.alreadyContributed && (
-            <TrashIcon
-              data-testid="remove-from-cart"
-              onClick={() =>
-                removeProjectFromCart(project, props.walletAddress)
-              }
-              className="w-5 h-5 ml-2 cursor-pointer"
-            />
-          )}
+          <TrashIcon
+            data-testid="remove-from-cart"
+            onClick={() => removeProjectFromCart(project, props.walletAddress)}
+            className="w-5 h-5 ml-2 cursor-pointer"
+          />
         </Flex>
       </Flex>
       {!props.last && <Box as="hr" borderColor="gray.100" mt={4} />}

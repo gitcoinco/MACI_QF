@@ -22,6 +22,8 @@ import { NATIVE } from "common";
 
 export function SummaryContainer(props: {
   alreadyContributed: boolean;
+  alreadyDonated: boolean;
+  stateIndex: number;
   donatedAmount: bigint;
   payoutTokenPrice: number;
   chainId: number;
@@ -45,6 +47,8 @@ export function SummaryContainer(props: {
 
   const {
     alreadyContributed,
+    alreadyDonated,
+    stateIndex,
     donatedAmount,
     payoutTokenPrice,
     chainId,
@@ -124,8 +128,6 @@ export function SummaryContainer(props: {
         console.error(e);
         return;
       }
-    } else if (alreadyContributed) {
-      setTotalDonations(donatedAmount);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects, votingToken, props]);
@@ -136,10 +138,12 @@ export function SummaryContainer(props: {
       setOpenMRCProgressModal(true);
       setOpenChainConfirmationModal(false);
     }, modalDelayMs);
-    if (alreadyContributed) {
+    if (alreadyDonated) {
       return;
     } else {
       const isSuccess = await checkoutMaci(
+        alreadyContributed,
+        stateIndex,
         parseChainId(chainId),
         roundId,
         walletClient,
@@ -182,13 +186,13 @@ export function SummaryContainer(props: {
               totalContributed={donatedAmount}
               chainIdsBeingCheckedOut={[parseChainId(chainId)]}
               setChainIdsBeingCheckedOut={() => {}}
-              alreadyContributed={alreadyContributed}
+              alreadyContributed={alreadyDonated}
             />
           </div>
         }
         isOpen={openChainConfirmationModal}
         setIsOpen={setOpenChainConfirmationModal}
-        disabled={totalDonations > tokenBalance && !alreadyContributed}
+        disabled={totalDonations > tokenBalance && !alreadyDonated}
       />
       <MRCProgressModal
         isOpen={openMRCProgressModal}
@@ -219,7 +223,7 @@ export function SummaryContainer(props: {
             chainId={parseChainId(chainId)}
             selectedPayoutToken={votingToken}
             totalDonation={totalDonations}
-            alreadyContributed={alreadyContributed}
+            alreadyContributed={alreadyDonated}
             roundName={roundName}
           />
           {totalDonations > 0 && (
@@ -257,7 +261,7 @@ export function SummaryContainer(props: {
           {filteredProjects.some(
             (project) => !project.amount || Number(project.amount) === 0
           ) &&
-            !alreadyContributed && (
+            !alreadyDonated && (
               <p className="rounded-md bg-red-50 py-2 text-pink-500 flex justify-center my-4 text-sm">
                 <InformationCircleIcon className="w-4 h-4 mr-1 mt-0.5" />
                 <span>You must enter donations for all the projects</span>
@@ -269,7 +273,7 @@ export function SummaryContainer(props: {
       <Button
         data-testid="handle-confirmation"
         type="button"
-        disabled={totalDonations > tokenBalance && !alreadyContributed}
+        disabled={totalDonations > tokenBalance && !alreadyDonated}
         onClick={() => {
           if (!isConnected) {
             openConnectModal?.();
@@ -282,7 +286,7 @@ export function SummaryContainer(props: {
         }`}
       >
         {isConnected
-          ? totalDonations > tokenBalance && !alreadyContributed
+          ? totalDonations > tokenBalance && !alreadyDonated
             ? "Not enough funds to donate"
             : donatedAmount < totalDonations
               ? "Exceeds donation amount"

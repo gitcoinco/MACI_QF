@@ -1,4 +1,4 @@
-import { parseAbi } from "viem";
+import { PublicClient, parseAbi } from "viem";
 import { VotingToken } from "../types";
 
 export type PermitSignature = {
@@ -13,10 +13,7 @@ export type PermitSignature = {
  * Old DAI permit type is only implemented on Ethereum and Polygon PoS. Check /docs/DAI.md for more info.
  * */
 export const getPermitType = (token: VotingToken): PermitType => {
-  if (
-    /DAI/i.test(token.name) &&
-    ([1, 137, 11155111].includes(token.chainId))
-  ) {
+  if (/DAI/i.test(token.name) && [1, 137, 11155111].includes(token.chainId)) {
     return "dai";
   } else {
     return "eip2612";
@@ -37,4 +34,35 @@ export const getMACIABI = () => {
     "function coordinatorPubKey() view returns ((uint256, uint256))",
   ]);
   return abi;
-}
+};
+
+export const getPoolData = async (
+  roundId: number,
+  alloContractAddress: `0x${string}`,
+  publicClient: PublicClient
+) => {
+  const abi = getMACIABI();
+  const [Pool] = await Promise.all([
+    publicClient.readContract({
+      abi: abi,
+      address: alloContractAddress,
+      functionName: "getPool",
+      args: [BigInt(roundId)],
+    }),
+  ]);
+
+  return Pool;
+};
+
+export const getMaciContracts = async (
+  strategyAddress: `0x${string}`,
+  publicClient: PublicClient
+) => {
+  const abi = getMACIABI();
+  const pollContracts = await publicClient.readContract({
+    abi: abi,
+    address: strategyAddress,
+    functionName: "pollContracts",
+  });
+  return pollContracts;
+};

@@ -422,8 +422,7 @@ export class AlloV2 implements Allo {
         return roundIpfsResult;
       }
 
-      let initStrategyDataEncoded: Address;
-      let token: Address = getAddress(NATIVE);
+      const token: Address = getAddress(NATIVE);
 
       const initStrategyData = [
         true,
@@ -434,7 +433,7 @@ export class AlloV2 implements Allo {
         dateToEthereumTimestamp(args.roundData.roundEndTime), // in seconds, must be after allocationStartTime
       ];
 
-      let CoordinatorKeypair =
+      const CoordinatorKeypair =
         args.roundData.roundMetadataWithProgramContractAddress?.maciParameters
           ?.coordinatorKeyPair;
 
@@ -472,7 +471,7 @@ export class AlloV2 implements Allo {
       // Choose only the unique event IDs create a map and then convert it to an array again
       const eventIDs = Array.from(new Set(array));
 
-      let allowlistGatingContractInitData = new ethers.utils.AbiCoder().encode(
+      const allowlistGatingContractInitData = new ethers.utils.AbiCoder().encode(
         ["uint256[]"],
         [eventIDs]
       );
@@ -480,7 +479,7 @@ export class AlloV2 implements Allo {
       // In the future we might support more than one MACI instance
       const maciID = 0n;
 
-      let MaciParams = [
+      const MaciParams = [
         // coordinator:
         address,
         // coordinatorPubKey:
@@ -502,9 +501,9 @@ export class AlloV2 implements Allo {
         maxContributionAmountNonAllowlisted,
       ];
 
-      let initStruct = [initStrategyData, MaciParams];
+      const initStruct = [initStrategyData, MaciParams];
 
-      let types = parseAbiParameters(
+      const types = parseAbiParameters(
         "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,address,uint8,bytes,bytes,uint256,uint256))"
       );
 
@@ -512,7 +511,7 @@ export class AlloV2 implements Allo {
         initStruct,
       ] as any);
 
-      initStrategyDataEncoded = encoded ?? "0x";
+      const initStrategyDataEncoded = encoded ?? "0x";
 
       const profileId = args.roundData.roundMetadataWithProgramContractAddress
         ?.programContractAddress as `0x${string}`;
@@ -805,9 +804,9 @@ export class AlloV2 implements Allo {
         throw new AlloError("DirectGrants is not supported yet!");
       }
 
-      let recipients: string[] = [];
-      let latestUpdateTimes: bigint[] = [];
-      let statuses: bigint[] = [];
+      const recipients: string[] = [];
+      const latestUpdateTimes: bigint[] = [];
+      const statuses: bigint[] = [];
 
       // Process the applicationsToUpdate array
       args.applicationsToUpdate.reduce(

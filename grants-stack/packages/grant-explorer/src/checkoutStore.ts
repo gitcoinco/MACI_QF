@@ -7,7 +7,7 @@ import {
   IPublishBatchArgs,
   IPublishMessage,
   PoolInfo,
-  MACIPollContracts,
+  MACIContracts,
   IMessageContractParams,
   IPubKey,
 } from "./features/api/types";
@@ -36,7 +36,11 @@ import { genRandomSalt } from "maci-crypto";
 import { DataLayer } from "data-layer";
 import { generatePubKey } from "./features/api/keys";
 import { getAlloAddress } from "common/dist/allo/backends/allo-v2";
-import { getMACIABI } from "common/src/allo/voting";
+import {
+  getMACIABI,
+  getMaciContracts,
+  getPoolData,
+} from "common/src/allo/voting";
 
 type ChainMap<T> = Record<ChainId, T>;
 
@@ -79,6 +83,8 @@ interface CheckoutState {
    * this has the side effect of adding the chains to the wallet if they are not yet present
    * We get the data necessary to construct the votes from the cart store */
   checkoutMaci: (
+    alreadyContributed: boolean,
+    stateIndex: number,
     chainId: ChainId,
     roundId: string,
     walletClient: WalletClient,
@@ -182,6 +188,8 @@ export const useCheckoutStore = create<CheckoutState>()(
      * this has the side effect of adding the chains to the wallet if they are not yet present
      * We get the data necessary to construct the votes from the cart store */
     checkoutMaci: async (
+      alreadyContributed: boolean,
+      stateIndex: number,
       chainId: ChainId,
       roundId: string,
       walletClient: WalletClient,
@@ -190,13 +198,19 @@ export const useCheckoutStore = create<CheckoutState>()(
       pcd?: string
     ): Promise<boolean> => {
       const chainIdsToCheckOut = [chainId];
+
+      get().setIsDonationOrChangeDonationInProgress(false);
       get().setChainsToCheckout(
         uniq([...get().chainsToCheckout, ...chainIdsToCheckOut])
       );
-      get().setContributionStatusForChain(chainId, ProgressStatus.NOT_STARTED);
       get().setMaciKeyStatusForChain(chainId, ProgressStatus.NOT_STARTED);
+      get().setContributionStatusForChain(
+        chainId,
+        alreadyContributed
+          ? ProgressStatus.IS_SUCCESS
+          : ProgressStatus.NOT_STARTED
+      );
       get().setVoteStatusForChain(chainId, ProgressStatus.NOT_STARTED);
-      get().setIsDonationOrChangeDonationInProgress(false);
 
       const projectsToCheckOut = useCartStorage
         .getState()
@@ -290,9 +304,7 @@ export const useCheckoutStore = create<CheckoutState>()(
           ] = voteWeight;
         });
 
-        const messagesPerRound: Record<string, IPublishMessage[]> = {};
         let nonceValue = 1;
-
         groupedEncodedVotes[roundId] = prepareAllocationData({
           publicKey: groupedKeyPairs[roundId].pubKey,
           amount: groupedAmounts[roundId],
@@ -303,7 +315,7 @@ export const useCheckoutStore = create<CheckoutState>()(
 
         groupedDonations[roundId].forEach((donation) => {
           messages.push({
-            stateIndex: 1n,
+            stateIndex: stateIndex !== 0 ? BigInt(stateIndex) : 1n,
             voteOptionIndex: BigInt(voteIdMap[donation.anchorAddress ?? ""]),
             nonce: BigInt(nonceValue++),
             newVoteWeight: bnSqrt(
@@ -314,34 +326,70 @@ export const useCheckoutStore = create<CheckoutState>()(
           });
         });
 
-        messagesPerRound[roundId] = messages;
+        if (!alreadyContributed) {
+          get().setContributionStatusForChain(
+            chainId,
+            ProgressStatus.IN_PROGRESS
+          );
 
-        console.log("Messages", messages);
+          const PublishBatchArgs = await allocate({
+            messages,
+            walletClient,
+            roundId,
+            chainId,
+            amount: groupedAmounts[roundId],
+            bytes: groupedEncodedVotes[roundId] as Hex,
+            pubKey: groupedKeyPairs[roundId].pubKey,
+            privateKey: groupedKeyPairs[roundId].privKey,
+          });
 
-        get().setContributionStatusForChain(
-          chainId,
-          ProgressStatus.IN_PROGRESS
-        );
+          get().setContributionStatusForChain(
+            chainId,
+            ProgressStatus.IS_SUCCESS
+          );
 
-        const PublishBatchArgs = await allocate({
-          messages,
-          walletClient,
-          roundId,
-          chainId,
-          amount: groupedAmounts[roundId],
-          bytes: groupedEncodedVotes[roundId] as Hex,
-          pubKey: groupedKeyPairs[roundId].pubKey,
-          privateKey: groupedKeyPairs[roundId].privKey,
-        });
+          get().setVoteStatusForChain(chainId, ProgressStatus.IN_PROGRESS);
 
-        get().setContributionStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
+          // Publish the batch of messages
+          await publishBatch(PublishBatchArgs);
 
-        get().setVoteStatusForChain(chainId, ProgressStatus.IN_PROGRESS);
+          get().setVoteStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
 
-        // Publish the batch of messages
-        await publishBatch(PublishBatchArgs);
+          set({
+            checkedOutProjects: [...get().checkedOutProjects, ...donations],
+          });
+        } else {
+          get().setVoteStatusForChain(chainId, ProgressStatus.IN_PROGRESS);
 
-        get().setVoteStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
+          const alloContractAddress = getAlloAddress(chainId);
+          const publicClient = getPublicClient({
+            chainId,
+          });
+          const pool = (await getPoolData(
+            parseInt(roundId),
+            alloContractAddress,
+            publicClient
+          )) as PoolInfo;
+
+          const strategyAddress = pool.strategy as Hex;
+
+          const maciContracts = (await getMaciContracts(
+            strategyAddress,
+            publicClient
+          )) as MACIContracts;
+
+          // Publish the batch of messages
+          await publishBatch({
+            messages,
+            Poll: maciContracts.poll,
+            publicKey: groupedKeyPairs[roundId].pubKey,
+            privateKey: groupedKeyPairs[roundId].privKey,
+            walletClient,
+            chainId,
+          });
+
+          get().setVoteStatusForChain(chainId, ProgressStatus.IS_SUCCESS);
+        }
 
         set({
           checkedOutProjects: [...get().checkedOutProjects, ...donations],
@@ -432,16 +480,12 @@ export const useCheckoutStore = create<CheckoutState>()(
 
         const alloContractAddress = getAlloAddress(chainId);
 
-        const [Pool] = await Promise.all([
-          publicClient.readContract({
-            abi: abi,
-            address: alloContractAddress as Hex,
-            functionName: "getPool",
-            args: [BigInt(roundId)],
-          }),
-        ]);
+        const pool = (await getPoolData(
+          parseInt(roundId),
+          alloContractAddress,
+          publicClient
+        )) as PoolInfo;
 
-        const pool = Pool as PoolInfo;
         for (const app of groupedDonations[roundId]) {
           const ID = (await dataLayer.getVoteOptionIndexByChainIdAndRoundId({
             chainId: chainId,
@@ -569,13 +613,12 @@ export const useCheckoutStore = create<CheckoutState>()(
           }
         });
 
-        const pollContracts = await publicClient.readContract({
-          abi: abi,
-          address: pool.strategy as Hex,
-          functionName: "pollContracts",
-        });
+        const maciContracts = (await getMaciContracts(
+          pool.strategy as Hex,
+          publicClient
+        )) as MACIContracts;
 
-        const poll = pollContracts as MACIPollContracts;
+        const poll = maciContracts.poll;
 
         const Messages = filteredMessages.map((message) => {
           return {
@@ -586,12 +629,10 @@ export const useCheckoutStore = create<CheckoutState>()(
           };
         });
 
-        console.log("Messages", Messages);
-
         await Promise.all([
           publishBatch({
             messages: Messages,
-            Poll: poll.poll,
+            Poll: poll,
             publicKey: groupedKeyPairs[roundId].pubKey,
             privateKey: groupedKeyPairs[roundId].privKey,
             walletClient,
@@ -681,23 +722,18 @@ const allocate = async ({
 
   const alloContractAddress = getAlloAddress(chainId);
 
-  const [Pool] = await Promise.all([
-    publicClient.readContract({
-      abi: abi,
-      address: alloContractAddress,
-      functionName: "getPool",
-      args: [BigInt(roundId)],
-    }),
-  ]);
+  const pool = (await getPoolData(
+    parseInt(roundId),
+    alloContractAddress,
+    publicClient
+  )) as PoolInfo;
 
-  const pool = Pool as PoolInfo;
-  const pollContracts = await publicClient.readContract({
-    abi: abi,
-    address: pool.strategy as Hex,
-    functionName: "pollContracts",
-  });
+  const maciContracts = (await getMaciContracts(
+    pool.strategy as Hex,
+    publicClient
+  )) as MACIContracts;
 
-  const poll = pollContracts as MACIPollContracts;
+  const poll = maciContracts.poll;
 
   const allocate = await walletClient.writeContract({
     address: alloContractAddress,
@@ -730,7 +766,7 @@ const allocate = async ({
 
   return {
     messages: Messages,
-    Poll: poll.poll,
+    Poll: poll,
     publicKey: pubKey,
     privateKey: privateKey,
     walletClient,

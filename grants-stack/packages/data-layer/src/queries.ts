@@ -711,6 +711,10 @@ export const getVoiceCreditsByChainIdAndRoundId = gql`
       }
     ) {
       voiceCreditBalance
+      stateIndex
+      messages {
+        messageId
+      }
     }
   }
 `;
