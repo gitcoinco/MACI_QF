@@ -715,6 +715,19 @@ export const getVoiceCreditsByChainIdAndRoundId = gql`
   }
 `;
 
+export const getVoiceCreditsByChainIdAndRoundIdWithoutAddress = gql`
+  query getContributionsByAddress($chainId: Int!, $roundId: String!) {
+    contributions(
+      filter: { chainId: { equalTo: $chainId }, roundId: { equalTo: $roundId } }
+    ) {
+      voiceCreditBalance
+      messages {
+        messageId
+      }
+    }
+  }
+`;
+
 export const getVoiceCreditsByChainIdsAndRoundIds = gql`
   query getContributionsByAddress($contributorAddress: String!) {
     contributions(
@@ -747,10 +760,7 @@ export const getVoteOptionIndexByChainIdAndRoundId = gql`
 export const getVoteOptionIndexesByChainIdAndRoundIdQuery = gql`
   query ($chainId: Int!, $roundId: String!) {
     votingIndexOptions(
-      filter: {
-        chainId: { equalTo: $chainId }
-        roundId: { equalTo: $roundId }
-      }
+      filter: { chainId: { equalTo: $chainId }, roundId: { equalTo: $roundId } }
     ) {
       chainId
       id
