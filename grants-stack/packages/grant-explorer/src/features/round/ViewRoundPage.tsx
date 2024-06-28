@@ -694,7 +694,7 @@ function ProjectCard(props: {
 
   const dataLayer = useDataLayer();
 
-  const { alreadyContributed, isLoading } = useAlreadyContributed(
+  const { data: status, isLoading } = useAlreadyContributed(
     dataLayer,
     address ?? "",
     Number(props.chainId),
@@ -766,7 +766,7 @@ function ProjectCard(props: {
             <div className="border-t pt-1 flex items-center justify-end mt-3">
               {props.isBeforeRoundEndDate &&
                 address &&
-                !alreadyContributed &&
+                !status?.hasDonated &&
                 !isLoading && (
                   <CartButton
                     project={project}

@@ -137,7 +137,7 @@ export interface PoolInfo {
   adminRole: string;
 }
 
-export interface MACIPollContracts {
+export interface MACIContracts {
   poll: string;
   messageProcessor: string;
   tally: string;

@@ -911,7 +911,11 @@ export class DataLayer {
     contributorAddress: string;
     chainId: number;
     roundId: string;
-  }): Promise<string> {
+  }): Promise<{
+    voiceCreditBalance: string;
+    stateIndex: string;
+    messages: string[];
+  }> {
     const requestVariables = {
       contributorAddress: contributorAddress,
       chainId: chainId,
@@ -921,14 +925,15 @@ export class DataLayer {
     const response: {
       contributions: {
         voiceCreditBalance: string;
+        stateIndex: string;
+        messages: string[];
       }[];
     } = await request(
       this.gsIndexerEndpoint,
       getVoiceCreditsByChainIdAndRoundId,
       requestVariables,
     );
-
-    return response.contributions[0].voiceCreditBalance;
+    return response.contributions[0];
   }
 
   async getContributionsByChainIdAndRoundIDWithoutAddress({

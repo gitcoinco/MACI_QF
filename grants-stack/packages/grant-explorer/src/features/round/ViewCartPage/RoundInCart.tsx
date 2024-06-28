@@ -23,6 +23,8 @@ import { fieldsToReveal } from "../../api/pcd";
 import { ZuzaluEvents } from "../../../constants/ZuzaluEvents";
 import { uuidToBigInt } from "@pcd/util";
 import { isRoundZuProofReused } from "../../api/voting";
+import { useAlreadyContributed } from "../../projects/hooks/useRoundMaciMessages";
+import { useDataLayer } from "data-layer";
 
 export function RoundInCart(
   props: React.ComponentProps<"div"> & {
@@ -51,6 +53,7 @@ export function RoundInCart(
   const round = useRoundById(chainId, roundId).round;
 
   const { address } = useAccount();
+  const dataLayer = useDataLayer();
 
   const [pcd, setPcd] = useState<string | undefined>(undefined);
   const [pcdFetched, setPcdFetched] = useState(false);
@@ -86,9 +89,12 @@ export function RoundInCart(
 
   const [isZupasReused, setIsZupasReused] = useState(false);
 
-  const alreadyContributed = useMemo(() => {
-    return (Number(maciContributions?.encrypted?.voiceCreditBalance) ?? 0) > 0;
-  }, [maciContributions?.encrypted?.voiceCreditBalance]);
+  const { isLoading, data: status } = useAlreadyContributed(
+    dataLayer,
+    address as string,
+    chainId,
+    roundId
+  );
 
   const votingToken = selectedPayoutToken;
 
@@ -110,13 +116,13 @@ export function RoundInCart(
   const maxContributionAllowlisted = round
     ? Number(
         round.roundMetadata?.maciParameters?.maxContributionAmountAllowlisted ??
-          2n
+          "1.0"
       ).toString()
     : "1.0";
   const maxContributionNonAllowlisted = round
     ? Number(
         round.roundMetadata?.maciParameters
-          ?.maxContributionAmountNonAllowlisted ?? 1n
+          ?.maxContributionAmountNonAllowlisted ?? "0.1"
       ).toString()
     : "0.1";
 
@@ -178,7 +184,7 @@ export function RoundInCart(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [donatedAmount, donationInput, props.roundCart]);
 
-  if (alreadyContributed && !isActiveRound) {
+  if (!isLoading && status?.hasDonated && !isActiveRound) {
     props.roundCart.forEach((project) => {
       props.handleRemoveProjectFromCart(project, address as string);
     });
@@ -241,7 +247,7 @@ export function RoundInCart(
                     roundRoutePath={`/round/${chainId}/${roundCart[0].roundId}`}
                     last={key === roundCart.length - 1}
                     payoutTokenPrice={payoutTokenPrice}
-                    alreadyContributed={alreadyContributed}
+                    alreadyContributed={status?.hasDonated ?? false}
                     walletAddress={address as `0x${string}`}
                   />
                 </div>
@@ -268,7 +274,9 @@ export function RoundInCart(
       </div>
       <div className="w-1/4 ml-[4%]">
         <SummaryContainer
-          alreadyContributed={alreadyContributed}
+          alreadyContributed={status?.hasContributed ?? false}
+          alreadyDonated={status?.hasDonated ?? false}
+          stateIndex={status?.stateIndex??0}
           payoutTokenPrice={payoutTokenPrice}
           donatedAmount={donatedAmount}
           roundId={roundId}
