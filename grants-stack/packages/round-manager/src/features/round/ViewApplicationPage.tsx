@@ -82,10 +82,10 @@ function getApplicationStatusTitle(status: ProjectStatus) {
 }
 
 export default function ViewApplicationPage() {
-  const navigate = useNavigate();
   datadogLogs.logger.info("====> Route: /round/:roundId/application/:id");
   datadogLogs.logger.info(`====> URL: ${window.location.href}`);
 
+  const navigate = useNavigate();
   const [reviewDecision, setReviewDecision] = useState<
     ApplicationStatus | undefined
   >(undefined);
@@ -93,8 +93,8 @@ export default function ViewApplicationPage() {
   const [openModal, setOpenModal] = useState(false);
   const [openProgressModal, setOpenProgressModal] = useState(false);
   const [openErrorModal, setOpenErrorModal] = useState(false);
-
-  const [verifiedProviders, setVerifiedProviders] = useState<{
+  // TODO: remove this
+  const [verifiedProviders] = useState<{
     [key: string]: VerifiedCredentialState;
   }>({
     github: VerifiedCredentialState.PENDING,
@@ -103,7 +103,6 @@ export default function ViewApplicationPage() {
 
   const { roundId, id } = useParams() as { roundId: string; id: string };
   const { chain, address } = useWallet();
-
   const { data: applications, isLoading } = useApplicationsByRoundId(roundId!);
   const filteredApplication = applications?.filter((a) => a.id == id) || [];
   const application = filteredApplication[0];

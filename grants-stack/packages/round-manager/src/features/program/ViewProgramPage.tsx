@@ -36,22 +36,20 @@ export default function ViewProgram() {
   datadogLogs.logger.info("====> Route: /program/:id");
   datadogLogs.logger.info(`====> URL: ${window.location.href}`);
 
-  const { id: programId } = useParams();
-
+  const { id: programId } = useParams(); 
   const { address } = useWallet();
-
   const { program: programToRender, fetchProgramsStatus } =
     useProgramById(programId);
-  const isProgramFetched = fetchProgramsStatus == ProgressStatus.IS_SUCCESS;
 
+  const isProgramFetched = fetchProgramsStatus == ProgressStatus.IS_SUCCESS;
   const { data: rounds, fetchRoundStatus } = useRounds(programId);
   const isRoundsFetched = fetchRoundStatus == ProgressStatus.IS_SUCCESS;
-
   const [programExists, setProgramExists] = useState(true);
   const [hasAccess, setHasAccess] = useState(true);
   const [grantType, setGrantType] = useState<
     "quadraticFunding" | "directGrant" | "MACI-QF" | null
   >(null);
+
   const debugModeEnabled = useDebugMode();
 
   useEffect(() => {
