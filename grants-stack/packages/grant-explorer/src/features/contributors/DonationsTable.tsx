@@ -80,6 +80,7 @@ function RoundsTableWithAccordian(props: {
 
             return (
               <Accordion
+                key={`${_roundId}-${contributionsForRound.length}`}
                 className="w-full"
                 allowMultiple={true}
                 defaultIndex={defaultIndex}
@@ -88,7 +89,7 @@ function RoundsTableWithAccordian(props: {
                 }}
               >
                 <AccordionItem
-                  key={key}
+                  key={`${_roundId}-${key}`}
                   isDisabled={sortedContributions.length === 0}
                 >
                   <h2>
@@ -220,7 +221,9 @@ function InnerTable(props: {
                       }
 
                       return (
-                        <tr key={contribution.id} className="">
+                        <tr
+                          key={`${contribution.id}-${contribution.timestamp}`}
+                        >
                           <td className="py-4 pr-2 w-2/5">
                             <div className="flex items-center">
                               <div className="flex flex-col sm:flex-row">

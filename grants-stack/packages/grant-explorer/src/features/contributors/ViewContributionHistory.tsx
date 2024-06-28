@@ -211,7 +211,9 @@ function ViewContributionHistoryFetcher(props: {
 }) {
   const { data: ensName } = useEnsName({
     /* If props.address is an ENS name, don't pass in anything, as we already have the ens name*/
-    address: isAddress(props.address) ? props.address : undefined,
+    address: isAddress(props.address)
+      ? (props.address as `0x${string}`)
+      : undefined,
     chainId: 1,
   });
 
