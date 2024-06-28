@@ -95,7 +95,7 @@ export function ProjectInCart(
   //   console.log(results.join("\n"));
   // }
   useEffect(() => {
-    if (totalAmount === 0) {
+    if (totalAmount === 0 || isNaN(Number(votes))) {
       store.updateUserDonationAmount(
         project.chainId,
         project.roundId,
