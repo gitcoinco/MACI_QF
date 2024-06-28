@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { ChainId } from "common";
-import { groupProjectsInCart } from "../../api/utils";
 import Footer from "common/src/components/Footer";
 import Navbar from "../../common/Navbar";
 import Breadcrumb, { BreadcrumbItem } from "../../common/Breadcrumb";
@@ -8,10 +7,8 @@ import { EmptyCart } from "./EmptyCart";
 import { Header } from "./Header";
 import { useCartStorage } from "../../../store";
 import { CartWithProjects } from "./CartWithProjects";
-import { useDataLayer } from "data-layer";
-import { useMACIContributions } from "../../projects/hooks/useRoundMaciMessages";
+import { groupProjectsInCart } from "../../api/utils";
 import { useAccount } from "wagmi";
-import { MACIContributionsByRoundId } from "../../api/types";
 
 export default function ViewCart() {
   const { userProjects } = useCartStorage();
@@ -20,13 +17,6 @@ export default function ViewCart() {
   const projects = useMemo(
     () => (walletAddress ? userProjects[walletAddress] ?? [] : []),
     [userProjects, walletAddress]
-  );
-
-  const dataLayer = useDataLayer();
-
-  const { data: maciContributions } = useMACIContributions(
-    walletAddress?.toLowerCase() as string,
-    dataLayer
   );
 
   const groupedCartProjects = groupProjectsInCart(projects);
@@ -67,11 +57,6 @@ export default function ViewCart() {
                       <div key={Number(chainId)}>
                         <CartWithProjects
                           cart={groupedCartProjects[Number(chainId)]}
-                          maciContributions={
-                            (maciContributions?.groupedMaciContributions[
-                              Number(chainId)
-                            ] as MACIContributionsByRoundId) ?? null
-                          }
                           chainId={Number(chainId) as ChainId}
                         />
                       </div>

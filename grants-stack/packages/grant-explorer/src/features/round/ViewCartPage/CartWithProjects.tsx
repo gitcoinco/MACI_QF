@@ -7,17 +7,13 @@ import { useEffect } from "react";
 import { RoundInCart } from "./RoundInCart";
 import { ChainId, useTokenPrice } from "common";
 import { useCartStorage } from "../../../store";
-import {
-  MACIContributionsByRoundId,
-} from "../../api/types";
 
 type Props = {
   cart: GroupedCartProjectsByRoundId;
-  maciContributions: MACIContributionsByRoundId | null;
   chainId: ChainId;
 };
 
-export function CartWithProjects({ cart, chainId, maciContributions }: Props) {
+export function CartWithProjects({ cart, chainId }: Props) {
   const chain = CHAINS[chainId];
   const cartByRound = Object.values(cart);
 
@@ -63,11 +59,6 @@ export function CartWithProjects({ cart, chainId, maciContributions }: Props) {
           <RoundInCart
             key={key}
             roundCart={roundcart}
-            maciContributions={
-              maciContributions && maciContributions[roundIds[key]]
-                ? maciContributions[roundIds[key]]
-                : null
-            }
             handleRemoveProjectFromCart={store.removeUserProject}
             selectedPayoutToken={selectedPayoutToken}
             payoutTokenPrice={payoutTokenPrice ?? 0}

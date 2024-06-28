@@ -29,7 +29,6 @@ import { useDataLayer } from "data-layer";
 export function RoundInCart(
   props: React.ComponentProps<"div"> & {
     roundCart: CartProject[];
-    maciContributions: MACIContributions | null;
     selectedPayoutToken: VotingToken;
     handleRemoveProjectFromCart: (
       project: CartProject,
@@ -46,7 +45,6 @@ export function RoundInCart(
     selectedPayoutToken,
     roundCart,
     handleRemoveProjectFromCart,
-    maciContributions,
     payoutTokenPrice,
   } = props;
 
@@ -76,14 +74,14 @@ export function RoundInCart(
     Number(donatedAmount) / 1e13
   );
 
-  const [usedVoiceCredits, setUsedVoiceCredits] = useState<bigint>(
+  const [usedVoiceCredits, setUsedVoiceCredits] = useState<number>(
     roundCart.reduce(
       (acc, project) =>
         acc +
         (isNaN(Number(project.amount)) || Number(project.amount) === 0
-          ? 0n
-          : BigInt(Number(project.amount))),
-      0n
+          ? 0
+          : Number(project.amount)),
+      0
     )
   );
 
@@ -176,9 +174,9 @@ export function RoundInCart(
         (acc, project) =>
           acc +
           (isNaN(Number(project.amount)) || Number(project.amount) === 0
-            ? 0n
-            : BigInt(Number(project.amount))),
-        0n
+            ? 0
+            : Number(project.amount)),
+        0
       )
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -276,7 +274,7 @@ export function RoundInCart(
         <SummaryContainer
           alreadyContributed={status?.hasContributed ?? false}
           alreadyDonated={status?.hasDonated ?? false}
-          stateIndex={status?.stateIndex??0}
+          stateIndex={status?.stateIndex ?? 0}
           payoutTokenPrice={payoutTokenPrice}
           donatedAmount={donatedAmount}
           roundId={roundId}
