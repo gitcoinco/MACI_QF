@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { CartProject, MACIContributions } from "../../api/types";
+import React, { useCallback, useEffect, useState } from "react";
+import { CartProject } from "../../api/types";
 import { useRoundById } from "../../../context/RoundContext";
 import { ProjectInCart } from "./ProjectInCart";
 import { parseUnits } from "viem";
@@ -67,7 +67,7 @@ export function RoundInCart(
     ).toString()
   );
   const [donatedAmount, setDonatedAmount] = useState<bigint>(
-    BigInt(Number(donationInput) * 1e18)
+    BigInt(parseInt(donationInput) * 1e18)
   );
 
   const [voiceCreditBalance, setVoiceCreditBalance] = useState<number>(
@@ -75,13 +75,17 @@ export function RoundInCart(
   );
 
   const [usedVoiceCredits, setUsedVoiceCredits] = useState<number>(
-    roundCart.reduce(
-      (acc, project) =>
-        acc +
-        (isNaN(Number(project.amount)) || Number(project.amount) === 0
-          ? 0
-          : Number(project.amount)),
-      0
+    parseInt(
+      roundCart
+        .reduce(
+          (acc, project) =>
+            acc +
+            (isNaN(Number(project.amount)) || Number(project.amount) === 0
+              ? 0
+              : Number(project.amount)),
+          0
+        )
+        .toString()
     )
   );
 
@@ -170,13 +174,17 @@ export function RoundInCart(
 
   useEffect(() => {
     setUsedVoiceCredits(
-      roundCart.reduce(
-        (acc, project) =>
-          acc +
-          (isNaN(Number(project.amount)) || Number(project.amount) === 0
-            ? 0
-            : Number(project.amount)),
-        0
+      parseInt(
+        roundCart
+          .reduce(
+            (acc, project) =>
+              acc +
+              (isNaN(Number(project.amount)) || Number(project.amount) === 0
+                ? 0
+                : Number(project.amount)),
+            0
+          )
+          .toString()
       )
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
