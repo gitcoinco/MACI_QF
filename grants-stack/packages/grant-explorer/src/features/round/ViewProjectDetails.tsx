@@ -149,12 +149,15 @@ export default function ViewProjectDetails() {
 
   const projects = address ? userProjects[address] : [];
 
-  const isAlreadyInCart = projects.some(
-    (project) =>
-      project.grantApplicationId === applicationId &&
-      project.chainId === Number(chainId) &&
-      project.roundId === roundId
-  );
+  const isAlreadyInCart = projects
+    ? projects.some(
+        (project) =>
+          project.grantApplicationId === applicationId &&
+          project.chainId === Number(chainId) &&
+          project.roundId === roundId
+      )
+    : false;
+  
   const cartProject = projectToRender as CartProject;
 
   if (cartProject !== undefined) {
