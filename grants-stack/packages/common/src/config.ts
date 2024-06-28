@@ -41,12 +41,6 @@ export type Config = {
   allo: {
     version: AlloVersion;
   };
-  passport: {
-    passportCommunityId: string;
-    passportAPIKey: string;
-    passportAvalancheCommunityId: string;
-    passportAvalancheAPIKey: string;
-  };
 };
 
 type LocalStorageConfigOverrides = Record<string, string>;
@@ -242,18 +236,6 @@ export function getConfig(
     },
     manager: {
       disableDirectGrantsForAlloV2: config?.allo.version === "allo-v1",
-    },
-    passport: {
-      passportCommunityId: z
-        .string()
-        .parse(process.env.REACT_APP_PASSPORT_API_COMMUNITY_ID),
-      passportAPIKey: z.string().parse(process.env.REACT_APP_PASSPORT_API_KEY),
-      passportAvalancheCommunityId: z
-        .string()
-        .parse(process.env.REACT_APP_PASSPORT_API_COMMUNITY_ID_AVALANCHE),
-      passportAvalancheAPIKey: z
-        .string()
-        .parse(process.env.REACT_APP_PASSPORT_AVALANCHE_API_KEY),
     },
   };
 

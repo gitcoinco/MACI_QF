@@ -1,10 +1,10 @@
-import { VerifiableCredential } from "@gitcoinco/passport-sdk-types";
 import { Address } from "viem";
 import { RoundApplicationMetadata } from "./roundApplication.types";
 export type RoundPayoutType =
   | "allov1.Direct"
   | "allov1.QF"
   | "allov2.DirectGrantsSimpleStrategy"
+  | "allov2.DirectGrantsLiteStrategy"
   | "allov2.DonationVotingMerkleDistributionDirectTransferStrategy"
   | "allov2.MACIQF"
   | ""; // This is to handle the cases where the strategyName is not set in a round, mostly spam rounds
@@ -38,10 +38,6 @@ export type GrantApplicationFormAnswer = {
   type?: string;
 };
 
-export type ProjectCredentials = {
-  [key: string]: VerifiableCredential;
-};
-
 export interface ProjectOwner {
   address: string;
 }
@@ -55,7 +51,6 @@ export type ProjectMetadata = {
   projectTwitter?: string;
   userGithub?: string;
   projectGithub?: string;
-  credentials: ProjectCredentials;
   owners: ProjectOwner[];
   createdAt: number;
   lastUpdated: number;
@@ -161,7 +156,6 @@ export type v2Project = {
     userGithub?: string;
     projectGithub?: string;
     projectTwitter?: string;
-    credentials?: ProjectCredentials;
     createdAt?: number;
     updatedAt?: number;
   };

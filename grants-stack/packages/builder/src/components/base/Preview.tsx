@@ -36,7 +36,6 @@ export default function Preview({
     return {
       prevMetadata,
       metadata: state.projectForm.metadata,
-      credentials: state.projectForm.credentials,
       status: state.newGrant.status,
       error: state.newGrant.error,
       openErrorModal: state.newGrant.error !== undefined,
@@ -92,10 +91,8 @@ export default function Preview({
     };
   }, [props.status]);
 
-  const { credentials } = props;
   const project = {
     ...props.metadata,
-    credentials,
   };
 
   return (

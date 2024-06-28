@@ -31,13 +31,10 @@ import ProgressModal from "../common/ProgressModal";
 import {
   AnswerBlock,
   ApplicationStatus,
-  GrantApplication,
   ProgressStatus,
   ProgressStep,
-  ProjectCredentials,
   ProjectStatus,
 } from "../api/types";
-import { VerifiableCredential } from "@gitcoinco/passport-sdk-types";
 import { Lit } from "../api/lit";
 import NotFoundPage from "../common/NotFoundPage";
 import AccessDenied from "../common/AccessDenied";
@@ -62,7 +59,7 @@ import {
   useAllo,
   VerifiedCredentialState,
 } from "common";
-import { renderToHTML, PassportVerifierWithExpiration } from "common";
+import { renderToHTML } from "common";
 import { useDebugMode } from "../../hooks";
 import { getPayoutRoundDescription } from "../common/Utils";
 import moment from "moment";
@@ -73,8 +70,6 @@ type Status = "done" | "current" | "rejected" | "approved" | undefined;
 
 export const IAM_SERVER =
   "did:key:z6MkghvGHLobLEdj1bgRLhS4LPGJAvbMA1tn2zcRyqmYU5LC";
-
-const verifier = new PassportVerifierWithExpiration();
 
 function getApplicationStatusTitle(status: ProjectStatus) {
   switch (status) {
@@ -158,37 +153,6 @@ export default function ViewApplicationPage() {
       redirectToViewRoundPage(navigate, 0, roundId);
     }
   }, [navigate, contractUpdatingStatus, indexingStatus, id, roundId]);
-
-  useEffect(() => {
-    const applicationHasLoadedWithProjectOwners =
-      !isLoading && application?.project?.owners;
-    if (applicationHasLoadedWithProjectOwners) {
-      const credentials: ProjectCredentials =
-        application?.project?.credentials ?? {};
-
-      if (!credentials) {
-        return;
-      }
-      const verify = async () => {
-        const newVerifiedProviders: { [key: string]: VerifiedCredentialState } =
-          { ...verifiedProviders };
-        for (const provider of Object.keys(verifiedProviders)) {
-          const verifiableCredential = credentials[provider];
-          if (verifiableCredential) {
-            newVerifiedProviders[provider] = await isVerified(
-              verifiableCredential,
-              verifier,
-              provider,
-              application
-            );
-          }
-        }
-
-        setVerifiedProviders(newVerifiedProviders);
-      };
-      verify();
-    }
-  }, [application, application?.project?.owners, isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { round } = useRoundById(roundId);
   const allo = useAllo();
@@ -372,10 +336,10 @@ export default function ViewApplicationPage() {
           status === "done" || status === "approved"
             ? "bg-teal-500 border-teal-500"
             : status === "current"
-            ? "border-violet-500"
-            : status === "rejected"
-            ? "bg-red-500 border-red-500"
-            : ""
+              ? "border-violet-500"
+              : status === "rejected"
+                ? "bg-red-500 border-red-500"
+                : ""
         }
         `}
         >
@@ -410,8 +374,8 @@ export default function ViewApplicationPage() {
               status === "done"
                 ? "bg-teal-500"
                 : status === "rejected"
-                ? "bg-red-500"
-                : "bg-grey-200"
+                  ? "bg-red-500"
+                  : "bg-grey-200"
             }`}
             style={{
               transform: "rotate(180deg)",
@@ -861,57 +825,6 @@ export default function ViewApplicationPage() {
       )}
     </>
   );
-}
-
-function vcProviderMatchesProject(
-  provider: string,
-  verifiableCredential: VerifiableCredential,
-  application: GrantApplication | undefined
-) {
-  let vcProviderMatchesProject = false;
-  if (provider === "twitter") {
-    vcProviderMatchesProject =
-      verifiableCredential.credentialSubject.provider
-        ?.split("#")[1]
-        .toLowerCase() === application?.project?.projectTwitter?.toLowerCase();
-  } else if (provider === "github") {
-    vcProviderMatchesProject =
-      verifiableCredential.credentialSubject.provider
-        ?.split("#")[1]
-        .toLowerCase() === application?.project?.projectGithub?.toLowerCase();
-  }
-  return vcProviderMatchesProject;
-}
-
-function vcIssuedToAddress(vc: VerifiableCredential, address: string) {
-  const vcIdSplit = vc.credentialSubject.id.split(":");
-  const addressFromId = vcIdSplit[vcIdSplit.length - 1];
-  return addressFromId.toLowerCase() === address.toLowerCase();
-}
-
-async function isVerified(
-  verifiableCredential: VerifiableCredential,
-  verifier: PassportVerifierWithExpiration,
-  provider: string,
-  application: GrantApplication | undefined
-) {
-  const vcHasValidProof = await verifier.verifyCredential(verifiableCredential);
-  const vcIssuedByValidIAMServer = verifiableCredential.issuer === IAM_SERVER;
-  const providerMatchesProject = vcProviderMatchesProject(
-    provider,
-    verifiableCredential,
-    application
-  );
-  const vcIssuedToAtLeastOneProjectOwner = (
-    application?.project?.owners ?? []
-  ).some((owner) => vcIssuedToAddress(verifiableCredential, owner.address));
-
-  return vcHasValidProof &&
-    vcIssuedByValidIAMServer &&
-    providerMatchesProject &&
-    vcIssuedToAtLeastOneProjectOwner
-    ? VerifiedCredentialState.VALID
-    : VerifiedCredentialState.INVALID;
 }
 
 function redirectToViewRoundPage(

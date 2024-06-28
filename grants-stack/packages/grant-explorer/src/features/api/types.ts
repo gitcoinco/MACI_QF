@@ -7,7 +7,6 @@ import { PCommand, PrivKey, PubKey } from "maci-domainobjs";
 export type {
   ApplicationStatus,
   GrantApplicationFormAnswer,
-  ProjectCredentials,
   ProjectOwner,
   ProjectMetadata,
   Project,

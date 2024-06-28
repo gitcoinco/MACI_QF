@@ -1,4 +1,3 @@
-import { VerifiableCredential } from "@gitcoinco/passport-sdk-types";
 import { ChainId } from "common";
 import { ProjectApplicationWithRound, RoundCategory } from "data-layer";
 import { RoundApplicationMetadata } from "data-layer/dist/roundApplication.types";
@@ -21,7 +20,6 @@ export interface Metadata {
   projectTwitter?: string;
   userGithub?: string;
   projectGithub?: string;
-  credentials?: ProjectCredentials;
   createdAt?: number;
   updatedAt?: number;
   chainId: number;
@@ -43,7 +41,6 @@ export interface Project {
   userGithub?: string;
   projectGithub?: string;
   projectTwitter?: string;
-  credentials?: ProjectCredentials;
   createdAt?: number;
 }
 
@@ -209,11 +206,6 @@ export interface SignedRoundApplication {
   application: RoundApplication;
 }
 
-export type ProjectCredentials = {
-  github?: VerifiableCredential;
-  twitter?: VerifiableCredential;
-};
-
 export type FormInputs = {
   title?: string;
   description?: string;
@@ -225,7 +217,6 @@ export type FormInputs = {
   projectTwitter?: string;
   userGithub?: string;
   projectGithub?: string;
-  credentials?: ProjectCredentials;
 };
 
 export enum ProjectFormStatus {

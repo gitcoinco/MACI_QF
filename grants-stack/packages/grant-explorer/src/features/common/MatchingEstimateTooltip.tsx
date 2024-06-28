@@ -30,14 +30,6 @@ export function MatchingEstimateTooltip(props: { isEligible: boolean }) {
               <>
                 Keep in mind that this is a potential match that may change with
                 the number of donations to a round.
-                <a
-                  href="https://passport.gitcoin.co"
-                  className={"underline"}
-                  target="_blank"
-                >
-                  Click here
-                </a>{" "}
-                to configure your score.
               </>
             )}
           </p>
