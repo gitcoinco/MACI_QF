@@ -250,20 +250,12 @@ export function RoundInCart(
                 </div>
               );
             })}
-          </div>
-        </div>
-        <div className="p-4 bg-grey-100 rounded-b-xl font-medium text-lg">
-          <div className="flex flex-row justify-between items-center">
-            <div className="flex flex-row gap-3 justify-center pt-1 pr-2">
-              <div className="font-semibold">
-                <p>
-                  <span className="mr-2">voiceCreditBalance</span>
-                  {voiceCreditBalance}
-                </p>
-                <p>
-                  <span className="mr-2">usedVoiceCredits</span>
-                  {usedVoiceCredits.toString()}
-                </p>
+            <div className="p-4 bg-grey-100 rounded-b-xl font-medium text-lg">
+              <div className="flex justify-end">
+                <div className="flex flex-row">
+                  <p className="mb-2 mr-4">Total voice credits allocated:</p>
+                  <p className="mb-2">{usedVoiceCredits.toString()}</p>
+                </div>
               </div>
             </div>
           </div>
