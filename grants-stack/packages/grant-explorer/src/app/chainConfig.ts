@@ -1,25 +1,5 @@
-import {
-  avalanche,
-  avalancheFuji,
-  Chain,
-  fantom,
-  fantomTestnet,
-  mainnet,
-  optimism,
-  polygon,
-  polygonMumbai,
-} from "wagmi/chains";
-import { arbitrum, arbitrumGoerli } from "viem/chains";
-import {
-  pgnTestnet,
-  pgn,
-  base,
-  scroll,
-  zkSyncEraMainnet,
-  zkSyncEraTestnet,
-  sepolia,
-  seiDevnet,
-} from "common/src/chains";
+import { Chain } from "wagmi/chains";
+import { scroll, sepolia } from "common/src/chains";
 import { ChainId } from "common/src/chain-ids";
 
 const ensureValidChainId = (chain: Chain) => {
@@ -30,30 +10,9 @@ const ensureValidChainId = (chain: Chain) => {
   }
 };
 
-const TESTNET_CHAINS = [
-  { ...fantomTestnet, iconUrl: "/logos/fantom-logo.svg" },
-  pgnTestnet,
-  arbitrumGoerli,
-  avalancheFuji,
-  polygonMumbai,
-  zkSyncEraTestnet,
-  sepolia,
-  seiDevnet,
-].map(ensureValidChainId);
+const TESTNET_CHAINS = [scroll, sepolia].map(ensureValidChainId);
 
-const MAINNET_CHAINS = [
-  mainnet,
-  optimism,
-  pgn,
-  arbitrum,
-  avalanche,
-  polygon,
-  zkSyncEraMainnet,
-  base,
-  scroll,
-  { ...fantom, iconUrl: "/logos/fantom-logo.svg" },
-  seiDevnet,
-].map(ensureValidChainId);
+const MAINNET_CHAINS = [scroll, sepolia].map(ensureValidChainId);
 
 export const getEnabledChains = (): Chain[] => {
   switch (process.env.REACT_APP_ENV) {

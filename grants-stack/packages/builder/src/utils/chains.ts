@@ -1,89 +1,18 @@
 import { Chain } from "@rainbow-me/rainbowkit";
-import { arbitrum, arbitrumGoerli } from "wagmi/chains";
 import { alchemyProvider } from "wagmi/providers/alchemy";
 import { infuraProvider } from "wagmi/providers/infura";
 import { publicProvider } from "wagmi/providers/public";
-import {
-  pgn,
-  pgnTestnet,
-  zkSyncEraMainnet,
-  zkSyncEraTestnet,
-  devChain1,
-  devChain2,
-  avalanche,
-  avalancheFuji,
-  fantom,
-  base,
-  fantomTestnet,
-  customOptimism,
-  customPolygon,
-  customMainnet,
-  sepolia,
-  scroll,
-  seiDevnet,
-} from "common/src/chains";
+import { sepolia, scroll } from "common/src/chains";
 import { getConfig } from "common/src/config";
-import { polygonMumbai } from "@wagmi/core/chains";
 
 const availableChains: { [key: string]: Chain } = {
-  dev1: devChain1,
-  dev2: devChain2,
-  mainnet: customMainnet,
-  fantom,
-  optimism: customOptimism,
-  pgn,
-  arbitrum,
-  avalanche,
-  polygon: customPolygon,
-  base,
   scroll,
-  fantomTestnet,
-  pgnTestnet,
-  arbitrumGoerli,
-  polygonMumbai,
-  avalancheFuji,
-  zkSyncEraMainnet,
-  zkSyncEraTestnet,
   sepolia,
-  seiDevnet,
 };
 
-const stagingChains = [
-  devChain1,
-  devChain2,
-  customOptimism,
-  fantomTestnet,
-  fantom,
-  customMainnet,
-  pgnTestnet,
-  pgn,
-  arbitrum,
-  base,
-  scroll,
-  arbitrumGoerli,
-  customPolygon,
-  polygonMumbai,
-  avalanche,
-  avalancheFuji,
-  zkSyncEraMainnet,
-  zkSyncEraTestnet,
-  sepolia,
-  seiDevnet,
-];
+const stagingChains = [scroll, sepolia];
 
-const productionChains = [
-  customMainnet,
-  fantom,
-  customOptimism,
-  pgn,
-  arbitrum,
-  avalanche,
-  customPolygon,
-  zkSyncEraMainnet,
-  base,
-  scroll,
-  seiDevnet,
-];
+const productionChains = [scroll, sepolia];
 
 export function getEnabledChainsAndProviders() {
   const config = getConfig();

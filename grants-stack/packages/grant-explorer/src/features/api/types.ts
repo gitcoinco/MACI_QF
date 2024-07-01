@@ -1,13 +1,12 @@
 import { ChainId } from "common";
 import { WalletClient } from "wagmi";
 
-import type { Project } from "data-layer";
-import { PrivKey, PubKey } from "maci-domainobjs";
+import type { MACIContribution, Project } from "data-layer";
+import { PCommand, PrivKey, PubKey } from "maci-domainobjs";
 
 export type {
   ApplicationStatus,
   GrantApplicationFormAnswer,
-  ProjectCredentials,
   ProjectOwner,
   ProjectMetadata,
   Project,
@@ -138,7 +137,7 @@ export interface PoolInfo {
   adminRole: string;
 }
 
-export interface MACIPollContracts {
+export interface MACIContracts {
   poll: string;
   messageProcessor: string;
   tally: string;
@@ -165,3 +164,107 @@ export interface IMessageContractParams {
     bigint,
   ];
 }
+
+export interface MACIContributions {
+  encrypted: MACIContribution;
+  maciInfo: {
+    maci: `0x${string}`;
+    pollContracts: readonly [
+      `0x${string}`,
+      `0x${string}`,
+      `0x${string}`,
+      `0x${string}`,
+    ];
+    strategy: string;
+    coordinatorPubKey: PubKey;
+    roundId: string;
+  };
+}
+
+export interface GroupedMaciContributions {
+  [chainId: number]: { [roundId: string]: MACIContributions };
+}
+
+export interface MACIContributionsByRoundId {
+  [roundId: string]: MACIContributions;
+}
+
+export interface GroupedMACIDecryptedContributions {
+  [chainID: number]: {
+    [roundID: string]: PCommand[];
+  };
+}
+
+export interface MACIDecryptedContributionsByRoundId {
+  [roundId: string]: PCommand[];
+}
+
+export interface GroupedCredits {
+  [chainId: number]: { [roundId: string]: string };
+}
+
+export interface GroupedCreditsByRoundId {
+  [roundId: string]: string;
+}
+
+export interface ProofArgs {
+  _pA: string[];
+  _pB: string[][];
+  _pC: string[];
+  _pubSignals: bigint[];
+}
+
+/**
+ * Interface for the arguments to the batch publish command
+ */
+export interface IAllocateArgs {
+  /**
+   * The public key of the user
+   */
+  publicKey: PubKey;
+
+  amount: bigint;
+
+  proof?: string;
+}
+
+export type bigintArray38 = [
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+  bigint,
+];

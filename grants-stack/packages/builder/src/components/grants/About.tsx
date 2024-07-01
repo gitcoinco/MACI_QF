@@ -2,7 +2,6 @@ import { Box } from "@chakra-ui/react";
 import { renderToHTML } from "common";
 import { ProjectApplicationWithRound } from "data-layer";
 import { GithubLogo, TwitterLogo } from "../../assets";
-import useValidateCredential from "../../hooks/useValidateCredential";
 import colors from "../../styles/colors";
 import {
   ApplicationCardType,
@@ -11,7 +10,6 @@ import {
   Project,
 } from "../../types";
 import { formatDateFromMs } from "../../utils/components";
-import GreenVerifiedBadge from "../badges/GreenVerifiedBadge";
 import Calendar from "../icons/Calendar";
 import LinkIcon from "../icons/LinkIcon";
 import ApplicationCard from "./ApplicationCard";
@@ -30,16 +28,6 @@ export default function About({
   updatedAt: number;
 }) {
   const canShowApplications = applications.length !== 0 && showApplications;
-
-  const { isValid: validTwitterCredential } = useValidateCredential(
-    project?.credentials?.twitter,
-    project?.projectTwitter
-  );
-
-  const { isValid: validGithubCredential } = useValidateCredential(
-    project?.credentials?.github,
-    project?.projectGithub
-  );
 
   const renderApplications = () => (
     <>
@@ -96,7 +84,6 @@ export default function About({
                 >
                   {project?.projectTwitter}
                 </a>
-                {validTwitterCredential && <GreenVerifiedBadge />}
               </div>
             )}
             {project?.projectGithub && (
@@ -110,7 +97,6 @@ export default function About({
                 >
                   {project?.projectGithub}
                 </a>
-                {validGithubCredential && <GreenVerifiedBadge />}
               </div>
             )}
           </div>

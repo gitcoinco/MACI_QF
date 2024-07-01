@@ -1,30 +1,26 @@
-import { ChainId, useTokenPrice, VotingToken } from "common";
+import { ChainId, VotingToken } from "common";
 import { CHAINS } from "../../api/utils";
-import { formatUnits, zeroAddress } from "viem";
+import { zeroAddress } from "viem";
 import { useAccount, useBalance } from "wagmi";
 import { InformationCircleIcon } from "@heroicons/react/24/solid";
+import { Tooltip } from "@chakra-ui/react";
 
 type SummaryProps = {
   totalDonation: bigint;
   selectedPayoutToken: VotingToken;
   chainId: ChainId;
+  alreadyContributed: boolean;
+  roundName: string;
 };
 
 export function Summary({
   selectedPayoutToken,
   totalDonation,
   chainId,
+  alreadyContributed,
+  roundName,
 }: SummaryProps) {
-  const { data: payoutTokenPrice } = useTokenPrice(
-    selectedPayoutToken.redstoneTokenId
-  );
-  const totalDonationInUSD =
-    payoutTokenPrice &&
-    Number(formatUnits(totalDonation, selectedPayoutToken.decimal)) *
-      Number(payoutTokenPrice);
-
   const { address } = useAccount();
-
   const { data: balance } = useBalance({
     address,
     token:
@@ -40,20 +36,31 @@ export function Summary({
     <div>
       <div className="flex flex-row justify-between mt-2 mb-5">
         <div className="flex flex-col">
-          <p className="mb-2">Your contribution on</p>
-          <p>
+          <p className="mb-2">Your donations amount on</p>
+          <div className="flex items-center">
             <img
               className={"inline max-w-[32px] mr-2"}
               alt={CHAINS[chainId].name}
               src={CHAINS[chainId].logo}
             />
-            {CHAINS[chainId].name}
-          </p>
+            <p>{roundName}</p>
+            <Tooltip
+              label="The total donation amount & percentages may slightly differ due to rounding during MACI vote calculations."
+              aria-label="Tooltip explaining rounding differences"
+              placement="top"
+              hasArrow
+              bg="gray.600"
+              color="white"
+              fontSize="sm"
+            >
+              <InformationCircleIcon className="w-4 h-4 ml-2 cursor-pointer text-gray-500" />
+            </Tooltip>
+          </div>
         </div>
-        <div className="flex flex-col">
+        {/* <div className="flex flex-col">
           <p className="text-right">
             <span data-testid={"totalDonation"} className="mr-2">
-              {formatUnits(totalDonation, selectedPayoutToken.decimal)}
+              {formatEther(totalDonation)}
             </span>
             <span data-testid={"summaryPayoutToken"}>
               {selectedPayoutToken.name}
@@ -66,9 +73,9 @@ export function Summary({
               </p>
             </div>
           )}
-        </div>
+        </div> */}
       </div>
-      {insufficientFunds && (
+      {insufficientFunds && !alreadyContributed && (
         <p
           data-testid="insufficientBalance"
           className="rounded-md bg-red-50 font-medium p-2 text-pink-500 flex justify-start items-center mt-2 mb-6 text-sm"

@@ -1,34 +1,190 @@
 import { useAccount, useEnsAddress, useEnsAvatar, useEnsName } from "wagmi";
-import { lazy, useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { lazy, useCallback, useEffect, useMemo, useState } from "react";
 import { getChainIds, votingTokens } from "../api/utils";
 import Navbar from "../common/Navbar";
 import blockies from "ethereum-blockies";
 import CopyToClipboardButton from "../common/CopyToClipboardButton";
 import Footer from "common/src/components/Footer";
 import Breadcrumb, { BreadcrumbItem } from "../common/Breadcrumb";
-import { useContributionHistory } from "../api/round";
 import { StatCard } from "../common/StatCard";
 import { DonationsTable } from "./DonationsTable";
 import { isAddress } from "viem";
-import { VotingToken, dateToEthereumTimestamp } from "common";
-import { Contribution } from "data-layer";
+import { VotingToken, dateToEthereumTimestamp, useTokenPrice } from "common";
+import { Contribution, useDataLayer } from "data-layer";
+import {
+  useDecryptMessages,
+  useMACIContributions,
+} from "../projects/hooks/useRoundMaciMessages";
+import { useRoundsApprovedApplications } from "../projects/hooks/useRoundApplications";
+import { WalletClient, getWalletClient } from "@wagmi/core";
+import { signAndStoreSignatures } from "../api/keys";
+import { areSignaturesPresent, getDonationHistory } from "../api/maciCartUtils";
+import { Spinner } from "../common/Spinner";
 
 const DonationHistoryBanner = lazy(
   () => import("../../assets/DonationHistoryBanner")
 );
+const LOCAL_STORAGE_KEY = "lastConnectedWallet";
 
 export function ViewContributionHistoryPage() {
-  const params = useParams();
+  const [signaturesReady, setSignaturesReady] = useState(false);
+  const [signaturesRequested, setSignaturesRequested] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState<string>(
+    "Checking needed signatures..."
+  );
+  const [contributions, setContributions] = useState<Contribution[]>([]);
+
   const chainIds = getChainIds();
+  const { address: walletAddress, isConnected } = useAccount();
 
   const { data: ensResolvedAddress } = useEnsAddress({
-    /* If params.address is actually an address, don't resolve the ens address for it*/
-    name: isAddress(params.address ?? "") ? undefined : params.address,
+    /* If walletAddress is actually an address, don't resolve the ens address for it*/
+    name: isAddress(walletAddress ?? "") ? undefined : walletAddress,
     chainId: 1,
   });
 
-  if (params.address === undefined) {
+  const dataLayer = useDataLayer();
+
+  const { data: maciContributions } = useMACIContributions(
+    walletAddress?.toLowerCase() as string,
+    dataLayer
+  );
+
+  const { data: applications } = useRoundsApprovedApplications(
+    maciContributions?.groupedRounds ?? [],
+    dataLayer
+  );
+
+  const { data: DecryptedContributions, refetch } = useDecryptMessages(
+    maciContributions?.groupedMaciContributions,
+    walletAddress?.toLowerCase() as string,
+    signaturesReady
+  );
+
+  function getNeededPairs(
+    groupedRounds:
+      | {
+          chainId: number;
+          roundId: string;
+          address: string;
+        }[]
+      | undefined
+  ) {
+    if (!groupedRounds) return;
+    const pairs: {
+      chainId: number;
+      roundId: string;
+    }[] = [];
+    for (const { chainId, roundId } of groupedRounds ?? []) {
+      pairs.push({
+        chainId,
+        roundId,
+      });
+    }
+    return pairs.length ? pairs : null;
+  }
+
+  const hasDonations = useMemo(() => {
+    if (maciContributions && maciContributions.groupedRounds) {
+      return maciContributions.groupedRounds.length > 0;
+    } else {
+      return false;
+    }
+  }, [maciContributions]);
+
+  const getNeededSignatures = useCallback(async () => {
+    if (signaturesRequested) return;
+    setSignaturesRequested(true);
+    const pairs = getNeededPairs(maciContributions?.groupedRounds);
+
+    if (!pairs || pairs.length === 0) {
+      setSignaturesReady(true);
+      setLoadingMessage("");
+      return;
+    }
+
+    setLoadingMessage("Requesting signatures...");
+    const walletClient = await getWalletClient();
+    if (pairs) {
+      await signAndStoreSignatures({
+        pairs,
+        walletClient: walletClient as WalletClient,
+        address: walletAddress as string,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [maciContributions, walletAddress, signaturesRequested, hasDonations]);
+
+  const fetchDonationHistory = useCallback(async () => {
+    const donations = await getDonationHistory(
+      dataLayer,
+      walletAddress as string,
+      applications,
+      maciContributions?.groupedMaciContributions,
+      DecryptedContributions?.decryptedMessagesByRound
+    );
+    setContributions(donations);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    dataLayer,
+    applications,
+    maciContributions,
+    DecryptedContributions,
+    walletAddress,
+    hasDonations,
+  ]);
+
+  useEffect(() => {
+    const lastWalletAddress = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (
+      isConnected &&
+      walletAddress &&
+      walletAddress.toLowerCase() !== lastWalletAddress?.toLowerCase()
+    ) {
+      localStorage.setItem(LOCAL_STORAGE_KEY, walletAddress.toLowerCase());
+      setSignaturesRequested(false);
+      setSignaturesReady(false);
+      setLoadingMessage("Checking needed signatures...");
+    }
+
+    if (maciContributions && walletAddress) {
+      const signaturesExist = areSignaturesPresent(
+        maciContributions.groupedMaciContributions,
+        walletAddress
+      );
+      if (signaturesExist) {
+        setSignaturesReady(true);
+      } else {
+        setLoadingMessage(
+          "Sign the messages to decrypt and view your contributions history."
+        );
+        getNeededSignatures();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [maciContributions, walletAddress, getNeededSignatures, hasDonations]);
+
+  useEffect(() => {
+    if (signaturesReady) {
+      refetch();
+    }
+  }, [signaturesReady, refetch, hasDonations]);
+
+  useEffect(() => {
+    if (DecryptedContributions && signaturesReady) {
+      setLoadingMessage("Decrypting your donation history...");
+      fetchDonationHistory();
+    }
+  }, [
+    DecryptedContributions,
+    signaturesReady,
+    fetchDonationHistory,
+    hasDonations,
+  ]);
+
+  useEffect(() => {}, [contributions, loadingMessage]);
+
+  if (walletAddress === undefined) {
     return null;
   }
 
@@ -36,8 +192,11 @@ export function ViewContributionHistoryPage() {
     <>
       <Navbar showWalletInteraction={true} />
       <ViewContributionHistoryFetcher
-        address={ensResolvedAddress ?? params.address}
+        address={ensResolvedAddress ?? walletAddress}
         chainIds={chainIds}
+        contributions={contributions}
+        loadingMessage={loadingMessage}
+        hasDonations={hasDonations}
       />
     </>
   );
@@ -46,12 +205,10 @@ export function ViewContributionHistoryPage() {
 function ViewContributionHistoryFetcher(props: {
   address: string;
   chainIds: number[];
+  contributions: Contribution[];
+  loadingMessage: string;
+  hasDonations: boolean;
 }) {
-  const contributionHistory = useContributionHistory(
-    props.chainIds,
-    props.address
-  );
-
   const { data: ensName } = useEnsName({
     /* If props.address is an ENS name, don't pass in anything, as we already have the ens name*/
     address: isAddress(props.address) ? props.address : undefined,
@@ -77,7 +234,11 @@ function ViewContributionHistoryFetcher(props: {
   const addressLogo = useMemo(() => {
     return (
       ensAvatar ??
-      blockies.create({ seed: props.address.toLowerCase() }).toDataURL()
+      blockies
+        .create({
+          seed: props.address.toLowerCase(),
+        })
+        .toDataURL()
     );
   }, [props.address, ensAvatar]);
 
@@ -89,40 +250,38 @@ function ViewContributionHistoryFetcher(props: {
     ])
   );
 
-  if (contributionHistory.type === "loading") {
-    return <div>Loading...</div>;
-  } else if (contributionHistory.type === "error") {
-    console.error("Error", contributionHistory);
-    return (
-      <ViewContributionHistoryWithoutDonations
-        address={props.address}
-        addressLogo={addressLogo}
-        breadCrumbs={breadCrumbs}
-      />
-    );
-  } else {
-    return (
-      <ViewContributionHistory
-        tokens={tokens}
-        addressLogo={addressLogo}
-        contributions={contributionHistory.data}
-        address={props.address}
-        breadCrumbs={breadCrumbs}
-        ensName={ensName}
-      />
-    );
-  }
+  return (
+    <ViewContributionHistory
+      tokens={tokens}
+      addressLogo={addressLogo}
+      contributions={{
+        data: props.contributions,
+        chainIds: props.chainIds,
+      }}
+      loadingMessage={props.loadingMessage}
+      hasDonations={props.hasDonations}
+      address={props.address}
+      breadCrumbs={breadCrumbs}
+      ensName={ensName}
+    />
+  );
 }
 
 export function ViewContributionHistory(props: {
   tokens: Record<string, VotingToken>;
-  contributions: { chainIds: number[]; data: Contribution[] };
+  contributions: {
+    chainIds: number[];
+    data: Contribution[];
+  };
+  loadingMessage: string;
+  hasDonations: boolean;
   address: string;
   addressLogo: string;
   ensName?: string | null;
   breadCrumbs: BreadcrumbItem[];
 }) {
-  const currentOrigin = window.location.origin;
+  const { data: price } = useTokenPrice("ETH");
+
   const [totalDonations, totalUniqueContributions, totalProjectsFunded] =
     useMemo(() => {
       let totalDonations = 0;
@@ -134,7 +293,8 @@ export function ViewContributionHistory(props: {
           contribution.tokenAddress.toLowerCase() + "-" + contribution.chainId;
         const token = props.tokens[tokenId];
         if (token) {
-          totalDonations += contribution.amountInUsd;
+          totalDonations +=
+            (Number(contribution.amount) * (price ?? 0)) / 10 ** 18;
           totalUniqueContributions += 1;
           const project = contribution.projectId;
           if (!projects.includes(project)) {
@@ -144,7 +304,7 @@ export function ViewContributionHistory(props: {
       });
 
       return [totalDonations, totalUniqueContributions, projects.length];
-    }, [props.contributions, props.tokens]);
+    }, [props.contributions, props.tokens, price]);
 
   const activeRoundDonations = useMemo(() => {
     const now = Date.now();
@@ -209,26 +369,7 @@ export function ViewContributionHistory(props: {
                 props.address.slice(0, 6) + "..." + props.address.slice(-6)}
             </div>
           </div>
-          <div className="flex justify-between items-center">
-            {/* todo: removed until site is stable */}
-            {/* <Button
-              className="shadow-sm inline-flex border-gray-300 border-2 bg-gradient-to-br from-[#f6d7caff] via-[#bddce8ff] to-[#ebdfa5ff] font-medium py-2 px-4 rounded-md hover:bg-gradient-to-tr text-black w-30 mr-6"
-              onClick={() =>
-                window.open(
-                  `https://gg-your-impact.streamlit.app/?address=${props.address}`,
-                  "_blank"
-                )
-              }
-            >
-              <span className="font-mono text-black text-opacity-100">
-                Your Gitcoin Grants Impact
-              </span>
-            </Button> */}
-            <CopyToClipboardButton
-              textToCopy={`${currentOrigin}/#/contributors/${props.address}`}
-              iconStyle="h-4 w-4 mr-1 mt-1 shadow-sm"
-            />
-          </div>
+          <div className="flex justify-between items-center"></div>
         </div>
         <div className="mt-8 mb-2 font-sans italic">
           * Please note that your recent transactions may take a short while to
@@ -256,22 +397,34 @@ export function ViewContributionHistory(props: {
           </div>
         </div>
         <div className="text-2xl my-6">Donation History</div>
-        <div className="text-lg bg-grey-75 text-black rounded-2xl pl-4 px-1 py-1 mb-2 font-semibold">
-          Active Rounds
-        </div>
-        <DonationsTable
-          contributions={activeRoundDonations}
-          tokens={props.tokens}
-          activeRound={true}
-        />
-        <div className="text-lg bg-grey-75 text-black rounded-2xl pl-4 px-1 py-1 mb-2 font-semibold">
-          Past Rounds
-        </div>
-        <DonationsTable
-          contributions={pastRoundDonations}
-          tokens={props.tokens}
-          activeRound={false}
-        />
+
+        {props.contributions.data.length === 0 && props.hasDonations ? (
+          <div className="flex flex-col items-center justify-center mt-[4%]">
+            <Spinner />
+            <p>{props.loadingMessage}</p>
+          </div>
+        ) : (
+          <div>
+            <div className="text-lg bg-grey-75 text-black rounded-2xl pl-4 px-1 py-1 mb-2 font-semibold">
+              Active Rounds
+            </div>
+            <DonationsTable
+              contributions={activeRoundDonations}
+              tokens={props.tokens}
+              activeRound={true}
+              price={price ?? 0}
+            />
+            <div className="text-lg bg-grey-75 text-black rounded-2xl pl-4 px-1 py-1 mb-2 font-semibold">
+              Past Rounds
+            </div>
+            <DonationsTable
+              contributions={pastRoundDonations}
+              tokens={props.tokens}
+              activeRound={false}
+              price={price ?? 0}
+            />
+          </div>
+        )}
       </main>
       <div className="mt-24 mb-11 h-11">
         <Footer />

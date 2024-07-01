@@ -1,179 +1,435 @@
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { CartProject } from "../../api/types";
 import { useRoundById } from "../../../context/RoundContext";
 import { ProjectInCart } from "./ProjectInCart";
-import {
-  matchingEstimatesToText,
-  useMatchingEstimates,
-} from "../../../hooks/matchingEstimate";
-import { getAddress, parseUnits, zeroAddress } from "viem";
+import { parseUnits } from "viem";
 import { useAccount } from "wagmi";
-import { useCartStorage } from "../../../store";
-import { Skeleton } from "@chakra-ui/react";
-import { BoltIcon } from "@heroicons/react/24/outline";
-import { ChainId, VotingToken, isRoundUsingPassportLite } from "common";
-import { getFormattedRoundId } from "../../common/utils/utils";
-import { PassportWidget } from "../../common/PassportWidget";
+import {
+  Button,
+  Tooltip,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  ModalFooter,
+} from "@chakra-ui/react";
+import { VotingToken } from "common";
+import { SummaryContainer } from "./SummaryContainer";
+import { Switch } from "@headlessui/react";
+import { zuAuthPopup } from "@pcd/zuauth";
+import { fieldsToReveal } from "../../api/pcd";
+import { ZuzaluEvents } from "../../../constants/ZuzaluEvents";
+import { uuidToBigInt } from "@pcd/util";
+import { isRoundZuProofReused } from "../../api/voting";
+import { useAlreadyContributed } from "../../projects/hooks/useRoundMaciMessages";
+import { useDataLayer } from "data-layer";
 
 export function RoundInCart(
   props: React.ComponentProps<"div"> & {
     roundCart: CartProject[];
     selectedPayoutToken: VotingToken;
-    handleRemoveProjectFromCart: (project: CartProject) => void;
+    handleRemoveProjectFromCart: (
+      project: CartProject,
+      walletAddress: string
+    ) => void;
     payoutTokenPrice: number;
+    chainId: number;
+    roundId: string;
   }
 ) {
-  const round = useRoundById(
-    props.roundCart[0].chainId,
-    props.roundCart[0].roundId
-  ).round;
+  const {
+    chainId,
+    roundId,
+    selectedPayoutToken,
+    roundCart,
+    handleRemoveProjectFromCart,
+    payoutTokenPrice,
+  } = props;
 
-  const isSybilDefenseEnabled =
-    round?.roundMetadata?.quadraticFundingConfig?.sybilDefense === true;
-
-  const minDonationThresholdAmount =
-    round?.roundMetadata?.quadraticFundingConfig?.minDonationThresholdAmount ??
-    1;
+  const round = useRoundById(chainId, roundId).round;
 
   const { address } = useAccount();
-  const votingTokenForChain = useCartStorage((state) =>
-    state.getVotingTokenForChain(props.roundCart[0]?.chainId)
+  const dataLayer = useDataLayer();
+
+  const [pcd, setPcd] = useState<string | undefined>(undefined);
+  const [pcdFetched, setPcdFetched] = useState(false);
+  const [enabled, setEnabled] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [donationInput, setDonationInput] = useState<string>(
+    (
+      roundCart.reduce(
+        (acc, project) =>
+          acc + (isNaN(Number(project.amount)) ? 0 : Number(project.amount)),
+        0
+      ) / 1e5
+    ).toString()
+  );
+  const [donatedAmount, setDonatedAmount] = useState<bigint>(
+    BigInt(parseInt(donationInput) * 1e18)
   );
 
-  const {
-    data: matchingEstimates,
-    error: matchingEstimateError,
-    isLoading: matchingEstimateLoading,
-  } = useMatchingEstimates([
-    {
-      roundId: getFormattedRoundId(round?.id ?? zeroAddress),
-      chainId: props.roundCart[0].chainId,
-      potentialVotes: props.roundCart.map((proj) => ({
-        roundId: getFormattedRoundId(round?.id ?? zeroAddress),
-        projectId: proj.projectRegistryId,
-        amount: parseUnits(
-          proj.amount ?? "0",
-          votingTokenForChain.decimal ?? 18
-        ),
-        grantAddress: proj.recipient,
-        voter: address ?? zeroAddress,
-        token: votingTokenForChain.address.toLowerCase(),
-        applicationId: proj.grantApplicationId,
-      })),
-    },
-  ]);
+  const [voiceCreditBalance, setVoiceCreditBalance] = useState<number>(
+    Number(donatedAmount) / 1e13
+  );
 
-  const estimate = matchingEstimatesToText(matchingEstimates);
+  const [usedVoiceCredits, setUsedVoiceCredits] = useState<number>(
+    parseInt(
+      roundCart
+        .reduce(
+          (acc, project) =>
+            acc +
+            (isNaN(Number(project.amount)) || Number(project.amount) === 0
+              ? 0
+              : Number(project.amount)),
+          0
+        )
+        .toString()
+    )
+  );
 
-  const totalDonationInUSD =
-    props.roundCart.reduce((acc, proj) => acc + Number(proj.amount), 0) *
-    props.payoutTokenPrice;
+  const [isZupasReused, setIsZupasReused] = useState(false);
 
-  const showMatchingEstimate =
-    matchingEstimateError === undefined &&
-    matchingEstimates !== undefined &&
-    round?.chainId !== ChainId.AVALANCHE;
+  const { isLoading, data: status } = useAlreadyContributed(
+    dataLayer,
+    address as string,
+    chainId,
+    roundId
+  );
+
+  const votingToken = selectedPayoutToken;
+
+  const validObjEventIDs = round?.roundMetadata?.maciParameters?.validEventIDs;
+
+  const array = validObjEventIDs
+    ? validObjEventIDs.map((eventId) => BigInt(eventId.eventID))
+    : [];
+
+  const eventIDs = Array.from(new Set(array));
+  const filteredEvents = ZuzaluEvents.filter((event) =>
+    eventIDs.includes(uuidToBigInt(event.eventId))
+  );
+  const eventsList = filteredEvents.map((event) => event.eventName).join("\n");
+
+  const currentTime = new Date();
+  const isActiveRound = round && round.roundEndTime > currentTime;
+
+  const maxContributionAllowlisted = round
+    ? Number(
+        round.roundMetadata?.maciParameters?.maxContributionAmountAllowlisted ??
+          "1.0"
+      ).toString()
+    : "1.0";
+  const maxContributionNonAllowlisted = round
+    ? Number(
+        round.roundMetadata?.maciParameters
+          ?.maxContributionAmountNonAllowlisted ?? "0.1"
+      ).toString()
+    : "0.1";
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    let value = event.target.value;
+    value =
+      pcdFetched === true && Number(value) >= Number(maxContributionAllowlisted)
+        ? maxContributionAllowlisted
+        : pcdFetched === true
+          ? value
+          : Number(value) >= Number(maxContributionNonAllowlisted)
+            ? maxContributionNonAllowlisted
+            : value;
+    value = value === "" ? "0.0" : value;
+
+    if (/^\d*\.?\d*$/.test(value)) {
+      setDonationInput(value);
+      const amountToDonate = parseUnits(value, votingToken.decimal);
+      setDonatedAmount(amountToDonate);
+      setVoiceCreditBalance(
+        parseInt((Number(amountToDonate) / 1e13).toString())
+      );
+    }
+  };
+
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
+
+  const getProof = useCallback(async () => {
+    if (!address) return;
+    const result = await zuAuthPopup({
+      fieldsToReveal,
+      watermark: address,
+      config: filteredEvents,
+    });
+    const isReused = await isRoundZuProofReused(
+      JSON.parse(result.pcdStr).pcd,
+      chainId,
+      roundId
+    );
+    if (result.type === "pcd") {
+      setPcd(JSON.parse(result.pcdStr).pcd);
+      setPcdFetched(true);
+      setIsZupasReused(isReused);
+    }
+  }, [address, filteredEvents]);
+
+  useEffect(() => {
+    setUsedVoiceCredits(
+      parseInt(
+        roundCart
+          .reduce(
+            (acc, project) =>
+              acc +
+              (isNaN(Number(project.amount)) || Number(project.amount) === 0
+                ? 0
+                : Number(project.amount)),
+            0
+          )
+          .toString()
+      )
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [donatedAmount, donationInput, props.roundCart]);
+
+  if (!isLoading && status?.hasDonated && !isActiveRound) {
+    props.roundCart.forEach((project) => {
+      props.handleRemoveProjectFromCart(project, address as string);
+    });
+  }
+  if (!isActiveRound) {
+    return null;
+  }
 
   return (
-    <div className="my-4">
-      {/* Round In Cart */}
-      <div className="bg-grey-50 px-4 py-6 rounded-t-xl">
-        <div className="flex flex-row items-end justify-between">
-          <div className={"flex flex-col"}>
-            <div>
-              <p className="text-xl font-semibold inline">
-                {round?.roundMetadata?.name}
-              </p>
-              <p className="text-lg font-bold ml-2 inline">
-                ({props.roundCart.length})
-              </p>
-            </div>
-            {minDonationThresholdAmount && (
+    <div className="my-4 flex w-full">
+      <div className="flex flex-col flex-grow w-3/4">
+        <div className="bg-grey-50 px-4 py-6 rounded-xl mb-4 flex-grow mr-2">
+          <div className="flex flex-row items-end justify-between">
+            <div className="flex flex-col">
               <div>
-                <p className="text-sm pt-2 italic mb-5">
-                  Your donation to each project must be valued at{" "}
-                  {minDonationThresholdAmount} USD or more to be eligible for
-                  matching.
+                <p className="text-xl font-semibold inline">
+                  {round?.roundMetadata?.name}
                 </p>
-              </div>
-            )}
-          </div>
-        </div>
-        <div>
-          {props.roundCart.map((project, key) => {
-            const matchingEstimateUSD = matchingEstimates
-              ?.flat()
-              .find(
-                (est) =>
-                  getAddress(est.recipient ?? zeroAddress) ===
-                  getAddress(project.recipient ?? zeroAddress)
-              )?.differenceInUSD;
-            return (
-              <div key={key}>
-                <ProjectInCart
-                  projects={props.roundCart}
-                  selectedPayoutToken={props.selectedPayoutToken}
-                  removeProjectFromCart={props.handleRemoveProjectFromCart}
-                  project={project}
-                  index={key}
-                  showMatchingEstimate={showMatchingEstimate}
-                  matchingEstimateUSD={matchingEstimateUSD}
-                  roundRoutePath={`/round/${props.roundCart[0].chainId}/${props.roundCart[0].roundId}`}
-                  last={key === props.roundCart.length - 1}
-                  payoutTokenPrice={props.payoutTokenPrice}
+                <p className="text-lg font-bold ml-2 inline">
+                  ({roundCart.length})
+                </p>
+                <RoundAllowlist
+                  pcdFetched={pcdFetched}
+                  maxContributionAllowlisted={maxContributionAllowlisted}
+                  maxContributionNonAllowlisted={maxContributionNonAllowlisted}
+                  openModal={openModal}
+                  isZupasReused={isZupasReused}
                 />
               </div>
-            );
-          })}
-        </div>
-      </div>
-      {/* Total Donations */}
-      <div className="p-4 bg-grey-100 rounded-b-xl font-medium text-lg">
-        <div className="flex flex-row justify-between items-center">
+            </div>
+            <div className="flex items-center pt-2  mb-5 mr-2">
+              <label
+                htmlFor="totalDonationETH"
+                className="text-lg font-semibold inline mr-2"
+              >
+                Total Donation:{"  "}
+              </label>
+              <input
+                type="text"
+                id="totalDonationETH"
+                value={donationInput}
+                typeof="number"
+                onChange={handleInputChange}
+                className="px-3 py-2 w-20 bg-white border shadow-sm border-slate-300 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-sky-500 block rounded-md sm:text-sm focus:ring-1"
+                placeholder="Enter amount in ETH"
+              />
+            </div>
+          </div>
           <div>
-            {address &&
-              round &&
-              (isSybilDefenseEnabled || isRoundUsingPassportLite(round)) && (
-                <div data-testid="passport-widget">
-                  <PassportWidget round={round} alignment="left" />
+            {roundCart.map((project, key) => {
+              return (
+                <div key={key}>
+                  <ProjectInCart
+                    projects={roundCart}
+                    selectedPayoutToken={selectedPayoutToken}
+                    removeProjectFromCart={handleRemoveProjectFromCart}
+                    totalAmount={parseFloat(donationInput)}
+                    project={project}
+                    index={key}
+                    roundRoutePath={`/round/${chainId}/${roundCart[0].roundId}`}
+                    last={key === roundCart.length - 1}
+                    payoutTokenPrice={payoutTokenPrice}
+                    alreadyContributed={status?.hasDonated ?? false}
+                    walletAddress={address as `0x${string}`}
+                  />
                 </div>
-              )}
+              );
+            })}
           </div>
-          <div className="flex flex-row gap-3 justify-center pt-1 pr-2">
-            <div>
-              {showMatchingEstimate && (
-                <div className="flex justify-end flex-nowrap">
-                  <Skeleton isLoaded={!matchingEstimateLoading}>
-                    <div className="flex flex-row font-semibold">
-                      <div
-                        className={
-                          "flex flex-col md:flex-row items-center gap-2 text-base"
-                        }
-                      >
-                        <span className="mr-2">Total match</span>
-                        <div className="flex flex-row items-center justify-between font-semibold text-teal-500">
-                          <BoltIcon className={"w-4 h-4 inline"} />
-                          ~$
-                          {estimate?.toFixed(2)}
-                        </div>
-                      </div>
-                      <span className="pl-4">|</span>
-                    </div>
-                  </Skeleton>
-                </div>
-              )}
-            </div>
-            <div className="font-semibold">
-              <p>
-                <span className="mr-2">Total donation</span>$
-                {isNaN(totalDonationInUSD)
-                  ? "0.0"
-                  : totalDonationInUSD.toFixed(2)}
-              </p>
+        </div>
+        <div className="p-4 bg-grey-100 rounded-b-xl font-medium text-lg">
+          <div className="flex flex-row justify-between items-center">
+            <div className="flex flex-row gap-3 justify-center pt-1 pr-2">
+              <div className="font-semibold">
+                <p>
+                  <span className="mr-2">voiceCreditBalance</span>
+                  {voiceCreditBalance}
+                </p>
+                <p>
+                  <span className="mr-2">usedVoiceCredits</span>
+                  {usedVoiceCredits.toString()}
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </div>
+      <div className="w-1/4 ml-[4%]">
+        <SummaryContainer
+          alreadyContributed={status?.hasContributed ?? false}
+          alreadyDonated={status?.hasDonated ?? false}
+          stateIndex={status?.stateIndex ?? 0}
+          payoutTokenPrice={payoutTokenPrice}
+          donatedAmount={donatedAmount}
+          roundId={roundId}
+          chainId={chainId}
+          walletAddress={address as `0x${string}`}
+          pcd={pcdFetched && !isZupasReused ? pcd : undefined}
+          roundName={round?.roundMetadata?.name ?? ""}
+        />
+      </div>
+
+      <Modal isOpen={isModalOpen} onClose={closeModal} isCentered={true}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Join Allowlist</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <p className="text-sm text-gray-700">
+              Prove that you are a ZuPass holder and that you attended one of
+              <Tooltip
+                label={
+                  <div style={{ whiteSpace: "pre-line" }}>{eventsList}</div>
+                }
+                aria-label="List of events"
+                placement="top"
+                closeOnClick={false}
+                hasArrow
+              >
+                <span className="underline cursor-pointer"> those</span>
+              </Tooltip>{" "}
+              events to join the allowlist.
+            </p>
+            {!pcdFetched && (
+              <Switch.Group
+                as="div"
+                className="flex items-center justify-between mt-4"
+              >
+                <span className="flex flex-grow flex-col">
+                  <Switch.Label
+                    as="span"
+                    className="text-sm font-medium leading-6 text-gray-900"
+                    passive
+                  >
+                    Join Allowlist
+                  </Switch.Label>
+                  <Switch.Description
+                    as="span"
+                    className="text-sm text-gray-500"
+                  >
+                    Toggle to generate proof and join the allowlist.
+                  </Switch.Description>
+                </span>
+                <Switch
+                  checked={enabled}
+                  onChange={setEnabled}
+                  className={classNames(
+                    enabled ? "bg-indigo-600" : "bg-gray-200",
+                    "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2"
+                  )}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={classNames(
+                      enabled ? "translate-x-5" : "translate-x-0",
+                      "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                    )}
+                  />
+                </Switch>
+              </Switch.Group>
+            )}
+
+            {pcdFetched && !isZupasReused && (
+              <div className="mt-4 text-green-600">
+                You can now contribute up to {maxContributionAllowlisted} ETH.
+              </div>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button onClick={enabled && !pcdFetched ? getProof : closeModal}>
+              {enabled && !pcdFetched ? "Generate proof" : "Close"}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }
+
+function classNames(...classes: string[]) {
+  return classes.filter(Boolean).join(" ");
+}
+
+const RoundAllowlist = ({
+  pcdFetched,
+  maxContributionAllowlisted,
+  maxContributionNonAllowlisted,
+  openModal,
+  isZupasReused,
+}: {
+  pcdFetched: boolean;
+  maxContributionAllowlisted: string;
+  maxContributionNonAllowlisted: string;
+  openModal: () => void;
+  isZupasReused: boolean;
+}) => {
+  return (
+    <div className="flex flex-col items-center">
+      <div className="flex flex-col">
+        {!pcdFetched ? (
+          <p className="text-sm pt-2 italic mb-5 mr-2">
+            Your max allowed contribution amount is{" "}
+            {maxContributionNonAllowlisted} ETH.{" "}
+            <Tooltip
+              label="Click to join the allowlist"
+              aria-label="Click to join the allowlist"
+            >
+              <a
+                onClick={openModal}
+                className="text-md pt-2 font-bold mb-5 mr-2 cursor-pointer"
+                style={{ color: "black", fontStyle: "normal" }}
+              >
+                Join the allowlist
+              </a>
+            </Tooltip>
+            <div className="text-sm italic mb-5 mr-2">
+              to contribute up to {maxContributionAllowlisted} ETH.
+            </div>
+          </p>
+        ) : !isZupasReused ? (
+          <div className="flex flex-col">
+            <p className="text-sm pt-2 italic ">
+              You successfuly proved your Zuzalu commitment you can
+            </p>
+            <p className="text-sm italic mb-5 mr-2">
+              now contribute up to {maxContributionAllowlisted} ETH.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col">
+            <p className="text-sm pt-2 italic ">
+              You have already used your Zupass for this round. You can
+            </p>
+            <p className="text-sm italic mb-5 mr-2">
+              contribute up to {maxContributionNonAllowlisted} ETH.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

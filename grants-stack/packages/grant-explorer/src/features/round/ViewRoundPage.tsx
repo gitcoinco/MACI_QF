@@ -14,7 +14,6 @@ import {
   formatUTCDateAsISOString,
   getRoundStrategyTitle,
   getUTCTime,
-  isRoundUsingPassportLite,
   renderToPlainText,
   truncateDescription,
   useTokenPrice,
@@ -23,13 +22,11 @@ import {
 import { Button, Input } from "common/src/styles";
 import AlloV1 from "common/src/icons/AlloV1";
 import AlloV2 from "common/src/icons/AlloV2";
-
 import { ReactComponent as CartCircleIcon } from "../../assets/icons/cart-circle.svg";
 import { ReactComponent as CheckedCircleIcon } from "../../assets/icons/checked-circle.svg";
 import { ReactComponent as Search } from "../../assets/search-grey.svg";
 import { ReactComponent as WarpcastIcon } from "../../assets/warpcast-logo.svg";
 import { ReactComponent as TwitterBlueIcon } from "../../assets/x-logo.svg";
-
 import { useRoundById } from "../../context/RoundContext";
 import { CartProject, Project, Requirement, Round } from "../api/types";
 import {
@@ -39,8 +36,6 @@ import {
   isInfiniteDate,
   votingTokens,
 } from "../api/utils";
-import { PassportWidget } from "../common/PassportWidget";
-
 import Footer from "common/src/components/Footer";
 import Navbar from "../common/Navbar";
 import NotFoundPage from "../common/NotFoundPage";
@@ -57,17 +52,10 @@ import {
   CardTitle,
 } from "../common/styles";
 import Breadcrumb, { BreadcrumbItem } from "../common/Breadcrumb";
-
-const builderURL = process.env.REACT_APP_BUILDER_URL;
 import CartNotification from "../common/CartNotification";
 import { useCartStorage } from "../../store";
-import { useAccount, useToken, useWalletClient } from "wagmi";
-import {
-  encodeAbiParameters,
-  getAddress,
-  parseAbi,
-  parseAbiParameters,
-} from "viem";
+import { useAccount, useToken } from "wagmi";
+import { getAddress } from "viem";
 import { getAlloVersion } from "common/src/config";
 import { ExclamationCircleIcon } from "@heroicons/react/24/solid";
 import { DefaultLayout } from "../common/DefaultLayout";
@@ -81,15 +69,12 @@ import {
 } from "@heroicons/react/24/outline";
 import { Box, Tab, Tabs } from "@chakra-ui/react";
 import GenericModal from "../common/GenericModal";
-import { String, chain, get } from "lodash";
-import { WalletClient, getPublicClient, signMessage } from "@wagmi/core";
-import { ethers } from "ethers";
+import {
+  useAlreadyContributed,
+  useGetContributions,
+} from "../projects/hooks/useRoundMaciMessages";
 
-// NEW CODE
-import { getContributorMessages } from "../api/voting";
-import { generatePubKey, generatePubKeyWithSeed } from "../../checkoutStore";
-import { poll } from "ethers/lib/utils.js";
-import { PubKey } from "maci-domainobjs";
+const builderURL = process.env.REACT_APP_BUILDER_URL;
 
 export default function ViewRound() {
   datadogLogs.logger.info("====> Route: /round/:chainId/:roundId");
@@ -221,27 +206,17 @@ function AfterRoundStart(props: {
   isAfterRoundEndDate?: boolean;
 }) {
   const { round, chainId, roundId } = props;
-
   const [searchQuery, setSearchQuery] = useState("");
   const [projects, setProjects] = useState<Project[]>();
   const [randomizedProjects, setRandomizedProjects] = useState<Project[]>();
-  const { address: walletAddress } = useAccount();
-  const { data: walletClient } = useWalletClient();
-  const isSybilDefenseEnabled =
-    round.roundMetadata?.quadraticFundingConfig?.sybilDefense === true;
-
   const [showCartNotification, setShowCartNotification] = useState(false);
   const [currentProjectAddedToCart, setCurrentProjectAddedToCart] =
     useState<Project>({} as Project);
   const [isProjectsLoading, setIsProjectsLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState(0);
-
   const disableAddToCartButton =
     (alloVersion === "allo-v2" && roundId.startsWith("0x")) ||
     props.isAfterRoundEndDate;
-
-  // NEW CODE
-  const [alreadyContributed, setAlreadyContributed] = useState(false);
 
   useEffect(() => {
     if (showCartNotification) {
@@ -365,74 +340,6 @@ function AfterRoundStart(props: {
     setSelectedTab(tabIndex);
   };
 
-  async function getMaciAddress() {
-    const publicClient = getPublicClient({
-      chainId,
-    });
-
-    const abi = parseAbi([
-      "function getPool(uint256) view returns ((bytes32 profileId, address strategy, address token, (uint256,string) metadata, bytes32 managerRole, bytes32 adminRole))",
-      "function _maci() public view returns (address)",
-      "function _pollContracts() public view returns ((address,address,address,address))",
-      "function coordinatorPubKey() public view returns ((uint256,uint256))",
-    ]);
-
-    const alloContractAddress = "0x1133ea7af70876e64665ecd07c0a0476d09465a1";
-
-    const [Pool] = await Promise.all([
-      publicClient.readContract({
-        abi: abi,
-        address: alloContractAddress,
-        functionName: "getPool",
-        args: [BigInt(roundId)],
-      }),
-    ]);
-
-    const pool = Pool as {
-      profileId: string;
-      strategy: string;
-      token: string;
-      metadata: [bigint, string];
-      managerRole: string;
-      adminRole: string;
-    };
-    const [pollContracts, maci] = await Promise.all([
-      publicClient.readContract({
-        abi: abi,
-        address: pool.strategy as `0x${string}`,
-        functionName: "_pollContracts",
-      }),
-      publicClient.readContract({
-        abi: abi,
-        address: pool.strategy as `0x${string}`,
-        functionName: "_maci",
-      }),
-    ]);
-
-    const _coordinatorPubKey = await publicClient.readContract({
-      abi: abi,
-      address: pollContracts[0] as `0x${string}`,
-      functionName: "coordinatorPubKey",
-    });
-
-    const coordinatorPubKey = new PubKey([
-      BigInt(_coordinatorPubKey[0]),
-      BigInt(_coordinatorPubKey[1]),
-    ]);
-
-    console.log("pool", pool.strategy);
-
-    return {
-      maci: maci,
-      pollContracts: pollContracts,
-      strategy: pool.strategy,
-      coordinatorPubKey: coordinatorPubKey,
-      roundId: roundId,
-    };
-  }
-
-  const dataLayer = useDataLayer();
-
   const projectDetailsTabs = useMemo(() => {
     const projectsTab = {
       name: isDirectRound(round)
@@ -450,7 +357,6 @@ function AfterRoundStart(props: {
             chainId={chainId}
             setCurrentProjectAddedToCart={setCurrentProjectAddedToCart}
             setShowCartNotification={setShowCartNotification}
-            alreadyContributed={alreadyContributed}
           />
         </>
       ),
@@ -500,12 +406,6 @@ function AfterRoundStart(props: {
           >
             <Breadcrumb items={breadCrumbs} />
           </div>
-          {walletAddress &&
-            (isSybilDefenseEnabled || isRoundUsingPassportLite(round)) && (
-              <div data-testid="passport-widget">
-                <PassportWidget round={round} alignment="right" />
-              </div>
-            )}
         </div>
 
         <section>
@@ -698,7 +598,6 @@ const ProjectList = (props: {
   isProjectsLoading: boolean;
   setCurrentProjectAddedToCart: React.Dispatch<React.SetStateAction<Project>>;
   setShowCartNotification: React.Dispatch<React.SetStateAction<boolean>>;
-  alreadyContributed?: boolean;
 }): JSX.Element => {
   const { projects, roundRoutePath, chainId, roundId } = props;
   const dataLayer = useDataLayer();
@@ -710,8 +609,6 @@ const ProjectList = (props: {
     },
     dataLayer
   );
-
-  console.log("applications", applications);
 
   const applicationsMapByGrantApplicationId:
     | Map<string, Application>
@@ -764,7 +661,6 @@ const ProjectList = (props: {
                       project.projectRegistryId
                     )?.uniqueDonorsCount ?? 0
                   }
-                  alreadyContributed={props.alreadyContributed}
                 />
               );
             })}
@@ -788,13 +684,24 @@ function ProjectCard(props: {
   setShowCartNotification: React.Dispatch<React.SetStateAction<boolean>>;
   crowdfundedUSD: number;
   uniqueContributorsCount: number;
-  alreadyContributed?: boolean;
 }) {
   const { project, roundRoutePath, round } = props;
   const projectRecipient =
     project.recipient.slice(0, 5) + "..." + project.recipient.slice(-4);
 
-  const { projects, add, remove } = useCartStorage();
+  const { userProjects, addUserProject, removeUserProject } = useCartStorage();
+  const { address } = useAccount();
+
+  const dataLayer = useDataLayer();
+
+  const { data: status, isLoading } = useAlreadyContributed(
+    dataLayer,
+    address ?? "",
+    Number(props.chainId),
+    props.roundId
+  );
+
+  const projects = address ? userProjects[address] ?? [] : [];
 
   const isAlreadyInCart = projects.some(
     (cartProject) =>
@@ -824,7 +731,7 @@ function ProjectCard(props: {
         </CardHeader>
 
         <CardContent className="px-2 relative">
-          {project.projectMetadata.logoImg && (
+          {project.projectMetadata?.logoImg && (
             <ProjectLogo
               imageCid={project.projectMetadata.logoImg}
               size={48}
@@ -855,38 +762,27 @@ function ProjectCard(props: {
       </Link>
       {!isDirectRound(round) && (
         <CardFooter className="bg-white">
-          <CardContent className="px-2 text-xs ">
-            <div className="border-t pt-1 flex items-center justify-between ">
-              <div>
-                <p>
-                  $
-                  {props.crowdfundedUSD?.toLocaleString("en-US", {
-                    maximumFractionDigits: 2,
-                  })}
-                </p>
-                <p className="text-[11px] font-mono">
-                  total raised by {props.uniqueContributorsCount} contributors
-                </p>
-              </div>
-              {props.isBeforeRoundEndDate && (
-                <CartButton
-                  project={project}
-                  isAlreadyInCart={isAlreadyInCart}
-                  removeFromCart={() => {
-                    remove(cartProject);
-                  }}
-                  addToCart={() => {
-                    props.alreadyContributed
-                      ? () => {}
-                      : console.log("already ? : ", props.alreadyContributed);
-                    add(cartProject);
-                  }}
-                  setCurrentProjectAddedToCart={
-                    props.setCurrentProjectAddedToCart
-                  }
-                  setShowCartNotification={props.setShowCartNotification}
-                />
-              )}
+          <CardContent className="px-2 text-xs">
+            <div className="border-t pt-1 flex items-center justify-end mt-3">
+              {props.isBeforeRoundEndDate &&
+                address &&
+                !status?.hasDonated &&
+                !isLoading && (
+                  <CartButton
+                    project={project}
+                    isAlreadyInCart={isAlreadyInCart}
+                    removeFromCart={() => {
+                      removeUserProject(cartProject, address);
+                    }}
+                    addToCart={() => {
+                      addUserProject(cartProject, address);
+                    }}
+                    setCurrentProjectAddedToCart={
+                      props.setCurrentProjectAddedToCart
+                    }
+                    setShowCartNotification={props.setShowCartNotification}
+                  />
+                )}
             </div>
           </CardContent>
         </CardFooter>
@@ -1037,7 +933,6 @@ const RoundStatsTabContent = ({
               token={token}
               tokenSymbol={tokenSymbol}
               round={round}
-              totalCrowdfunded={totalUSDCrowdfunded}
               totalDonations={totalDonations}
               totalDonors={round.uniqueDonorsCount ?? 0}
               totalProjects={applications?.length ?? 0}
@@ -1077,41 +972,51 @@ const formatAmount = (amount: string | number, noDigits?: boolean) => {
 
 const Stats = ({
   round,
-  totalCrowdfunded,
   totalProjects,
   token,
   tokenSymbol,
-  totalDonations,
-  totalDonors,
   statsLoading,
 }: {
   round: Round;
-  totalCrowdfunded: number;
   totalProjects: number;
   chainId: number;
   token?: VotingToken;
   tokenSymbol?: string;
-  totalDonations: number;
-  totalDonors: number;
+  totalDonations?: number;
+  totalDonors?: number;
   statsLoading: boolean;
 }): JSX.Element => {
   const tokenAmount =
     round.roundMetadata?.quadraticFundingConfig?.matchingFundsAvailable ?? 0;
 
   const { data: poolTokenPrice } = useTokenPrice(token?.redstoneTokenId);
-
   const matchingPoolUSD = poolTokenPrice
     ? Number(poolTokenPrice) * tokenAmount
     : undefined;
-  const matchingCapPercent =
-    round.roundMetadata?.quadraticFundingConfig?.matchingCapAmount ?? 0;
-  const matchingCapTokenValue = (tokenAmount * matchingCapPercent) / 100;
+
+  const dataLayer = useDataLayer();
+  const { totalDonations, isLoading } = useGetContributions(
+    dataLayer,
+    round.chainId!,
+    round.id!
+  );
+
+  let donationsCount: number = 0;
+  if (totalDonations) {
+    donationsCount = totalDonations.reduce(
+      (acc, contribution) =>
+        acc + Number(contribution.voiceCreditBalance) / 1e5,
+      0
+    );
+  }
+  const totalDonationsUSD = donationsCount * Number(poolTokenPrice);
+  const totalContributors = totalDonations?.length;
 
   return (
     <div className="max-w-5xl m-auto w-full">
-      <div className={`xl:grid-cols-3 grid grid-cols-2 gap-2 sm:gap-4`}>
+      <div className={`xl:grid-cols-4 grid grid-cols-2 gap-2 sm:gap-4`}>
         <StatCard
-          statValue={`${formatAmount(tokenAmount, true)} ${tokenSymbol}`}
+          statValue={`${formatAmount(tokenAmount, false)} ${tokenSymbol}`}
           secondaryStatValue={`${
             matchingPoolUSD ? `($${formatAmount(matchingPoolUSD ?? 0)})` : ""
           }`}
@@ -1119,36 +1024,23 @@ const Stats = ({
           isValueLoading={statsLoading}
         />
         <StatCard
-          statValue={`$${formatAmount(totalCrowdfunded.toFixed(2))}`}
-          statName="Total USD Crowdfunded"
-          isValueLoading={statsLoading}
-        />
-        {!!matchingCapPercent && (
-          <StatCard
-            statValue={`${matchingCapPercent.toFixed()}% `}
-            secondaryStatValue={`(${formatAmount(
-              matchingCapTokenValue,
-              true
-            )} ${tokenSymbol})`}
-            statName="Matching Cap"
-            isValueLoading={statsLoading}
-          />
-        )}
-
-        <StatCard
           statValue={formatAmount(totalProjects, true)}
           statName="Total Projects"
           isValueLoading={statsLoading}
         />
-
         <StatCard
-          statValue={formatAmount(totalDonations, true)}
-          statName="Total Donations"
+          statValue={`${formatAmount(donationsCount, false)} ETH`}
+          secondaryStatValue={`${
+            totalDonationsUSD
+              ? `($${formatAmount(totalDonationsUSD ?? 0)})`
+              : ""
+          }`}
+          statName="Total ETH Crowdfunded"
           isValueLoading={statsLoading}
         />
         <StatCard
-          statValue={formatAmount(totalDonors, true)}
-          statName="Total Donors"
+          statValue={totalContributors?.toString() ?? "0"}
+          statName="Total contributors"
           isValueLoading={statsLoading}
         />
       </div>

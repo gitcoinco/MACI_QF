@@ -6,7 +6,7 @@ import {
 import { yupResolver } from "@hookform/resolvers/yup";
 import { classNames } from "common";
 import { Button, Input } from "common/src/styles";
-import _, { set } from "lodash";
+import _ from "lodash";
 import moment from "moment";
 import { Fragment, useContext, useEffect, useState } from "react";
 import Datetime from "react-datetime";
@@ -21,7 +21,7 @@ import {
   useForm,
 } from "react-hook-form";
 
-import { Listbox, RadioGroup, Transition } from "@headlessui/react";
+import { Dialog, Listbox, Switch, Transition } from "@headlessui/react";
 import { RoundCategory } from "data-layer";
 import ReactTooltip from "react-tooltip";
 import * as yup from "yup";
@@ -31,10 +31,7 @@ import { FormStepper } from "../common/FormStepper";
 import { FormContext } from "../common/FormWizard";
 
 // NEW CODE
-import { Keypair, PubKey } from "maci-domainobjs";
-import { useSearchParams } from "react-router-dom";
-
-import TagsInput from "react-tagsinput";
+import { PubKey, Keypair } from "maci-domainobjs";
 
 export const RoundValidationSchema = yup.object().shape({
   roundMetadata: yup.object({
@@ -42,7 +39,6 @@ export const RoundValidationSchema = yup.object().shape({
       .string()
       .required("This field is required.")
       .min(8, "Round name must be at least 8 characters."),
-    roundType: yup.string().required("You must select the round type."),
     support: yup.object({
       type: yup
         .string()
@@ -114,8 +110,8 @@ export const RoundValidationSchema = yup.object().shape({
       then: yup
         .date()
         .min(
-          yup.ref("applicationsStartTime"),
-          "Round start date must be later than the applications start date."
+          yup.ref("applicationsEndTime"),
+          "Round start date must be later than the applications end date."
         )
         .max(
           yup.ref("roundEndTime"),
@@ -138,7 +134,6 @@ export const RoundValidationSchema = yup.object().shape({
         ),
     }),
 });
-
 interface RoundDetailFormProps {
   stepper: typeof FormStepper;
   initialData?: { program?: Program };
@@ -162,6 +157,7 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
     register,
     handleSubmit,
     setValue,
+    getValues,
     formState: { errors },
     watch,
   } = useForm<Round>({
@@ -178,7 +174,7 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
 
   const FormStepper = props.stepper;
   const [applicationStartDate, setApplicationStartDate] = useState(moment());
-  const [, setApplicationEndDate] = useState(moment());
+  const [applicationEndDate, setApplicationEndDate] = useState(moment());
   const [roundStartDate, setRoundStartDate] = useState(moment());
   const [roundEndDate, setRoundEndDate] = useState<moment.Moment | "">("");
   const [rollingApplications, setRollingApplications] = useState(false);
@@ -193,9 +189,16 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
     }
     const data = _.merge(formData, values);
     setFormData(data);
-    !coordinatorKeyPairCreated &&
+    const pubkey = getValues("roundMetadata.maciParameters.coordinatorKeyPair");
+
+    !pubkey &&
       alert("Please generate a Coordinator Key Pair before proceeding.");
-    if (!coordinatorKeyPairCreated) return;
+    const isValidPk = PubKey.isValidSerializedPubKey(pubkey);
+    if (!isValidPk) {
+      alert("Invalid Coordinator Public Key");
+      return;
+    }
+    if (!pubkey) return;
     setCurrentStep(currentStep + 1);
   };
 
@@ -209,6 +212,10 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
 
   function disableBeforeApplicationStartDate(current: moment.Moment) {
     return current.isAfter(applicationStartDate);
+  }
+
+  function disableBeforeApplicationEndDate(current: moment.Moment) {
+    return current.isAfter(applicationEndDate);
   }
 
   const disablePastAndBeforeRoundStartDate = (current: moment.Moment) => {
@@ -225,13 +232,32 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
       setApplicationEndDate(roundEndDate);
     }
   }, [rollingApplications, roundEndDate, setValue]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [hasKey, setHasKey] = useState(false);
+  const [pubKey, setPubKey] = useState("");
+  const closeModal = () => setIsOpen(false);
+  const openModal = () => setIsOpen(true);
 
-  const [categories, setCategories] = useState({ tags: [] });
-  const [searchParams] = useSearchParams();
-  const roundCategoryParam = searchParams.get("roundCategory");
-  const [coordinatorKeyPairCreated, setCoordinatorKeyPairCreated] =
-    useState<boolean>(false);
-
+  const generateKeyPair = () => {
+    // Assuming Keypair is a part of your cryptographic utilities
+    const keypair = new Keypair();
+    const rawPrivKey = keypair.privKey.serialize();
+    const jsonString = JSON.stringify(keypair.toJSON(), null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const link = document.createElement("a");
+    link.download = "coordinatorKey.json";
+    link.href = URL.createObjectURL(blob);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setPubKey(keypair.pubKey.serialize());
+    setHasKey(true);
+    setValue(
+      "roundMetadata.maciParameters.coordinatorKeyPair",
+      keypair.pubKey.serialize()
+    );
+    openModal(); // Open the alert dialog
+  };
   return (
     <div>
       <div className="md:grid md:grid-cols-3 md:gap-10">
@@ -258,84 +284,155 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
                 />
                 {program && <ProgramChain program={program} />}
               </div>
-              {/* New Code */}
-              {roundCategoryParam == "MACI-QF" && (
-                <>
-                  {/* Coordinator Key explanation */}
-                  <div className="mt-6 mb-3 text-sm text-grey-400">
-                    <div className="text-base">
-                      First things first, let's set up the MACI Coordinator Key
-                      <ApplicationDatesInformation />
-                    </div>
-                    <p className="text-sm mt-0.5">
-                      Tips: Keep it safe is mandatory!
-                    </p>
+
+              <>
+                {/* Coordinator Key explanation */}
+                <div className="mt-6 mb-3 text-sm text-grey-400">
+                  <div className="text-base">
+                    First things first, let's set up the MACI Coordinator
+                    PublicKey & Ethereum Address.
+                    <CoordinatorValuesInformation />
                   </div>
-                  <p className="text-sm mb-2">
+                  <p className="text-sm mt-0.5">
+                    Tips: Make sure that the coordinator has access to the
+                    private keys!
+                  </p>
+                </div>
+                <div className="flex flex-col space-y-4 mb-2">
+                  <div className="flex justify-between">
+                    <label
+                      htmlFor="roundMetadata.maciParameters.coordinatorKeyPair"
+                      className="text-sm"
+                    >
+                      Coordinator MACI Public Key
+                    </label>
+
                     <span className="text-right text-violet-400 float-right text-xs mt-1">
                       *Required
                     </span>
-                  </p>
-                  <Button
-                    type="button"
-                    $variant="outline"
-                    className="mx-auto mb-3 py-2 px-4 text-sm"
-                    disabled={coordinatorKeyPairCreated}
-                    onClick={() => {
-                      const keypair = new Keypair();
-                      const rawPrivKey = keypair.privKey.serialize();
-                      const KP = {
-                        coordinatorKey: rawPrivKey,
-                      };
-                      // Convert the object to a JSON string
-                      const jsonString = JSON.stringify(KP, null, 2);
-
-                      // Create a Blob from the JSON string
-                      const blob = new Blob([jsonString], {
-                        type: "application/json",
-                      });
-
-                      // Create a link element
-                      const link = document.createElement("a");
-
-                      // Set the download attribute with a filename
-                      link.download = "coordinatorKey.json";
-
-                      // Create a URL for the Blob and set it as the href attribute
-                      link.href = URL.createObjectURL(blob);
-
-                      // Append the link to the document body
-                      document.body.appendChild(link);
-
-                      // Programmatically click the link to trigger the download
-                      link.click();
-
-                      // Clean up by removing the link
-                      document.body.removeChild(link);
-                      const message = `Carefully store this private key. Without it the round cannot get finalized.\n\nNow it is in your Download folder please move it somewhere safe.\n\nPrivateKey: ${rawPrivKey}`;
-
-                      alert(message);
-
-                      const  pubkey = keypair.pubKey.serialize();
-
-                      const pubk = PubKey.deserialize(pubkey)
-                      console.log(pubkey)
-
-                      // Saving the Coordinator Public Key in the form
-                      setValue(
-                        "roundMetadata.maciParameters.coordinatorKeyPair",
-                        pubkey
-                      );
-                      setCoordinatorKeyPairCreated(true);
-                    }}
+                  </div>
+                  {hasKey ? (
+                    <>
+                      <Switch.Group as="div" className="flex items-center">
+                        <Switch.Label as="span" className="mr-3">
+                          Have a keypair?
+                        </Switch.Label>
+                        <Switch
+                          as="button"
+                          checked={!hasKey}
+                          onChange={() => setHasKey(!hasKey)}
+                          className={`${hasKey ? "bg-purple-600" : "bg-gray-200"} relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2`}
+                        >
+                          <span
+                            className={`${hasKey ? "translate-x-6" : "translate-x-1"} inline-block w-4 h-4 transform bg-white rounded-full transition-transform`}
+                          />
+                        </Switch>
+                      </Switch.Group>
+                      <Input
+                        type="text"
+                        placeholder="Enter the MACI Coordinator Public Key"
+                        // value={pubKey}
+                        // onChange={(e) => setPubKey(e.target.value)}
+                        value={watch(
+                          "roundMetadata.maciParameters.coordinatorKeyPair"
+                        )}
+                        id="roundMetadata.maciParameters.coordinatorKeyPair"
+                        {...register(
+                          "roundMetadata.maciParameters.coordinatorKeyPair"
+                        )}
+                        className="h-10 mt-2"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <Switch.Group as="div" className="flex items-center">
+                        <Switch.Label as="span" className="mr-3">
+                          Have a keypair?
+                        </Switch.Label>
+                        <Switch
+                          as="button"
+                          checked={!hasKey}
+                          onChange={() => setHasKey(!hasKey)}
+                          className={`${hasKey ? "bg-purple-600" : "bg-gray-200"} relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2`}
+                        >
+                          <span
+                            className={`${hasKey ? "translate-x-6" : "translate-x-1"} inline-block w-4 h-4 transform bg-white rounded-full transition-transform`}
+                          />
+                        </Switch>
+                      </Switch.Group>
+                      <Button
+                        type="button"
+                        className="float-left w-1/4 mb-3 py-2 px-4 text-sm"
+                        onClick={generateKeyPair}
+                      >
+                        Generate Key Pair
+                      </Button>
+                    </>
+                  )}
+                  <Dialog
+                    as="div"
+                    className="fixed inset-0 z-10 overflow-y-auto"
+                    open={isOpen}
+                    onClose={closeModal}
                   >
-                    Generate Coordinator Key Pair
-                  </Button>
-
-                 
-                   
-                </>
-              )}
+                    <div className="min-h-screen px-4 text-center">
+                      <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
+                      <span
+                        className="inline-block h-screen align-middle"
+                        aria-hidden="true"
+                      >
+                        &#8203;
+                      </span>
+                      <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+                        <Dialog.Title
+                          as="h3"
+                          className="text-lg font-medium leading-6 text-gray-900"
+                        >
+                          Key Generation Complete
+                        </Dialog.Title>
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-500">
+                            Your new Coordinator Key Pair has been generated and
+                            saved. Please ensure to store it securely.
+                          </p>
+                        </div>
+                        <div className="mt-4">
+                          <button
+                            type="button"
+                            className="inline-flex justify-center px-4 py-2 text-sm font-medium text-purple-900 bg-purple-100 border border-transparent rounded-md hover:bg-purple-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
+                            onClick={closeModal}
+                          >
+                            Close
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </Dialog>
+                </div>
+                <div className="flex justify-between">
+                  <label
+                    htmlFor="roundMetadata.support.info"
+                    className="text-sm"
+                  >
+                    Coordinator Ethereum Address
+                  </label>
+                  <span className="text-right text-violet-400 float-right text-xs mt-1">
+                    *Required
+                  </span>
+                </div>
+                <Input
+                  type="text"
+                  placeholder="Enter the Coordinator Ethereum Address"
+                  value={watch(
+                    "roundMetadata.maciParameters.coordinatorAddress"
+                  )}
+                  id="roundMetadata.maciParameters.coordinatorAddress"
+                  {...register(
+                    "roundMetadata.maciParameters.coordinatorAddress"
+                  )}
+                  className="h-10 mt-2"
+                />
+              </>
 
               {/* support */}
               <div className="mt-8 mb-3 text-sm text-grey-400">
@@ -370,9 +467,9 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
                       <ApplicationDatesInformation />
                     </div>
                     <p className="text-sm mt-0.5">
-                      Tips: You can accept applications even after the round
-                      starts by setting up overlapping Applications and Round
-                      periods!
+                      Tips: You cannot accept applications after the round
+                      starts. Setting up overlapping Applications and Round
+                      periods is not possible.
                     </p>
                   </>
                 ) : (
@@ -381,185 +478,183 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
               </div>
 
               {/* Application dates */}
-              {roundCategory === RoundCategory.QuadraticFunding && (
-                <>
-                  <p className="text-sm mb-2">
-                    <span>Applications</span>
-                    <span className="text-right text-violet-400 float-right text-xs mt-1">
-                      *Required
-                    </span>
-                  </p>
+              <>
+                <p className="text-sm mb-2">
+                  <span>Applications</span>
+                  <span className="text-right text-violet-400 float-right text-xs mt-1">
+                    *Required
+                  </span>
+                </p>
 
-                  <div className="grid grid-cols-6 gap-6 mb-1">
-                    {/* Application start date */}
-                    <div className="col-span-6 sm:col-span-3">
-                      <div
-                        className={`relative border rounded-md px-3 py-2 mb-2 shadow-sm focus-within:ring-1 ${
-                          errors.applicationsStartTime
-                            ? "border-red-300 text-red-900 placeholder-red-300 focus-within:outline-none focus-within:border-red-500 focus-within: ring-red-500"
-                            : "border-gray-300 focus-within:border-indigo-600 focus-within:ring-indigo-600"
-                        }`}
+                <div className="grid grid-cols-6 gap-6 mb-1">
+                  {/* Application start date */}
+                  <div className="col-span-6 sm:col-span-3">
+                    <div
+                      className={`relative border rounded-md px-3 py-2 mb-2 shadow-sm focus-within:ring-1 ${
+                        errors.applicationsStartTime
+                          ? "border-red-300 text-red-900 placeholder-red-300 focus-within:outline-none focus-within:border-red-500 focus-within: ring-red-500"
+                          : "border-gray-300 focus-within:border-indigo-600 focus-within:ring-indigo-600"
+                      }`}
+                    >
+                      <label
+                        htmlFor="applicationsStartTime"
+                        className="block text-[10px]"
                       >
-                        <label
-                          htmlFor="applicationsStartTime"
-                          className="block text-[10px]"
+                        Start Date
+                      </label>
+                      <Controller
+                        control={control}
+                        name="applicationsStartTime"
+                        render={({ field }) => (
+                          <Datetime
+                            {...field}
+                            closeOnSelect
+                            onChange={(date) => {
+                              setApplicationStartDate(moment(date));
+                              field.onChange(moment(date));
+                            }}
+                            inputProps={{
+                              id: "applicationsStartTime",
+                              placeholder: "",
+                              className:
+                                "block w-full border-0 p-0 text-gray-900 placeholder-grey-40  0 focus:ring-0 text-sm",
+                            }}
+                            isValidDate={disablePastAndBeforeRoundStartDate}
+                            initialViewDate={now}
+                            utc={true}
+                            dateFormat={"YYYY-MM-DD"}
+                            timeFormat={"HH:mm UTC"}
+                          />
+                        )}
+                      />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
                         >
-                          Start Date
-                        </label>
-                        <Controller
-                          control={control}
-                          name="applicationsStartTime"
-                          render={({ field }) => (
-                            <Datetime
-                              {...field}
-                              closeOnSelect
-                              onChange={(date) => {
-                                setApplicationStartDate(moment(date));
-                                field.onChange(moment(date));
-                              }}
-                              inputProps={{
-                                id: "applicationsStartTime",
-                                placeholder: "",
-                                className:
-                                  "block w-full border-0 p-0 text-gray-900 placeholder-grey-40  0 focus:ring-0 text-sm",
-                              }}
-                              isValidDate={disablePastAndBeforeRoundStartDate}
-                              initialViewDate={now}
-                              utc={true}
-                              dateFormat={"YYYY-MM-DD"}
-                              timeFormat={"HH:mm UTC"}
-                            />
-                          )}
-                        />
-                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                      {errors.applicationsStartTime && (
-                        <p
-                          className="text-xs text-pink-500"
-                          data-testid="application-start-date-error"
-                        >
-                          {errors.applicationsStartTime?.message}
-                        </p>
-                      )}
-                      <div className="flex items-center mt-2">
-                        <input
-                          id="rollingApplications"
-                          name="rollingApplications"
-                          type="checkbox"
-                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                          checked={rollingApplications}
-                          onChange={(e) =>
-                            setRollingApplications(e.target.checked)
-                          }
-                        />
-                        <label
-                          htmlFor="rollingApplications"
-                          className="ml-2 block text-sm text-grey-400"
-                        >
-                          Enable rolling applications
-                        </label>
-                        <InformationCircleIcon
-                          data-tip
-                          data-for="rollingApplicationsTooltip"
-                          className="h-4 w-4 ml-1 text-grey-400"
-                        />
-                        <ReactTooltip
-                          id="rollingApplicationsTooltip"
-                          place="top"
-                          effect="solid"
-                          className="text-grey-400"
-                        >
-                          <span>
-                            If enabled, applications will be accepted until the
-                            round ends.
-                          </span>
-                        </ReactTooltip>
+                          <path
+                            fillRule="evenodd"
+                            d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
                       </div>
                     </div>
-                    {/* Application end date */}
-                    <div className="col-span-6 sm:col-span-3">
-                      <div
-                        className={`relative border rounded-md px-3 py-2 mb-2 shadow-sm focus-within:ring-1 ${
-                          errors.applicationsEndTime
-                            ? "border-red-300 text-red-900 placeholder-red-300 focus-within:outline-none focus-within:border-red-500 focus-within: ring-red-500"
-                            : "border-gray-300 focus-within:border-indigo-600 focus-within:ring-indigo-600"
-                        } ${
-                          rollingApplications
-                            ? "cursor-not-allowed bg-gray-100"
-                            : ""
-                        }`}
+                    {errors.applicationsStartTime && (
+                      <p
+                        className="text-xs text-pink-500"
+                        data-testid="application-start-date-error"
                       >
-                        <label
-                          htmlFor="applicationsEndTime"
-                          className="block text-[10px]"
-                        >
-                          End Date
-                        </label>
-                        <Controller
-                          control={control}
-                          name="applicationsEndTime"
-                          render={({ field }) => (
-                            <Datetime
-                              {...field}
-                              closeOnSelect
-                              onChange={(date) => {
-                                setApplicationEndDate(moment(date));
-                                field.onChange(moment(date));
-                              }}
-                              inputProps={{
-                                id: "applicationsEndTime",
-                                placeholder: "",
-                                className:
-                                  "block w-full border-0 p-0 text-gray-900 placeholder-grey-400 focus:ring-0 text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100",
-                                disabled: rollingApplications,
-                              }}
-                              isValidDate={disableBeforeApplicationStartDate}
-                              utc={true}
-                              dateFormat={"YYYY-MM-DD"}
-                              timeFormat={"HH:mm UTC"}
-                            />
-                          )}
-                        />
-                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                      {errors.applicationsEndTime && (
-                        <p
-                          className="text-xs text-pink-500"
-                          data-testid="application-end-date-error"
-                        >
-                          {errors.applicationsEndTime?.message}
-                        </p>
-                      )}
+                        {errors.applicationsStartTime?.message}
+                      </p>
+                    )}
+                    <div className="flex items-center mt-2 hidden">
+                      <input
+                        id="rollingApplications"
+                        name="rollingApplications"
+                        type="checkbox"
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        checked={rollingApplications}
+                        onChange={(e) =>
+                          setRollingApplications(e.target.checked)
+                        }
+                      />
+                      <label
+                        htmlFor="rollingApplications"
+                        className="ml-2 block text-sm text-grey-400"
+                      >
+                        Enable rolling applications
+                      </label>
+                      <InformationCircleIcon
+                        data-tip
+                        data-for="rollingApplicationsTooltip"
+                        className="h-4 w-4 ml-1 text-grey-400"
+                      />
+                      <ReactTooltip
+                        id="rollingApplicationsTooltip"
+                        place="top"
+                        effect="solid"
+                        className="text-grey-400"
+                      >
+                        <span>
+                          If enabled, applications will be accepted until the
+                          round ends.
+                        </span>
+                      </ReactTooltip>
                     </div>
                   </div>
-                </>
-              )}
+                  {/* Application end date */}
+                  <div className="col-span-6 sm:col-span-3">
+                    <div
+                      className={`relative border rounded-md px-3 py-2 mb-2 shadow-sm focus-within:ring-1 ${
+                        errors.applicationsEndTime
+                          ? "border-red-300 text-red-900 placeholder-red-300 focus-within:outline-none focus-within:border-red-500 focus-within: ring-red-500"
+                          : "border-gray-300 focus-within:border-indigo-600 focus-within:ring-indigo-600"
+                      } ${
+                        rollingApplications
+                          ? "cursor-not-allowed bg-gray-100"
+                          : ""
+                      }`}
+                    >
+                      <label
+                        htmlFor="applicationsEndTime"
+                        className="block text-[10px]"
+                      >
+                        End Date
+                      </label>
+                      <Controller
+                        control={control}
+                        name="applicationsEndTime"
+                        render={({ field }) => (
+                          <Datetime
+                            {...field}
+                            closeOnSelect
+                            onChange={(date) => {
+                              setApplicationEndDate(moment(date));
+                              field.onChange(moment(date));
+                            }}
+                            inputProps={{
+                              id: "applicationsEndTime",
+                              placeholder: "",
+                              className:
+                                "block w-full border-0 p-0 text-gray-900 placeholder-grey-400 focus:ring-0 text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100",
+                              disabled: rollingApplications,
+                            }}
+                            isValidDate={disableBeforeApplicationStartDate}
+                            utc={true}
+                            dateFormat={"YYYY-MM-DD"}
+                            timeFormat={"HH:mm UTC"}
+                          />
+                        )}
+                      />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                    {errors.applicationsEndTime && (
+                      <p
+                        className="text-xs text-pink-500"
+                        data-testid="application-end-date-error"
+                      >
+                        {errors.applicationsEndTime?.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </>
 
               {/* Round dates */}
               <>
@@ -602,7 +697,7 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
                               className:
                                 "block w-full border-0 p-0 text-gray-900 placeholder-grey-400 focus:ring-0 text-sm",
                             }}
-                            isValidDate={disableBeforeApplicationStartDate}
+                            isValidDate={disableBeforeApplicationEndDate}
                             utc={true}
                             dateFormat={"YYYY-MM-DD"}
                             timeFormat={"HH:mm UTC"}
@@ -631,41 +726,6 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
                       >
                         {errors.roundStartTime?.message}
                       </p>
-                    )}
-
-                    {/* Round end date */}
-                    {roundCategory === RoundCategory.Direct && (
-                      <Controller
-                        control={control}
-                        name="roundEndTimeDisabled"
-                        render={({ field }) => (
-                          <div className="flex items-center mt-2">
-                            <input
-                              id="noEndDate"
-                              type="checkbox"
-                              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                              checked={field.value}
-                              onChange={(e) => {
-                                field.onChange(e.target.checked);
-                                if (e.target.checked) {
-                                  // reset input and trick type validation
-                                  // for direct round, when date is empty it will be set to maxDate
-                                  setValue(
-                                    "roundEndTime",
-                                    null as unknown as Date
-                                  );
-                                }
-                              }}
-                            />
-                            <label
-                              htmlFor="noEndDate"
-                              className="ml-2 block text-sm text-grey-400"
-                            >
-                              This round does not have an end date
-                            </label>
-                          </div>
-                        )}
-                      />
                     )}
                   </div>
 
@@ -766,41 +826,6 @@ export function RoundDetailForm(props: RoundDetailFormProps) {
               </>
             </div>
 
-            {/* Round Type */}
-            <div className="p-6 bg-white">
-              <div className="grid grid-rows-1 text-grey-400">
-                <p>
-                  Do you want to show your round on the Gitcoin Explorer
-                  homepage?
-                </p>
-                <p className="text-sm mt-0.5">
-                  <a
-                    className="text-violet-400 mr-1"
-                    href="https://explorer.gitcoin.co/"
-                    target="_blank"
-                  >
-                    Gitcoin Explorer
-                  </a>
-                  is the place where supporters (donors) discover and donate to
-                  projects.
-                </p>
-              </div>
-              <div className="flex mt-4">
-                <RoundType
-                  register={register("roundMetadata.roundType")}
-                  control={control}
-                />
-              </div>
-              {errors.roundMetadata?.roundType && (
-                <p
-                  className="text-xs text-pink-500 mt-2"
-                  data-testid="round-end-date-error"
-                >
-                  {errors.roundMetadata?.roundType?.message}
-                </p>
-              )}
-            </div>
-
             {/* Footer */}
             <div className="px-6 align-middle py-3.5 shadow-md">
               <FormStepper
@@ -845,8 +870,6 @@ function RoundName(props: {
     </div>
   );
 }
-
-
 
 export function ProgramChain(props: { program: Program }) {
   const { program } = props;
@@ -1142,86 +1165,24 @@ function ApplicationDatesInformation() {
   );
 }
 
-function RoundType(props: {
-  register: UseFormRegisterReturn<string>;
-  control?: Control<Round>;
-}) {
-  const { field: roundTypeField } = useController({
-    name: "roundMetadata.roundType",
-    control: props.control,
-    rules: {
-      required: true,
-    },
-  });
-
+function CoordinatorValuesInformation() {
   return (
     <>
-      {" "}
-      <div className="col-span-6 sm:col-span-3">
-        <RadioGroup {...roundTypeField} data-testid="round-type-selection">
-          <div>
-            <RadioGroup.Option value="public" className="mb-2">
-              {({ checked, active }) => (
-                <span className="flex items-start text-sm">
-                  <span
-                    className={classNames(
-                      checked
-                        ? "bg-indigo-600 border-transparent"
-                        : "bg-white border-gray-300",
-                      active ? "ring-2 ring-offset-2 ring-indigo-500" : "",
-                      "h-4 w-4 mt-1 rounded-full border flex items-center justify-center"
-                    )}
-                    aria-hidden="true"
-                  >
-                    <span className="rounded-full bg-white w-1.5 h-1.5" />
-                  </span>
-                  <RadioGroup.Label
-                    as="span"
-                    className="ml-3 block text-sm text-gray-700"
-                    data-testid="round-type-public"
-                  >
-                    Yes, make my round public
-                    <p className="text-xs text-gray-400 mt-1">
-                      Anyone on the Gitcoin Explorer homepage will be able to
-                      see your round
-                    </p>
-                  </RadioGroup.Label>
-                </span>
-              )}
-            </RadioGroup.Option>
-            <RadioGroup.Option value="private">
-              {({ checked, active }) => (
-                <span className="flex items-start text-sm">
-                  <span
-                    className={classNames(
-                      checked
-                        ? "bg-indigo-600 border-transparent"
-                        : "bg-white border-gray-300",
-                      active ? "ring-2 ring-offset-2 ring-indigo-500" : "",
-                      "h-4 w-4 mt-1 rounded-full border flex items-center justify-center"
-                    )}
-                    aria-hidden="true"
-                  >
-                    <span className="rounded-full bg-white w-1.5 h-1.5" />
-                  </span>
-                  <RadioGroup.Label
-                    as="span"
-                    className="ml-3 block text-sm text-gray-700"
-                    data-testid="round-type-private"
-                  >
-                    No, keep my round private
-                    <p className="text-xs text-gray-400 mt-1">
-                      Only people with the round link can see your round.
-                    </p>
-                  </RadioGroup.Label>
-                </span>
-              )}
-            </RadioGroup.Option>
-          </div>
-        </RadioGroup>
-      </div>
+      <InformationCircleIcon
+        data-tip
+        data-background-color="#0E0333"
+        data-for="CoordinatorValues-tooltip"
+        className="inline h-4 w-4 ml-2 mr-3 mb-1"
+        data-testid="CoordinatorValues-tooltip"
+      />
+      <ReactTooltip
+        id="CoordinatorValues-tooltip"
+        place="bottom"
+        type="dark"
+        effect="solid"
+      >
+        <span className="text-xs">Make sure those values are correct.</span>
+      </ReactTooltip>
     </>
   );
 }
-
-

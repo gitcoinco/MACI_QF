@@ -1,3 +1,4 @@
+import { PipelineEdDSATicketZuAuthConfig } from "@pcd/passport-interface";
 import {
   booleanToBigInt,
   hexToBigInt,
@@ -20,6 +21,26 @@ function convertStringArrayToBigIntArray(arr: string[]): bigint[] {
 export const BABY_JUB_NEGATIVE_ONE = BigInt(
   "21888242871839275222246405745257275088548364400416034343698204186575808495616"
 );
+
+export const fieldsToReveal = {
+  revealAttendeeEmail: true,
+  revealEventId: true,
+  revealProductId: true,
+};
+
+export const ZUAUTH_CONFIG: PipelineEdDSATicketZuAuthConfig[] = [
+  {
+    pcdType: "eddsa-ticket-pcd",
+    publicKey: [
+      "05e0c4e8517758da3a26c80310ff2fe65b9f85d89dfc9c80e6d0b6477f88173e",
+      "29ae64b615383a0ebb1bc37b3a642d82d37545f0f5b1444330300e4c4eedba3f",
+    ],
+    eventId: "91312aa1-5f74-4264-bdeb-f4a3ddb8670c",
+    eventName: "Zuconnect23",
+    productId: "cc9e3650-c29b-4629-b275-6b34fc70b2f9",
+    productName: "",
+  },
+];
 
 /**
  * Max supported size of validEventIds field in ZKEdDSAEventTicketPCDArgs.

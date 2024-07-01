@@ -174,7 +174,11 @@ export const getApplicationsByProjectIds = gql`
   ) {
     applications(
       first: 1000
-      filter: { projectId: { in: $projectIds }, chainId: { in: $chainIds } }
+      filter: {
+        projectId: { in: $projectIds }
+        chainId: { in: $chainIds }
+        round: { strategyName: { equalTo: "allov2.MACIQF" } }
+      }
     ) {
       id
       projectId
@@ -551,7 +555,7 @@ export const getRoundForManager = gql`
   query getRoundForManager($roundId: String!, $chainId: Int!) {
     rounds(
       first: 1
-      filter: { id: { equalTo: $roundId }, chainId: { equalTo: $chainId } }
+      filter: { id: { equalTo: $roundId }, chainId: { equalTo: $chainId }, strategyName: { equalTo: "allov2.MACIQF" } }
     ) {
       ${getRoundForManagerFields}
     }
@@ -565,6 +569,7 @@ export const getRoundsForManager = gql`
       filter: {
         chainId: { equalTo: $chainId }
         projectId: { equalTo: $programId }
+        strategyName: {equalTo: "allov2.MACIQF"}
       }
     ) {
       ${getRoundForManagerFields}
@@ -576,7 +581,11 @@ export const getRoundForExplorer = gql`
   query getRoundForExplorer($roundId: String!, $chainId: Int!) {
     rounds(
       first: 1
-      filter: { id: { equalTo: $roundId }, chainId: { equalTo: $chainId } }
+      filter: {
+        id: { equalTo: $roundId }
+        chainId: { equalTo: $chainId }
+        strategyName: { equalTo: "allov2.MACIQF" }
+      }
     ) {
       id
       chainId
@@ -646,7 +655,7 @@ export const getDonationsByDonorAddress = gql`
   }
 `;
 
-// NEW CODE 
+// NEW CODE
 
 export const getContributionsByAddressAndId = gql`
   query getContributionsByAddressAndId(
@@ -659,17 +668,108 @@ export const getContributionsByAddressAndId = gql`
         id: { equalTo: $contributionId }
       }
     ) {
-      contributorAddress
-      stateIndex
-      maciId
       id
+      contributorAddress
+      chainId
+      roundId
+      voiceCreditBalance
+    }
+  }
+`;
+
+export const getContributionsByAddress = gql`
+  query getContributionsByAddress($contributorAddress: String!) {
+    contributions(
+      filter: { contributorAddress: { equalTo: $contributorAddress } }
+    ) {
+      stateIndex
+      contributorAddress
+      timestamp
+      transactionHash
+      chainId
+      roundId
+      maciId
       messages {
         message
-        messageId
-        pollId
-        createdByAddress
-        contributionId
       }
+      voiceCreditBalance
+    }
+  }
+`;
+
+export const getVoiceCreditsByChainIdAndRoundId = gql`
+  query getContributionsByAddress(
+    $contributorAddress: String!
+    $chainId: Int!
+    $roundId: String!
+  ) {
+    contributions(
+      filter: {
+        contributorAddress: { equalTo: $contributorAddress }
+        chainId: { equalTo: $chainId }
+        roundId: { equalTo: $roundId }
+      }
+    ) {
+      voiceCreditBalance
+      stateIndex
+      messages {
+        messageId
+      }
+    }
+  }
+`;
+
+export const getVoiceCreditsByChainIdAndRoundIdWithoutAddress = gql`
+  query getContributionsByAddress($chainId: Int!, $roundId: String!) {
+    contributions(
+      filter: { chainId: { equalTo: $chainId }, roundId: { equalTo: $roundId } }
+    ) {
+      voiceCreditBalance
+      messages {
+        messageId
+      }
+    }
+  }
+`;
+
+export const getVoiceCreditsByChainIdsAndRoundIds = gql`
+  query getContributionsByAddress($contributorAddress: String!) {
+    contributions(
+      filter: { contributorAddress: { equalTo: $contributorAddress } }
+    ) {
+      chainId
+      roundId
+      voiceCreditBalance
+    }
+  }
+`;
+
+export const getVoteOptionIndexByChainIdAndRoundId = gql`
+  query ($chainId: Int!, $roundId: String!, $recipientId: String!) {
+    votingIndexOptions(
+      filter: {
+        chainId: { equalTo: $chainId }
+        roundId: { equalTo: $roundId }
+        recipientId: { equalTo: $recipientId }
+      }
+    ) {
+      chainId
+      id
+      optionIndex
+      recipientId
+    }
+  }
+`;
+
+export const getVoteOptionIndexesByChainIdAndRoundIdQuery = gql`
+  query ($chainId: Int!, $roundId: String!) {
+    votingIndexOptions(
+      filter: { chainId: { equalTo: $chainId }, roundId: { equalTo: $roundId } }
+    ) {
+      chainId
+      id
+      optionIndex
+      recipientId
     }
   }
 `;

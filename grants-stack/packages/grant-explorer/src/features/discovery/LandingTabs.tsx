@@ -3,9 +3,7 @@ import { Tab, Tabs } from "../common/styles";
 import { toQueryString } from "./RoundsFilter";
 import { RoundStatus } from "./hooks/useFilterRounds";
 import { useMediaQuery } from "@chakra-ui/react";
-import {
-  useAlloVersion,
-} from "common/src/components/AlloVersionSwitcher";
+import { useAlloVersion } from "common/src/components/AlloVersionSwitcher";
 
 type TabType = {
   to: string;
@@ -18,6 +16,7 @@ type TabType = {
 export const exploreRoundsLink = `/rounds?${toQueryString({
   orderBy: "MATCH_AMOUNT_IN_USD_DESC",
   status: [RoundStatus.active, RoundStatus.taking_applications].join(","),
+  type: "allov2.MACIQF",
 })}`;
 
 export default function LandingTabs() {
@@ -35,16 +34,11 @@ export default function LandingTabs() {
       to: `/rounds?${toQueryString({
         orderBy: "MATCH_AMOUNT_IN_USD_DESC",
         status: [RoundStatus.active, RoundStatus.taking_applications].join(","),
+        type: "allov2.MACIQF",
       })}`,
       activeRegExp: /^\/rounds/,
       children: isDesktop ? "Explore rounds" : "Rounds",
       tabName: "home-rounds-tab",
-    },
-    {
-      to: "/projects",
-      activeRegExp: /^\/projects/,
-      children: isDesktop ? "Explore projects" : "Projects",
-      tabName: "home-projects-tab",
     },
   ];
 

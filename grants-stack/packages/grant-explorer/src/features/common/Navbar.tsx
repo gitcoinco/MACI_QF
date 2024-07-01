@@ -8,16 +8,10 @@ import { useEffect } from "react";
 import { useAccount } from "wagmi";
 import { useCartStorage } from "../../store";
 import { Link } from "react-router-dom";
-import { getAlloVersion } from "common/src/config";
-import { ExclamationCircleIcon } from "@heroicons/react/24/solid";
-import ExploreRoundsDropdown, {
-  ExploreRoundsDropdownProps,
-} from "./ExploreRoundsDropdown";
 
 export interface NavbarProps {
   customBackground?: string;
   showWalletInteraction?: boolean;
-  showAlloVersionBanner?: boolean;
 }
 
 export default function Navbar(props: NavbarProps) {
@@ -40,65 +34,6 @@ export default function Navbar(props: NavbarProps) {
 
   const showWalletInteraction = props.showWalletInteraction ?? true;
   const { address: walletAddress } = useAccount();
-  const alloVersion = getAlloVersion();
-
-  const rounds: ExploreRoundsDropdownProps[] = [
-    {
-      chainId: 42161,
-      roundId: "26",
-      name: "WEB3 Infrastructure",
-      link: "/round/42161/26",
-    },
-    {
-      chainId: 42161,
-      roundId: "27",
-      name: "Developer Tooling",
-      link: "/round/42161/27",
-    },
-    {
-      chainId: 42161,
-      roundId: "25",
-      name: "dApps & Apps",
-      link: "/round/42161/25",
-    },
-    {
-      chainId: 42161,
-      roundId: "23",
-      name: "Hackathon Alumni",
-      link: "/round/42161/23",
-    },
-    {
-      chainId: 42161,
-      roundId: "29",
-      name: "Climate Solutions",
-      link: "/round/42161/29",
-    },
-    {
-      chainId: 42161,
-      roundId: "24",
-      name: "ENS",
-      link: "/round/42161/24",
-    },
-    {
-      chainId: 10,
-      roundId: "9",
-      name: "Token Engineering Commons (TEC)",
-      link: "/round/10/9",
-      customClasses: "w-[7.5rem]",
-    },
-    {
-      chainId: 42161,
-      roundId: "31",
-      name: "Open Civics",
-      link: "/round/42161/31",
-    },
-    {
-      chainId: 42161,
-      roundId: "28",
-      name: "Hypercerts Ecosystem",
-      link: "/round/42161/28",
-    },
-  ];
 
   return (
     <nav
@@ -121,7 +56,6 @@ export default function Navbar(props: NavbarProps) {
             </Link>
           </div>
           <div className="flex flex-row items-center gap-6 font-mono font-medium">
-            {rounds && <ExploreRoundsDropdown rounds={rounds} />}
             {showWalletInteraction && (
               <div>
                 <div
@@ -140,54 +74,22 @@ export default function Navbar(props: NavbarProps) {
               </div>
             )}
             {walletAddress && (
-              <div>
-                <Link
-                  to={`/contributors/${walletAddress}`}
-                  className="flex-shrink-0 flex items-center ph-no-capture"
-                  data-testid={"contributions-link"}
-                >
-                  <UserCircleIcon className="h-8 w-8 ph-no-capture" />
-                </Link>
-              </div>
+              <>
+                <div>
+                  <Link
+                    to={`/contributors/${walletAddress}`}
+                    className="flex-shrink-0 flex items-center ph-no-capture"
+                    data-testid={"contributions-link"}
+                  >
+                    <UserCircleIcon className="h-8 w-8 ph-no-capture" />
+                  </Link>
+                </div>
+                <NavbarCart cart={store.userProjects[walletAddress] ?? []} />
+              </>
             )}
-            <NavbarCart cart={store.projects} />
           </div>
         </div>
       </div>
-      {props.showAlloVersionBanner && (
-        <div className="bg-white/40 backdrop-blur-sm p-4 text-center w-full font-medium flex flex-col items-center justify-center text-black">
-          <div>
-            <ExclamationCircleIcon className="h-5 w-5 inline-block mr-2" />
-            {alloVersion === "allo-v2" ? (
-              <>
-                Rounds launched before the 25th of March appear on Allo v1.
-                Check out those rounds{" "}
-                <a
-                  className="underline"
-                  target="_blank"
-                  href="https://explorer-v1.gitcoin.co"
-                >
-                  here
-                </a>
-                !
-              </>
-            ) : (
-              <>
-                Rounds launched after the 24th of March appear on Allo v2. Check
-                out those rounds{" "}
-                <a
-                  className="underline"
-                  target="_blank"
-                  href="https://explorer.gitcoin.co"
-                >
-                  here
-                </a>
-                !
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </nav>
   );
 }

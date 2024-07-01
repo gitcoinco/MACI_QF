@@ -1,4 +1,4 @@
-import { FormInputs, ProjectCredentials } from "../types";
+import { FormInputs } from "../types";
 
 export const METADATA_SAVED = "METADATA_SAVED";
 export const METADATA_IMAGE_SAVED = "METADATA_IMAGE_SAVED";
@@ -20,16 +20,7 @@ export interface MetadataImageSaved {
   fieldName: string;
 }
 
-export interface CredentialsSaved {
-  type: typeof CREDENTIALS_SAVED;
-  credentials?: ProjectCredentials;
-}
-
-export type ProjectFormActions =
-  | MetadataSaved
-  | MetadataImageSaved
-  | CredentialsSaved
-  | FormReset;
+export type ProjectFormActions = MetadataSaved | MetadataImageSaved | FormReset;
 
 export const formReset = (): ProjectFormActions => ({
   type: FORM_RESET,
@@ -65,13 +56,4 @@ export const metadataImageSaved = (
   type: METADATA_IMAGE_SAVED,
   image,
   fieldName,
-});
-
-export const credentialsSaved = (
-  vc: ProjectCredentials
-): ProjectFormActions => ({
-  type: CREDENTIALS_SAVED,
-  credentials: {
-    ...vc,
-  },
 });

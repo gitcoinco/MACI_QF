@@ -20,6 +20,7 @@ export function DonationsTable(props: {
   contributions: Contribution[];
   tokens: Record<string, VotingToken>;
   activeRound: boolean;
+  price: number;
 }) {
   return (
     <>
@@ -28,6 +29,7 @@ export function DonationsTable(props: {
         activeRound={props.activeRound}
         contributions={props.contributions}
         tokens={props.tokens}
+        price={props.price}
       />
       {props.contributions.length === 0 && (
         <div className="text-md mt-2 mb-12">
@@ -44,6 +46,7 @@ function RoundsTableWithAccordian(props: {
   contributions: Contribution[];
   tokens: Record<string, VotingToken>;
   activeRound: boolean;
+  price: number;
 }) {
   const nestedContributionsForRound = props.contributions.reduce(
     (acc: Record<string, Contribution[]>, contribution) => {
@@ -101,6 +104,7 @@ function RoundsTableWithAccordian(props: {
                         activeRound={props.activeRound}
                         contributions={sortedContributions}
                         tokens={props.tokens}
+                        price={props.price}
                       />
                       <AccordionIcon />
                     </AccordionButton>
@@ -110,6 +114,7 @@ function RoundsTableWithAccordian(props: {
                       activeRound={props.activeRound}
                       contributions={sortedContributions}
                       tokens={props.tokens}
+                      price={props.price}
                     />
                   </AccordionPanel>
                 </AccordionItem>
@@ -164,6 +169,7 @@ function InnerTable(props: {
   contributions: Contribution[];
   tokens: Record<string, VotingToken>;
   activeRound: boolean;
+  price: number;
 }) {
   return (
     <div className="bg-grey-75 rounded-lg p-2 py-1">
@@ -195,12 +201,22 @@ function InnerTable(props: {
                       const token = props.tokens[tokenId];
 
                       let formattedAmount = "N/A";
+                      let amountInUsd = 0;
 
                       if (token) {
-                        formattedAmount = `${formatUnits(
-                          BigInt(contribution.amount),
-                          token.decimal
-                        )} ${token.name}`;
+                        formattedAmount = `${Number(
+                          formatUnits(
+                            BigInt(contribution.amount),
+                            token.decimal
+                          )
+                        ).toFixed(5)} ${token.name}`;
+                        amountInUsd =
+                          Number(
+                            formatUnits(
+                              BigInt(contribution.amount),
+                              token.decimal
+                            )
+                          ) * (props.price ?? 0);
                       }
 
                       return (
@@ -232,11 +248,8 @@ function InnerTable(props: {
                           </td>
                           {/* Display donations */}
                           <td className="py-4 truncate lg:pr-16">
-                            <span className="font-bold">
-                              {formattedAmount}{" "}
-                            </span>
                             <span className="text-grey-400">
-                              / ${contribution.amountInUsd.toFixed(2)}
+                              ${amountInUsd.toFixed(2)}
                             </span>
                           </td>
                         </tr>
@@ -255,6 +268,7 @@ function Table(props: {
   contributions: Contribution[];
   tokens: Record<string, VotingToken>;
   activeRound: boolean;
+  price: number;
 }) {
   const roundInfo = props.contributions[0];
   const chainId = roundInfo.chainId;
@@ -270,7 +284,8 @@ function Table(props: {
 
   // Get the total contribution amount in USD and matching token
   sortedContributions.forEach((contribution) => {
-    totalContributionAmountInUsd += contribution.amountInUsd;
+    totalContributionAmountInUsd +=
+      (Number(contribution.amount) * props.price) / 10 ** 18;
     totalContributionInMatchingToken += Number(contribution.amount);
   });
 
@@ -321,9 +336,8 @@ function Table(props: {
           </td>
           {/* Display donations */}
           <td className="py-4 truncate w-2/5 pl-8">
-            <span className="font-bold">{formattedAmount} </span>
             <span className="text-grey-400">
-              / ${totalContributionAmountInUsd.toFixed(2)}
+              ${totalContributionAmountInUsd.toFixed(2)}
             </span>
           </td>
           <td className="truncate w-1/5 pl-48">

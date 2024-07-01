@@ -56,7 +56,6 @@ export const metadataToProject = (
     userGithub: m.userGithub,
     projectGithub: m.projectGithub,
     projectTwitter: m.projectTwitter,
-    credentials: m.credentials,
   };
 
   return p;

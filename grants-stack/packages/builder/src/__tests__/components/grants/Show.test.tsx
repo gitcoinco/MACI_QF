@@ -44,7 +44,6 @@ describe("<Show />", () => {
       grantMetadataFetched(
         buildProjectMetadata({
           id: projectId,
-          credentials: {},
         })
       )
     );

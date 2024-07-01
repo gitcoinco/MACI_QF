@@ -116,7 +116,6 @@ const RoundCard = ({ round, index, roundType }: RoundCardProps) => {
   return (
     <BasicCard className="w-full">
       <a
-        target="_blank"
         href={`/#/round/${chainId}/${id}`}
         data-testid="round-card"
         data-track-event={trackEventValue}

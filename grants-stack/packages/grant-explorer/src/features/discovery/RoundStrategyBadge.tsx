@@ -17,8 +17,9 @@ const colorOptions = {
   [ROUND_PAYOUT_MERKLE]: "blue",
   [ROUND_PAYOUT_DIRECT]: "yellow",
   [ROUND_PAYOUT_MACIQF]: "green",
-
   ["allov2.DonationVotingMerkleDistributionDirectTransferStrategy"]: "blue",
+
+  ["allov2.DirectGrantsLiteStrategy"]: "blue",
   ["allov2.MicroGrantsStrategy"]: "yellow",
   ["allov2.MicroGrantsHatsStrategy"]: "yellow",
   ["allov2.SQFSuperFluidStrategy"]: "yellow",

@@ -1,10 +1,6 @@
 import { datadogLogs } from "@datadog/browser-logs";
-import {
-  PROVIDER_ID,
-  VerifiableCredential,
-} from "@gitcoinco/passport-sdk-types";
 import { ShieldCheckIcon } from "@heroicons/react/24/solid";
-import { PassportVerifierWithExpiration, formatDateWithOrdinal, renderToHTML, useParams } from "common";
+import { formatDateWithOrdinal, renderToHTML, useParams } from "common";
 import { getAlloVersion } from "common/src/config";
 import { formatDistanceToNowStrict } from "date-fns";
 import React, {
@@ -45,7 +41,6 @@ import {
   mapApplicationToRound,
   useApplication,
 } from "../projects/hooks/useApplication";
-import { PassportWidget } from "../common/PassportWidget";
 
 const CalendarIcon = (props: React.SVGProps<SVGSVGElement>) => {
   return (
@@ -122,7 +117,9 @@ export default function ViewProjectDetails() {
     round?.roundMetadata?.quadraticFundingConfig?.sybilDefense === true;
 
   const { grants } = useGap(projectToRender?.projectRegistryId as string);
-  const { stats } = useOSO(projectToRender?.projectMetadata.projectGithub as string);
+  const { stats } = useOSO(
+    projectToRender?.projectMetadata.projectGithub as string
+  );
 
   const currentTime = new Date();
   const isAfterRoundEndDate =
@@ -147,14 +144,20 @@ export default function ViewProjectDetails() {
   const disableAddToCartButton =
     (alloVersion === "allo-v2" && roundId.startsWith("0x")) ||
     isAfterRoundEndDate;
-  const { projects, add, remove } = useCartStorage();
+  const { userProjects, addUserProject, removeUserProject } = useCartStorage();
+  const { address } = useAccount();
 
-  const isAlreadyInCart = projects.some(
-    (project) =>
-      project.grantApplicationId === applicationId &&
-      project.chainId === Number(chainId) &&
-      project.roundId === roundId
-  );
+  const projects = address ? userProjects[address] : [];
+
+  const isAlreadyInCart = projects
+    ? projects.some(
+        (project) =>
+          project.grantApplicationId === applicationId &&
+          project.chainId === Number(chainId) &&
+          project.roundId === roundId
+      )
+    : false;
+  
   const cartProject = projectToRender as CartProject;
 
   if (cartProject !== undefined) {
@@ -228,11 +231,6 @@ export default function ViewProjectDetails() {
           <div className="flex items-center pt-2" data-testid="bread-crumbs">
             <Breadcrumb items={breadCrumbs} />
           </div>
-          {walletAddress && round && isSybilDefenseEnabled && (
-            <div data-testid="passport-widget">
-              <PassportWidget round={round} alignment="right" />
-            </div>
-          )}
         </div>
         <div className="mb-4">
           <ProjectBanner
@@ -249,15 +247,15 @@ export default function ViewProjectDetails() {
           </div>
         </div>
         <div className="md:flex gap-4 flex-row-reverse">
-          {round && !isDirectRound(round) && (
+          {round && address && !isDirectRound(round) && (
             <Sidebar
               isAlreadyInCart={isAlreadyInCart}
               isBeforeRoundEndDate={!disableAddToCartButton}
               removeFromCart={() => {
-                remove(cartProject);
+                removeUserProject(cartProject, address);
               }}
               addToCart={() => {
-                add(cartProject);
+                addUserProject(cartProject, address);
               }}
             />
           )}
@@ -311,36 +309,6 @@ function ProjectDetailsTabs(props: {
   );
 }
 
-function useVerifyProject(project?: Project) {
-  const { credentials = {} } = project?.projectMetadata ?? {};
-  const dataLayer = useDataLayer();
-
-  // Return data as { twitter?: boolean, ... }
-  return useSWR<{ [K in Lowercase<PROVIDER_ID>]?: boolean }>(credentials, () =>
-    Promise.all(
-      // Check verifications for all credentials in project metadata
-      Object.entries(credentials).map(async ([provider, credential]) => ({
-        provider,
-        verified: await isVerified({
-          dataLayer,
-          verifiableCredential: credential,
-          provider,
-          project,
-        }),
-      }))
-    ).then((verifications) =>
-      // Convert to object ({ [provider]: isVerified })
-      verifications.reduce(
-        (acc, x) => ({
-          ...acc,
-          [x.provider]: x.verified === VerifiedCredentialState.VALID,
-        }),
-        {}
-      )
-    )
-  );
-}
-
 function ProjectLinks({ project }: { project?: Project }) {
   const {
     recipient,
@@ -355,9 +323,6 @@ function ProjectLinks({ project }: { project?: Project }) {
 
   // @ts-expect-error Temp until viem (could also cast recipient as Address or update the type)
   const ens = useEnsName({ address: recipient, enabled: Boolean(recipient) });
-
-  const verified = useVerifyProject(project);
-
   const createdOn =
     createdAt &&
     `Created on: ${formatDateWithOrdinal(new Date(createdAt ?? 0))}`;
@@ -380,7 +345,6 @@ function ProjectLinks({ project }: { project?: Project }) {
         <ProjectLink
           url={`https://twitter.com/${projectTwitter}`}
           icon={TwitterIcon}
-          isVerified={verified.data?.twitter}
         >
           {projectTwitter}
         </ProjectLink>
@@ -389,7 +353,6 @@ function ProjectLinks({ project }: { project?: Project }) {
         <ProjectLink
           url={`https://github.com/${projectGithub}`}
           icon={GithubIcon}
-          isVerified={verified.data?.github}
         >
           {projectGithub}
         </ProjectLink>
@@ -536,18 +499,8 @@ function Sidebar(props: {
 }
 
 export function ProjectStats() {
-  const { chainId, roundId, applicationId } = useProjectDetailsParams();
+  const { chainId, roundId } = useProjectDetailsParams();
   const { round } = useRoundById(Number(chainId), roundId);
-  const dataLayer = useDataLayer();
-  const { data: application } = useApplication(
-    {
-      chainId: Number(chainId as string),
-      roundId,
-      applicationId: applicationId,
-    },
-    dataLayer
-  );
-
   const timeRemaining =
     round?.roundEndTime && !isInfiniteDate(round?.roundEndTime)
       ? formatDistanceToNowStrict(round.roundEndTime)
@@ -558,16 +511,6 @@ export function ProjectStats() {
 
   return (
     <div className="rounded-3xl flex-auto p-3 md:p-4 gap-4 flex flex-col text-blue-800">
-      <Stat
-        isLoading={!application}
-        value={`$${application?.totalAmountDonatedInUsd.toFixed(2)}`}
-      >
-        funding received in current round
-      </Stat>
-      <Stat isLoading={!application} value={application?.uniqueDonorsCount}>
-        contributors
-      </Stat>
-
       <Stat
         isLoading={isBeforeRoundEndDate === undefined}
         value={timeRemaining}
@@ -583,8 +526,8 @@ export function ProjectStats() {
           isBeforeRoundEndDate === undefined
             ? ""
             : isBeforeRoundEndDate
-            ? "to go"
-            : "Round ended"
+              ? "to go"
+              : "Round ended"
         }
       </Stat>
     </div>
@@ -631,61 +574,4 @@ function CartButtonToggle(props: {
       {props.isAlreadyInCart ? "Added to cart" : "Add to cart"}
     </button>
   );
-}
-
-function vcProviderMatchesProject(
-  provider: string,
-  verifiableCredential: VerifiableCredential,
-  project: Project | undefined
-) {
-  let vcProviderMatchesProject = false;
-  if (provider === "twitter") {
-    vcProviderMatchesProject =
-      verifiableCredential.credentialSubject.provider
-        ?.split("#")[1]
-        .toLowerCase() ===
-      project?.projectMetadata.projectTwitter?.toLowerCase();
-  } else if (provider === "github") {
-    vcProviderMatchesProject =
-      verifiableCredential.credentialSubject.provider
-        ?.split("#")[1]
-        .toLowerCase() ===
-      project?.projectMetadata.projectGithub?.toLowerCase();
-  }
-  return vcProviderMatchesProject;
-}
-
-function vcIssuedToAddress(vc: VerifiableCredential, address: string) {
-  const vcIdSplit = vc.credentialSubject.id.split(":");
-  const addressFromId = vcIdSplit[vcIdSplit.length - 1];
-  return addressFromId === address;
-}
-
-async function isVerified(args: {
-  verifiableCredential: VerifiableCredential;
-  provider: string;
-  project: Project | undefined;
-  dataLayer: DataLayer;
-}) {
-  const { verifiableCredential, provider, project } = args;
-
-  const passportVerifier = new PassportVerifierWithExpiration();
-  const  vcHasValidProof = await passportVerifier.verifyCredential(verifiableCredential);
-
-  const vcIssuedByValidIAMServer = verifiableCredential.issuer === IAM_SERVER;
-  const providerMatchesProject = vcProviderMatchesProject(
-    provider,
-    verifiableCredential,
-    project
-  );
-  const vcIssuedToAtLeastOneProjectOwner = (
-    project?.projectMetadata?.owners ?? []
-  ).some((owner) => vcIssuedToAddress(verifiableCredential, owner.address));
-
-  return vcHasValidProof &&
-    vcIssuedByValidIAMServer &&
-    providerMatchesProject &&
-    vcIssuedToAtLeastOneProjectOwner
-    ? VerifiedCredentialState.VALID
-    : VerifiedCredentialState.INVALID;
 }

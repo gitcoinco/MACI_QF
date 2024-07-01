@@ -1,20 +1,17 @@
 import {
   METADATA_SAVED,
   METADATA_IMAGE_SAVED,
-  CREDENTIALS_SAVED,
   FORM_RESET,
   ProjectFormActions,
 } from "../actions/projectForm";
-import { FormInputs, ProjectCredentials } from "../types";
+import { FormInputs } from "../types";
 
 export interface ProjectFormState {
   metadata: FormInputs;
-  credentials?: ProjectCredentials;
 }
 
 export const initialState: ProjectFormState = {
   metadata: {},
-  credentials: {},
 };
 
 export const projectFormReducer = (
@@ -38,16 +35,6 @@ export const projectFormReducer = (
         metadata: {
           ...state.metadata,
           [action.fieldName]: action.image,
-        },
-      };
-    }
-
-    case CREDENTIALS_SAVED: {
-      return {
-        ...state,
-        credentials: {
-          ...state.credentials,
-          ...action.credentials,
         },
       };
     }

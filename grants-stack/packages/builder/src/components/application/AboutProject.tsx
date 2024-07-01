@@ -6,11 +6,9 @@ import {
 } from "data-layer/dist/roundApplication.types";
 import { useEnsName } from "wagmi";
 import { GithubLogo, TwitterLogo } from "../../assets";
-import useValidateCredential from "../../hooks/useValidateCredential";
 import colors from "../../styles/colors";
 import { Metadata } from "../../types";
 import { getPayoutIcon } from "../../utils/wallet";
-import GreenVerifiedBadge from "../badges/GreenVerifiedBadge";
 import Calendar from "../icons/Calendar";
 import { DetailSummary } from "./DetailSummary";
 
@@ -21,19 +19,8 @@ export function AboutProject(props: {
   chainId: ChainId;
 }) {
   const { projectToRender, answers, questions, chainId } = props;
-
-  const { website, projectTwitter, projectGithub, userGithub, credentials } =
+  const { website, projectTwitter, projectGithub, userGithub } =
     projectToRender;
-
-  const { isValid: validTwitterCredential } = useValidateCredential(
-    credentials?.twitter,
-    projectTwitter
-  );
-
-  const { isValid: validGithubCredential } = useValidateCredential(
-    credentials?.github,
-    projectGithub
-  );
 
   const recipientQuestion = questions.find((item) => item.type === "recipient");
   const recipient = recipientQuestion
@@ -88,6 +75,7 @@ export function AboutProject(props: {
             target="_blank"
             rel="noreferrer"
             className="text-base font-normal text-black"
+            aria-label="Website"
           >
             <DetailSummary
               text={`${website}`}
@@ -101,6 +89,7 @@ export function AboutProject(props: {
         <span className="flex items-center mt-4 gap-1">
           <img src={TwitterLogo} className="h-4" alt="Twitter Logo" />
           <a
+            aria-label="ds"
             href={`https://twitter.com/${projectTwitter}`}
             target="_blank"
             rel="noreferrer"
@@ -112,13 +101,13 @@ export function AboutProject(props: {
               violetcolor
             />
           </a>
-          {validTwitterCredential && <GreenVerifiedBadge />}
         </span>
       )}
       {userGithub && (
         <span className="flex items-center mt-4 gap-2">
           <img src={GithubLogo} className="h-4" alt="GitHub Logo" />
           <a
+            aria-label="git"
             href={`https://github.com/${userGithub}`}
             target="_blank"
             rel="noreferrer"
@@ -130,13 +119,13 @@ export function AboutProject(props: {
               violetcolor
             />
           </a>
-          {validGithubCredential && <GreenVerifiedBadge />}
         </span>
       )}
       {projectGithub && (
         <span className="flex items-center mt-4 gap-1">
           <img src={GithubLogo} className="h-4" alt="GitHub Logo" />
           <a
+            aria-label="proj-git"
             href={`https://github.com/${projectGithub}`}
             target="_blank"
             rel="noreferrer"

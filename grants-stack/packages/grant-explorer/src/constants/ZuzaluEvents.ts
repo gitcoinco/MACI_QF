@@ -1,6 +1,5 @@
-export const errorModalDelayMs = 3000;
-export const modalDelayMs = 1000;
-export const maxDateForUint256 = new Date(8640000000000000);
+import { PipelineEdDSATicketZuAuthConfig } from "@pcd/passport-interface";
+
 export const ZuzaluEvents = [
   //Zuzalu (Montenegro, 2023)
   {
@@ -41,8 +40,6 @@ export const ZuzaluEvents = [
     ],
     eventId: "9ccc53cb-3b0a-415b-ab0d-76cfa21c72ac",
     eventName: "Vitalia",
-    productId: "cd3f2b06-e520-4eff-b9ed-c52365c60848",
-    productName: "Resident",
   },
   //ETHBerlin (Berlin, 2024)
   {
@@ -75,6 +72,7 @@ export const ZuzaluEvents = [
     eventId: "21c7db2e-08e3-4234-9a6e-386a592d63c8",
     eventName: "Edge Esmeralda",
   },
+
   {
     pcdType: "eddsa-ticket-pcd",
     publicKey: [
@@ -84,11 +82,4 @@ export const ZuzaluEvents = [
     eventId: "223b4108-348d-5f65-afa3-464b103e7d90",
     eventName: "Test",
   },
-] as {
-  pcdType: string;
-  publicKey: string[];
-  eventId: string;
-  eventName: string;
-  productId?: undefined;
-  productName?: undefined;
-}[];
+] as PipelineEdDSATicketZuAuthConfig[];

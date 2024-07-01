@@ -3,10 +3,8 @@ import {
   Allo as AlloV2Contract,
   CreateProfileArgs,
   DirectGrantsStrategy,
-  DirectGrantsStrategyTypes,
   DonationVotingMerkleDistributionDirectTransferStrategyAbi,
   DonationVotingMerkleDistributionStrategy,
-  DonationVotingMerkleDistributionStrategyTypes,
   Registry,
   RegistryAbi,
   TransactionData,
@@ -42,38 +40,35 @@ import Erc20ABI from "../abis/erc20";
 import { StandardMerkleTree } from "@openzeppelin/merkle-tree";
 import { buildUpdatedRowsOfApplicationStatuses } from "../application";
 import { generateMerkleTree } from "./allo-v1";
-import { BigNumber, utils } from "ethers";
-
-import { Keypair, PubKey } from "maci-domainobjs";
+import { BigNumber, ethers, utils } from "ethers";
+import { PubKey } from "maci-domainobjs";
 
 function getStrategyAddress(strategy: RoundCategory, chainId: ChainId): string {
   let strategyAddresses;
   switch (chainId) {
-    case ChainId.ZKSYNC_ERA_MAINNET_CHAIN_ID:
-      throw new Error("ZkSync era mainnet is not supported");
-    case ChainId.ZKSYNC_ERA_TESTNET_CHAIN_ID:
-      throw new Error("ZkSync era testnet is not supported");
-
-    case ChainId.SEI_DEVNET:
+    case ChainId.SEPOLIA:
       strategyAddresses = {
         [RoundCategory.QuadraticFunding]:
-          "0x029dFAf686DfA0efdace5132ba422e9279D50b5b",
-        [RoundCategory.Direct]: "0x45181C4fD52d4d350380B3D42091b80065c702Ef",
-        [RoundCategory.Maci]: "0xAD93f0AAf57E40531e14d65bb62D3006480121D4",
+          "0x000000000000000000000000000000000000000",
+        [RoundCategory.Direct]: "0x000000000000000000000000000000000000000",
+        [RoundCategory.Maci]: "0xB84be727Ff04B64D5f85e0a669Af0ef8e14f530B",
       };
       break;
 
     default:
-      strategyAddresses = {
-        [RoundCategory.QuadraticFunding]:
-          "0x787eC93Dd71a90563979417879F5a3298389227f",
-        [RoundCategory.Direct]: "0x8564d522b19836b7F5B4324E7Ee8Cb41810E9F9e",
-        [RoundCategory.Maci]: "0xAD93f0AAf57E40531e14d65bb62D3006480121D4",
-      };
+      throw new Error(`Unsupported chain ID ${chainId}`);
       break;
   }
   return strategyAddresses[strategy];
 }
+
+const ClonableMACIFactoryAddress = getAddress(
+  "0x272DfA1B365E4e72690F834c6e0a2823Fa5120e5"
+);
+const ZuPassRegistryAddress = getAddress(
+  "0x455cC27badb067cb9b7cdE52F153DfebC83B1A99"
+);
+const NonAllowlistGatingAddress = getAddress(zeroAddress);
 
 function applicationStatusToNumber(status: ApplicationStatus) {
   switch (status) {
@@ -427,121 +422,96 @@ export class AlloV2 implements Allo {
         return roundIpfsResult;
       }
 
-      let initStrategyDataEncoded: Address;
-      let token: Address = getAddress(NATIVE);
+      const token: Address = getAddress(NATIVE);
 
-      if (args.roundData.roundCategory === RoundCategory.QuadraticFunding) {
-        const initStrategyData: DonationVotingMerkleDistributionStrategyTypes.InitializeData =
-          {
-            useRegistryAnchor: true,
-            metadataRequired: true,
-            registrationStartTime: dateToEthereumTimestamp(
-              args.roundData.applicationsStartTime
-            ), // in seconds, must be in future
-            registrationEndTime: dateToEthereumTimestamp(
-              args.roundData.applicationsEndTime
-            ), // in seconds, must be after registrationStartTime
-            allocationStartTime: dateToEthereumTimestamp(
-              args.roundData.roundStartTime
-            ), // in seconds, must be after registrationStartTime
-            allocationEndTime: dateToEthereumTimestamp(
-              args.roundData.roundEndTime
-            ), // in seconds, must be after allocationStartTime
-            allowedTokens: [], // allow all tokens
-          };
+      const initStrategyData = [
+        true,
+        true,
+        dateToEthereumTimestamp(args.roundData.applicationsStartTime), // in seconds, must be in future
+        dateToEthereumTimestamp(args.roundData.applicationsEndTime), // in seconds, must be after registrationStartTime
+        dateToEthereumTimestamp(args.roundData.roundStartTime), // in seconds, must be after registrationStartTime
+        dateToEthereumTimestamp(args.roundData.roundEndTime), // in seconds, must be after allocationStartTime
+      ];
 
-        const strategy = new DonationVotingMerkleDistributionStrategy({
-          chain: this.chainId,
-        });
+      const CoordinatorKeypair =
+        args.roundData.roundMetadataWithProgramContractAddress?.maciParameters
+          ?.coordinatorKeyPair;
 
-        initStrategyDataEncoded =
-          await strategy.getInitializeData(initStrategyData);
+      const pubk = PubKey.deserialize(CoordinatorKeypair as string);
 
-        const alloToken =
-          args.roundData.token === zeroAddress ? NATIVE : args.roundData.token;
+      const address = getAddress(
+        args.roundData.roundMetadataWithProgramContractAddress?.maciParameters
+          ?.coordinatorAddress as string
+      ) as Address;
 
-        token = getAddress(alloToken);
-      } else if (args.roundData.roundCategory === RoundCategory.Direct) {
-        const initStrategyData: DirectGrantsStrategyTypes.InitializeParams = {
-          registryGating: true,
-          metadataRequired: true,
-          grantAmountRequired: true,
-          registrationStartTime: dateToEthereumTimestamp(
-            args.roundData.roundStartTime
-          ), // in seconds, must be in future
-          registrationEndTime: dateToEthereumTimestamp(
-            args.roundData.roundEndTime
-          ), // in seconds, must be after registrationStartTime
-        };
+      const validObjEventIDs =
+        args.roundData.roundMetadataWithProgramContractAddress?.maciParameters
+          ?.validEventIDs;
 
-        const strategy = new DirectGrantsStrategy({
-          chain: this.chainId,
-        });
-
-        initStrategyDataEncoded = strategy.getInitializeData(initStrategyData);
-      } else if (args.roundData.roundCategory == RoundCategory.Maci) {
-        const initStrategyData = [
-          true,
-          true,
-          dateToEthereumTimestamp(args.roundData.applicationsStartTime), // in seconds, must be in future
-          dateToEthereumTimestamp(args.roundData.applicationsEndTime), // in seconds, must be after registrationStartTime
-          dateToEthereumTimestamp(args.roundData.roundStartTime), // in seconds, must be after registrationStartTime
-          dateToEthereumTimestamp(args.roundData.roundEndTime), // in seconds, must be after allocationStartTime
-        ];
-        console.log(
-          "args.roundData.roundMetadataWithProgramContractAddress",
-          args.roundData.roundMetadataWithProgramContractAddress
-        );
-        let CoordinatorKeypair =
+      const maxContributionAmountAllowlisted = BigInt(
+        Number(
           args.roundData.roundMetadataWithProgramContractAddress?.maciParameters
-            ?.coordinatorKeyPair;
+            ?.maxContributionAmountAllowlisted
+        ) *
+          10 ** 18
+      );
 
-        console.log("CoordinatorKeypair", CoordinatorKeypair);
+      const maxContributionAmountNonAllowlisted = BigInt(
+        Number(
+          args.roundData.roundMetadataWithProgramContractAddress?.maciParameters
+            ?.maxContributionAmountNonAllowlisted
+        ) *
+          10 ** 18
+      );
 
-        const pubk = PubKey.deserialize(CoordinatorKeypair as string);
+      const array = validObjEventIDs
+        ? validObjEventIDs.map((eventId) => BigInt(eventId.eventID))
+        : [];
 
-        const address = await this.transactionSender.address();
+      // Choose only the unique event IDs create a map and then convert it to an array again
+      const eventIDs = Array.from(new Set(array));
 
-        console.log("address", address);
+      const allowlistGatingContractInitData = new ethers.utils.AbiCoder().encode(
+        ["uint256[]"],
+        [eventIDs]
+      );
 
-        let MaciParams = [
-          // coordinator:
-          address,
-          // coordinatorPubKey:
-          [BigInt(pubk.asContractParam().x), BigInt(pubk.asContractParam().y)],
-          "0x2e7c021Ed995960E6eB31C5675a5e5119f4787d9",
-          "0x068d780E21b439214B89C990D7DBEE7Bde1B6CB6",
-          // maci_id
-          0n,
-          // VALID_EVENT_IDS
-          [192993346581360151154216832563903227660n],
-          // maxContributionAmountForZupass
-          10n ** 18n * 100n,
-          // maxContributionAmountForNonZupass
-          10n ** 18n * 100n,
-        ];
+      // In the future we might support more than one MACI instance
+      const maciID = 0n;
 
-        let initStruct = [initStrategyData, MaciParams];
+      const MaciParams = [
+        // coordinator:
+        address,
+        // coordinatorPubKey:
+        [BigInt(pubk.asContractParam().x), BigInt(pubk.asContractParam().y)],
+        ClonableMACIFactoryAddress,
+        // Allowlist gating verifier address
+        ZuPassRegistryAddress,
+        // Non-allowlist gating verifier address
+        NonAllowlistGatingAddress,
+        // maci_id
+        maciID,
+        // AllowlistGatingContractInitData
+        allowlistGatingContractInitData,
+        // NonAllowlistGatingContractInitData
+        "0x00",
+        // maxContributionAmountForZupass
+        maxContributionAmountAllowlisted,
+        // maxContributionAmountForNonZupass
+        maxContributionAmountNonAllowlisted,
+      ];
 
-        console.log("initStruct", initStruct);
+      const initStruct = [initStrategyData, MaciParams];
 
-        let types = parseAbiParameters(
-          "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,uint8,uint256[],uint256,uint256))"
-        );
+      const types = parseAbiParameters(
+        "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,address,uint8,bytes,bytes,uint256,uint256))"
+      );
 
-        console.log("types", types);
+      const encoded: `0x${string}` = encodeAbiParameters(types, [
+        initStruct,
+      ] as any);
 
-        const encoded: `0x${string}` = encodeAbiParameters(types, [
-          initStruct,
-        ] as any);
-
-        initStrategyDataEncoded = encoded ?? "0x00";
-        console.log("encoded", encoded);
-      } else {
-        throw new Error(
-          `Unsupported round type ${args.roundData.roundCategory}`
-        );
-      }
+      const initStrategyDataEncoded = encoded ?? "0x";
 
       const profileId = args.roundData.roundMetadataWithProgramContractAddress
         ?.programContractAddress as `0x${string}`;
@@ -549,6 +519,10 @@ export class AlloV2 implements Allo {
       if (!profileId || !profileId.startsWith("0x")) {
         throw new Error("Program contract address is required");
       }
+
+      const managers = args.roundData.roundOperators.map((address) =>
+        getAddress(address)
+      );
 
       const createPoolArgs: CreatePoolArgs = {
         profileId: profileId as Hex,
@@ -560,7 +534,7 @@ export class AlloV2 implements Allo {
         token,
         amount: 0n, // we send 0 tokens to the pool, we fund it later
         metadata: { protocol: 1n, pointer: roundIpfsResult.value },
-        managers: args.roundData.roundOperators ?? [],
+        managers: managers as Address[],
       };
 
       const txData = this.allo.createPool(createPoolArgs);
@@ -813,6 +787,9 @@ export class AlloV2 implements Allo {
     applicationsToUpdate: {
       address: string;
       status: ApplicationStatus;
+      statusSnapshots?: {
+        updatedAt: Date;
+      }[];
     }[];
   }): AlloOperation<
     Result<void>,
@@ -827,24 +804,38 @@ export class AlloV2 implements Allo {
         throw new AlloError("DirectGrants is not supported yet!");
       }
 
-      let recipients: string[] = [];
-      let statuses: bigint[] = [];
+      const recipients: string[] = [];
+      const latestUpdateTimes: bigint[] = [];
+      const statuses: bigint[] = [];
 
       // Process the applicationsToUpdate array
       args.applicationsToUpdate.reduce(
         (acc, app) => {
           acc.recipients.push(app.address);
           acc.statuses.push(applicationStatusToNumber(app.status));
+          acc.latestUpdateTimes.push(
+            !app.statusSnapshots || app.statusSnapshots.length <= 1
+              ? 0n
+              : BigInt(
+                  app.statusSnapshots[
+                    app.statusSnapshots.length - 1
+                  ].updatedAt.getTime() / 1000
+                )
+          );
           return acc;
         },
-        { recipients: recipients, statuses: statuses }
+        {
+          recipients: recipients,
+          statuses: statuses,
+          latestUpdateTimes: latestUpdateTimes,
+        }
       );
 
       const txResult = await sendTransaction(this.transactionSender, {
         address: args.strategyAddress,
         abi: MACIQF as Abi,
         functionName: "reviewRecipients",
-        args: [recipients, statuses],
+        args: [recipients, latestUpdateTimes, statuses],
       });
 
       emit("transaction", txResult);

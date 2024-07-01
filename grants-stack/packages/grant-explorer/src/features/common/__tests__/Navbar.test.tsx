@@ -26,16 +26,10 @@ vi.mock("wagmi", async () => {
     useNetwork: () => mockNetwork,
   };
 });
-
 vi.mock("@rainbow-me/rainbowkit", () => ({
   ConnectButton: vi.fn(),
 }));
-
 vi.mock("../Auth");
-
-vi.mock("../PassportWidget", () => ({
-  PassportWidget: vi.fn(),
-}));
 
 const navigateMock = vi.fn();
 

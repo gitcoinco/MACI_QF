@@ -1,6 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=Miriam+Libre:wght@400;700&display=swap");
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400:500&display=swap');
-
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400:500&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -57,31 +56,43 @@
   }
 }
 
-/*  New Code Css for multi select tags inputs */
+/* Custom CSS for react-tagsinput */
 .react-tagsinput {
   background-color: #fff;
-  border: 1px solid #ccc;
+  border: 2px solid #ccc;
   overflow: hidden;
   padding-left: 5px;
   padding-top: 5px;
+  border-radius: 0.375rem; /* Rounded-md */
 }
-
-.react-tagsinput--focused {
-  border-color: #bbb; /* Changed to a neutral grey */
-}
-
-.react-tagsinput-tag {
-  background-color: #eee; /* Changed to light grey */
-  border-radius: 2px;
-  border: 1px solid #bbb; /* Changed to a neutral grey */
-  color: #333; /* Changed to dark grey */
-  display: inline-block;
+.react-tagsinput-input {
+  background: transparent;
+  border: 0;
+  border-radius: 20px;
+  border-color: transparent;
+  color: transparent;
   font-family: sans-serif;
   font-size: 13px;
   font-weight: 400;
+  margin-bottom: 6px;
+  margin-top: 1px;
+  outline: none;
+  padding: 5px;
+  width: 80px;
+  border-radius: 0.375rem; /* Rounded-md */
+}
+
+.react-tagsinput-tag {
+  background-color: #6f3ff5;
+  color: #fff;
+  display: inline-block;
+  font-family: sans-serif;
+  font-size: 13px;
   margin-bottom: 5px;
   margin-right: 5px;
   padding: 5px;
+  border-radius: 0.375rem; /* Rounded-md */
+
 }
 
 .react-tagsinput-remove {
@@ -91,18 +102,4 @@
 
 .react-tagsinput-tag a::before {
   content: " ×";
-}
-
-.react-tagsinput-input {
-  background: transparent;
-  border: 0;
-  color: #777; /* Kept as is since it's already grey */
-  font-family: sans-serif;
-  font-size: 13px;
-  font-weight: 400;
-  margin-bottom: 6px;
-  margin-top: 1px;
-  outline: none;
-  padding: 5px;
-  width: 80px;
 }

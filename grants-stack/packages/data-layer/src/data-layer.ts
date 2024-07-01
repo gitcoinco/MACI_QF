@@ -51,8 +51,21 @@ import {
   getDonationsByDonorAddress,
   getApplicationsForExplorer,
   getContributionsByAddressAndId,
+  getContributionsByAddress,
+  getVoiceCreditsByChainIdAndRoundId,
+  getVoiceCreditsByChainIdsAndRoundIds,
+  getVoteOptionIndexByChainIdAndRoundId,
+  getVoteOptionIndexesByChainIdAndRoundIdQuery,
+  getVoiceCreditsByChainIdAndRoundIdWithoutAddress,
 } from "./queries";
 import { mergeCanonicalAndLinkedProjects } from "./utils";
+
+interface VotingIndexOption {
+  chainId: number;
+  id: string;
+  optionIndex: number;
+  recipientId: string;
+}
 
 /**
  * DataLayer is a class that provides a unified interface to the various data sources.
@@ -66,7 +79,6 @@ import { mergeCanonicalAndLinkedProjects } from "./utils";
  * @param subgraph - The configuration for the subgraph API.
  * @param indexer - The configuration for the indexer API.
  * @param ipfs - The configuration for the IPFS gateway.
- * @param passport - The configuration for the Passport verifier.
  * @param collections - The configuration for the collections source.
  *
  * @returns The DataLayer instance.
@@ -156,7 +168,7 @@ export class DataLayer {
     const requestVariables = {
       userAddress: address.toLowerCase(),
       chainId,
-      tags: ["program", ...tags],
+      tags: ["program", "allo-v2", ...tags],
     };
 
     const response: { projects: Program[] } = await request(
@@ -620,7 +632,6 @@ export class DataLayer {
             projectTwitter: application.project.metadata.projectTwitter,
             userGithub: application.project.metadata.userGithub,
             projectGithub: application.project.metadata.projectGithub,
-            credentials: application.project.metadata.credentials,
             owners: application.project.metadata.owners,
             createdAt: application.project.metadata.createdAt,
             lastUpdated: application.project.metadata.lastUpdated,
@@ -868,5 +879,167 @@ export class DataLayer {
     );
 
     return response.contributions ?? [];
+  }
+
+  /**
+   * getContributionsByAddress() returns a list of MACI contributions (Encrypted messages) by address.
+   * @param contributorAddress
+   */
+  async getContributionsByAddress({
+    contributorAddress,
+  }: {
+    contributorAddress: string;
+  }): Promise<MACIContribution[]> {
+    const requestVariables = {
+      contributorAddress: contributorAddress,
+    };
+
+    const response: { contributions: MACIContribution[] } = await request(
+      this.gsIndexerEndpoint,
+      getContributionsByAddress,
+      requestVariables,
+    );
+
+    return response.contributions ?? [];
+  }
+
+  async getContributionsByChainIdAndRoundID({
+    contributorAddress,
+    chainId,
+    roundId,
+  }: {
+    contributorAddress: string;
+    chainId: number;
+    roundId: string;
+  }): Promise<{
+    voiceCreditBalance: string;
+    stateIndex: string;
+    messages: string[];
+  }> {
+    const requestVariables = {
+      contributorAddress: contributorAddress,
+      chainId: chainId,
+      roundId: roundId,
+    };
+
+    const response: {
+      contributions: {
+        voiceCreditBalance: string;
+        stateIndex: string;
+        messages: string[];
+      }[];
+    } = await request(
+      this.gsIndexerEndpoint,
+      getVoiceCreditsByChainIdAndRoundId,
+      requestVariables,
+    );
+    return response.contributions[0];
+  }
+
+  async getContributionsByChainIdAndRoundIDWithoutAddress({
+    chainId,
+    roundId,
+  }: {
+    chainId: number;
+    roundId: string;
+  }): Promise<
+    {
+      voiceCreditBalance: string;
+      messages: string[];
+    }[]
+  > {
+    const requestVariables = {
+      chainId: chainId,
+      roundId: roundId,
+    };
+
+    const response: {
+      contributions: {
+        voiceCreditBalance: string;
+        messages: string[];
+      }[];
+    } = await request(
+      this.gsIndexerEndpoint,
+      getVoiceCreditsByChainIdAndRoundIdWithoutAddress,
+      requestVariables,
+    );
+
+    return response.contributions;
+  }
+
+  async getVoteOptionIndexByChainIdAndRoundId({
+    chainId,
+    roundId,
+    recipientId,
+  }: {
+    chainId: number;
+    roundId: string;
+    recipientId: string;
+  }) {
+    const requestVariables = {
+      chainId: chainId,
+      roundId: roundId,
+      recipientId: recipientId,
+    };
+
+    const response = await request(
+      this.gsIndexerEndpoint,
+      getVoteOptionIndexByChainIdAndRoundId,
+      requestVariables,
+    );
+
+    return response;
+  }
+
+  async getVoteOptionIndexesByChainIdAndRoundId(
+    chainId: number,
+    roundId: string,
+  ) {
+    const requestVariables = {
+      chainId,
+      roundId,
+    };
+
+    const response: { votingIndexOptions: VotingIndexOption[] } = await request(
+      this.gsIndexerEndpoint,
+      getVoteOptionIndexesByChainIdAndRoundIdQuery,
+      requestVariables,
+    );
+
+    return response;
+  }
+
+  async getVoiceCreditsByChainIdAndRoundId({
+    contributorAddress,
+  }: {
+    contributorAddress: string;
+  }): Promise<{ [chainId: number]: { [roundId: string]: string } }> {
+    const requestVariables = {
+      contributorAddress: contributorAddress,
+    };
+
+    const response: {
+      contributions: {
+        chainId: number;
+        roundId: string;
+        voiceCreditBalance: string;
+      }[];
+    } = await request(
+      this.gsIndexerEndpoint,
+      getVoiceCreditsByChainIdsAndRoundIds,
+      requestVariables,
+    );
+
+    const result: { [chainId: number]: { [roundId: string]: string } } = {};
+
+    response.contributions.forEach((contribution) => {
+      const { chainId, roundId, voiceCreditBalance } = contribution;
+      if (!result[chainId]) {
+        result[chainId] = {};
+      }
+      result[chainId][roundId] = voiceCreditBalance;
+    });
+
+    return result;
   }
 }

@@ -111,7 +111,7 @@
     "typescript": "^5.1.6",
     "url": "^0.11.0",
     "util": "^0.12.4",
-    "verify-env": "*",
+    "verify-env": "workspace:*",
     "viem": "^1.5.3",
     "wagmi": "1.4.1",
     "web-vitals": "^2.1.0",
@@ -124,7 +124,10 @@
     "@pcd/zk-eddsa-event-ticket-pcd": "^0.2.1",
     "@pcd/zuauth": "^1.2.0",
     
-    "zustand": "^4.1.2"
+    "zustand": "^4.1.2",
+    "maci-domainobjs": "1.2.5",
+    "maci-core": "1.2.5",
+    "maci-crypto": "1.2.5"
   },
   "devDependencies": {
     "@babel/core": "^7.20.12",
@@ -134,7 +137,6 @@
     "@babel/preset-react": "^7.18.6",
     "@babel/preset-typescript": "^7.21.0",
     "@faker-js/faker": "^7.5.0",
-    "@gitcoinco/passport-sdk-types": "^0.2.0",
     "@testing-library/dom": ">=7.21.4 ",
     "@types/dompurify": "^2.4.0",
     "@types/ethereum-blockies": "^0.1.0",
@@ -159,10 +161,7 @@
     "vite": "^4.4.9",
     "vitest": "^0.34.2",
     "vitest-fetch-mock": "^0.2.2",
-    "@types/json-bigint": "^1.0.4",
-    "maci-domainobjs": "1.2.0",
-    "maci-core": "1.2.0",
-    "maci-crypto": "1.2.0"
+    "@types/json-bigint": "^1.0.4"
   },
   "engines": {
     "node": ">=18",

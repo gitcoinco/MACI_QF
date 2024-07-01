@@ -11,11 +11,19 @@ import {
   TypedDataDomain,
   zeroAddress,
 } from "viem";
-import { CartProject } from "./types";
+import {
+  CartProject,
+  ProofArgs,
+  IAllocateArgs,
+  bigintArray38,
+  PoolInfo,
+} from "./types";
 import { WalletClient } from "wagmi";
 import { VotingToken } from "common";
 import { NATIVE } from "common/dist/allo/common";
-
+import { getPublicClient } from "@wagmi/core";
+import { getMACIABI } from "common/src/allo/voting";
+import { getZupassRegistryAddress } from "common/src/allowlist";
 type SignPermitProps = {
   walletClient: WalletClient;
   contractAddress: Hex;
@@ -214,7 +222,6 @@ export function encodedQFAllocation(
   return encodedData;
 }
 
-
 export function bnSqrt(val: bigint) {
   // Take square root from a bigint
   // https://stackoverflow.com/a/52468569/1868395
@@ -238,28 +245,6 @@ export function bnSqrt(val: bigint) {
   return x;
 }
 
-// NEW CODE
-export interface ProofArgs {
-  _pA: string[];
-  _pB: string[][];
-  _pC: string[];
-  _pubSignals: bigint[];
-}
-
-/**
- * Interface for the arguments to the batch publish command
- */
-export interface IAllocateArgs {
-  /**
-   * The public key of the user
-   */
-  publicKey: PubKey;
-
-  amount: bigint;
-
-  proof?: string;
-}
-
 export const prepareAllocationData = ({
   publicKey,
   amount,
@@ -269,20 +254,28 @@ export const prepareAllocationData = ({
   // uint[2][2] memory _pB,
   // uint[2] memory _pC,
   // uint[38] memory _pubSignals
-  const types = "(uint256,uint256),uint256,uint[2],uint[2][2],uint[2],uint[38]";
+  const types = "(uint256,uint256),uint256,bool,bytes";
 
-  console.log("amount", amount);
-  let dt: ProofArgs;
+  let dt: ProofArgs | null = null;
   if (proof) {
     dt = generateWitness(JSON.parse(proof));
-  } else {
-    dt = {
-      _pA: new Array(2).fill("0"),
-      _pB: [new Array(2).fill("0"), new Array(2).fill("0")],
-      _pC: new Array(2).fill("0"),
-      _pubSignals: new Array(38).fill("0"),
-    };
   }
+
+  const proofTypes = "uint[2],uint[2][2],uint[2],uint[38]";
+  const proofData = dt
+    ? encodeAbiParameters(parseAbiParameters(proofTypes), [
+        dt._pA.map((str) => BigInt(str)) as [bigint, bigint],
+        dt._pB.map((pair) => pair.map((num) => BigInt(num))) as [
+          [bigint, bigint],
+          [bigint, bigint],
+        ],
+        dt._pC.map((str) => BigInt(str)) as [bigint, bigint],
+        // add 38 bigint in the as [bigint, bigint, ...] format
+        dt._pubSignals as bigintArray38,
+      ])
+    : "0x";
+
+  const isAllowlistedProof = dt ? true : false;
 
   const pubKey = [
     publicKey.asContractParam().x,
@@ -291,58 +284,48 @@ export const prepareAllocationData = ({
   const data = encodeAbiParameters(parseAbiParameters(types), [
     pubKey,
     amount as bigint,
-    dt._pA.map((str) => BigInt(str)) as [bigint, bigint],
-    dt._pB.map((pair) => pair.map((num) => BigInt(num))) as [
-      [bigint, bigint],
-      [bigint, bigint],
-    ],
-    dt._pC.map((str) => BigInt(str)) as [bigint, bigint],
-    // add 38 bigint in the as [bigint, bigint, ...] format
-    dt._pubSignals as [
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-      bigint,
-    ],
+    isAllowlistedProof,
+    proofData,
   ]);
 
   return data;
 };
 
+const abi = getMACIABI();
+
+export const isRoundZuProofReused = async (
+  pcd: string,
+  chainId: number,
+  roundId: string
+) => {
+  const alloContractAddress = getAlloAddress(chainId);
+
+  const ZuPassRegistryAddress = getZupassRegistryAddress(chainId);
+
+  const publicClient = getPublicClient({
+    chainId,
+  });
+  const [Pool] = await Promise.all([
+    publicClient.readContract({
+      abi: abi,
+      address: alloContractAddress as Hex,
+      functionName: "getPool",
+      args: [BigInt(roundId)],
+    }),
+  ]);
+
+  const pool = Pool as PoolInfo;
+  const proof = generateWitness(JSON.parse(pcd));
+  const emailHash = proof._pubSignals[9];
+  const isUsed = await publicClient.readContract({
+    address: ZuPassRegistryAddress,
+    abi,
+    functionName: "usedRoundNullifiers",
+    args: [pool.strategy as `0x${string}`, emailHash],
+  });
+
+  return isUsed;
+};
 
 import { utils } from "ethers";
 import {
@@ -353,6 +336,7 @@ import {
   Message,
 } from "maci-domainobjs";
 import { generateWitness } from "./pcd";
+import { getAlloAddress } from "common/dist/allo/backends/allo-v2";
 
 /**
  * Convert to MACI Message object
@@ -400,11 +384,11 @@ export async function getContributorMessages({
 
   return maciMessages.messages.map((message) => {
     const macimsg = getMaciMessage(message.msgType, message.data);
-    const { command, signature } = PCommand.decrypt(macimsg, sharedKey, true);
+    const { command } = PCommand.decrypt(macimsg, sharedKey, true);
+
     return command;
   });
 }
-
 
 /**
  * Derives the MACI private key from the users signature hash

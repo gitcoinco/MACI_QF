@@ -1,17 +1,17 @@
 import { Project } from "data-layer";
+import { useNavigate } from "react-router-dom";
 import tw from "tailwind-styled-components";
 
 export default function NavbarCart(props: { cart: Project[] }) {
   const projectCount = props.cart.length;
 
+  const navigate = useNavigate();
+
   return (
     <div
       data-testid="navbar-cart"
       className="relative flex-row"
-      onClick={() => {
-        const url = "#/cart";
-        window.open(url, "_blank");
-      }}
+      onClick={() => navigate("/cart")}
     >
       <QuickViewIcon count={projectCount} />
     </div>

@@ -2,12 +2,6 @@ import { Button } from "@chakra-ui/react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { ExclamationCircleIcon } from "@heroicons/react/20/solid";
-import { getAlloVersion } from "common/src/config";
-import {
-  AlloVersionSwitcher,
-  useAlloVersion,
-} from "common/src/components/AlloVersionSwitcher";
 import { grantsPath, newGrantPath } from "../routes";
 import CustomerSupport from "./base/CustomerSupport";
 import colors from "../styles/colors";
@@ -15,14 +9,8 @@ import Hamburger from "./icons/Hamburger";
 import Plus from "./icons/Plus";
 import { GitcoinLogo, BuilderLogo } from "../assets";
 
-export default function Header({
-  alloVersionSwitcherVisible = true,
-}: {
-  alloVersionSwitcherVisible?: boolean;
-}) {
+export default function Header() {
   const [navbarOpen, setNavbarOpen] = useState(false);
-  const { switchToVersion } = useAlloVersion();
-  const version = getAlloVersion();
 
   return (
     <div className="mb-3">
@@ -44,6 +32,7 @@ export default function Header({
               type="button"
               onClick={() => setNavbarOpen(!navbarOpen)}
               className="lg:hidden"
+              aria-label="Hamburger"
             >
               <div className="border-solid border rounded border-primary-text p-2">
                 <Hamburger color={colors["primary-text"]} />
@@ -68,37 +57,12 @@ export default function Header({
                   New Project
                 </Button>
               </Link>
-              {alloVersionSwitcherVisible && (
-                <AlloVersionSwitcher color="black" />
-              )}
               <ConnectButton />
               <CustomerSupport />
             </div>
           </div>
         </div>
       </header>
-      {version === "allo-v1" &&
-        (window.location.hash === "#/projects" ||
-          window.location.hash === "#/projects/new") && (
-          <div className="bg-black p-4 text-center font-medium flex flex-col items-center justify-center text-white">
-            <div>
-              <ExclamationCircleIcon className="h-5 w-5 inline-block mr-2" />
-              You are currently on Allo v1. To switch to the most current
-              version of Builder,&nbsp;
-              <button
-                type="button"
-                className="underline"
-                onClick={(e) => {
-                  e.preventDefault();
-                  switchToVersion("allo-v2");
-                }}
-              >
-                switch to Allo v2.
-              </button>
-              &nbsp;
-            </div>
-          </div>
-        )}
     </div>
   );
 }
