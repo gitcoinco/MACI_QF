@@ -192,8 +192,8 @@ export function RoundInCart(
 
   return (
     <div className="my-4 flex w-full">
-      <div className="flex flex-col flex-grow w-3/4">
-        <div className="bg-grey-50 px-4 py-6 rounded-xl mb-4 flex-grow mr-2">
+      <div className="flex flex-col flex-grow w-3/4 bg-grey-50 rounded-xl">
+        <div className="px-4 py-6 flex-grow mr-2">
           <div className="flex flex-row items-end justify-between">
             <div className="flex flex-col">
               <div>
@@ -256,13 +256,13 @@ export function RoundInCart(
                 </div>
               );
             })}
-            <div className="p-4 bg-grey-100 rounded-b-xl font-medium text-lg">
-              <div className="flex justify-end">
-                <div className="flex flex-row">
-                  <p className="mb-2 mr-2">Total voice credits allocated:</p>
-                  <p className="mb-2">{usedVoiceCredits.toString()}</p>
-                </div>
-              </div>
+          </div>
+        </div>
+        <div className="p-4 bg-grey-100 rounded-b-xl font-medium text-lg">
+          <div className="flex justify-end">
+            <div className="flex flex-row">
+              <p className="mb-2 mr-2">Total voice credits allocated:</p>
+              <p className="mb-2">{usedVoiceCredits.toString()}</p>
             </div>
           </div>
         </div>

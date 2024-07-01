@@ -6,7 +6,6 @@ import { EyeIcon } from "@heroicons/react/24/solid";
 import { TrashIcon } from "@heroicons/react/24/outline";
 import { renderToPlainText, VotingToken } from "common";
 import { useCartStorage } from "../../../store";
-import { Box, Flex, Image, Text, Input, Center } from "@chakra-ui/react";
 import { groupProjectsInCart } from "../../api/utils";
 
 export function ProjectInCart(
@@ -114,11 +113,11 @@ export function ProjectInCart(
 
   return (
     <div
-      className="mb-4 p-4 border border-gray-200 rounded-md"
+      className={`p-4 ${props.last ? "" : " mb-4 border-b border-gray-300"} rounded-md`}
       data-testid="cart-project"
     >
-      <div className="flex justify-between items-center">
-        <div className="flex">
+      <div className="flex items-center">
+        <div className="flex w-1/2">
           <div className="relative w-16 h-16 overflow-hidden rounded-full">
             <img
               className="w-16 h-16 rounded-full"
@@ -154,28 +153,29 @@ export function ProjectInCart(
             </p>
           </div>
         </div>
-        <div className="flex flex-col items-center">
-          <input
-            aria-label={`Donation votes for project ${project.projectMetadata?.title}`}
-            value={votes}
-            onChange={handleVotesChange}
-            className="rounded-xl w-20 text-center"
-            min={0}
-            type="number"
+        <div className="flex w-1/2 justify-between items-center">
+          <div className="flex flex-col items-center ml-4">
+            <input
+              aria-label={`Donation votes for project ${project.projectMetadata?.title}`}
+              value={votes}
+              onChange={handleVotesChange}
+              className="rounded-xl w-20 text-center"
+              min={0}
+              type="number"
+            />
+            <p className="text-gray-400">quadratic votes</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <p className="text-sm text-gray-400">{Number(votes) ** 2}</p>
+            <p className="text-gray-400">voice credits</p>
+          </div>
+          <TrashIcon
+            data-testid="remove-from-cart"
+            onClick={() => removeProjectFromCart(project, props.walletAddress)}
+            className="w-5 h-5 ml-2 cursor-pointer"
           />
-          <p className="text-gray-400">quadratic votes</p>
         </div>
-        <div className="flex flex-col items-center">
-          <p className="text-sm text-gray-400">{Number(votes) ** 2}</p>
-          <p className="text-gray-400">voice credits</p>
-        </div>
-        <TrashIcon
-          data-testid="remove-from-cart"
-          onClick={() => removeProjectFromCart(project, props.walletAddress)}
-          className="w-5 h-5 ml-2 cursor-pointer"
-        />
       </div>
-      {!props.last && <hr className="border-gray-100 mt-4" />}
     </div>
   );
 }
