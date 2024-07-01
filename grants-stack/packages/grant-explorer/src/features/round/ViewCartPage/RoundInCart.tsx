@@ -212,12 +212,14 @@ export function RoundInCart(
                 />
               </div>
             </div>
-            <div className="flex items-center pt-2  mb-5 mr-2">
+          </div>
+          <div className="flex flex-row items-end justify-between items-center">
+            <div className="flex pt-2 items-center mb-5 mr-2">
               <label
                 htmlFor="totalDonationETH"
-                className="text-lg font-semibold inline mr-2"
+                className="text-lg font-normal inline mr-2"
               >
-                Total Donation:{"  "}
+                Your Contribution{"  "}
               </label>
               <input
                 type="text"
@@ -228,6 +230,15 @@ export function RoundInCart(
                 className="px-3 py-2 w-20 bg-white border shadow-sm border-slate-300 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-sky-500 block rounded-md sm:text-sm focus:ring-1"
                 placeholder="Enter amount in ETH"
               />
+              <label
+                htmlFor="totalDonationETH"
+                className="text-lg font-normal inline mx-2"
+              >
+                ETH
+              </label>
+            </div>
+            <div className="bg-blue-500 p-2 text-white rounded-lg">
+              Your voice credits: {voiceCreditBalance}
             </div>
           </div>
           <div>
@@ -374,25 +385,34 @@ const RoundAllowlist = ({
     <div className="flex flex-col items-center">
       <div className="flex flex-col">
         {!pcdFetched ? (
-          <p className="text-sm pt-2 italic mb-5 mr-2">
-            Your max allowed contribution amount is{" "}
-            {maxContributionNonAllowlisted} ETH.{" "}
-            <Tooltip
-              label="Click to join the allowlist"
-              aria-label="Click to join the allowlist"
-            >
-              <a
-                onClick={openModal}
-                className="text-md pt-2 font-bold mb-5 mr-2 cursor-pointer"
-                style={{ color: "black", fontStyle: "normal" }}
+          <div className="mb-5">
+            <p className="text-sm pt-2 italic  mr-2">
+              Your max allowed contribution amount is{" "}
+              {maxContributionNonAllowlisted} ETH (
+              {parseInt(
+                (Number(maxContributionNonAllowlisted) * 1e5).toString()
+              )}{" "}
+              voice credits). To contriute upto {maxContributionAllowlisted} ETH
+              ({parseInt((Number(maxContributionAllowlisted) * 1e5).toString())}{" "}
+              voice credits),{" "}
+              <Tooltip
+                label="Click to join the allowlist"
+                aria-label="Click to join the allowlist"
               >
-                Join the allowlist
-              </a>
-            </Tooltip>
-            <div className="text-sm italic mb-5 mr-2">
-              to contribute up to {maxContributionAllowlisted} ETH.
-            </div>
-          </p>
+                <a
+                  onClick={openModal}
+                  className="text-md pt-2 font-bold mb-5 mr-2 cursor-pointer"
+                  style={{ color: "black", fontStyle: "normal" }}
+                >
+                  join the allowlist.
+                </a>
+              </Tooltip>
+            </p>
+            <p className="text-sm italic mr-2">
+              For each vote, the number of voice credits decreases by the square
+              of the number of votes cast.
+            </p>
+          </div>
         ) : !isZupasReused ? (
           <div className="flex flex-col">
             <p className="text-sm pt-2 italic ">
