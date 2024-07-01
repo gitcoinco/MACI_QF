@@ -231,7 +231,9 @@ export function RoundInCart(
                 placeholder="Enter amount in ETH"
               />
             </div>
-            <div className="bg-blue-500 p-2 text-white rounded-lg">
+            <div
+              className={` ${voiceCreditBalance > 0 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-500"} p-2 rounded-lg`}
+            >
               Your voice credits: {voiceCreditBalance - usedVoiceCredits} /{" "}
               {voiceCreditBalance}
             </div>
