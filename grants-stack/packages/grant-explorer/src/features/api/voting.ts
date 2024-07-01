@@ -23,7 +23,6 @@ import { VotingToken } from "common";
 import { NATIVE } from "common/dist/allo/common";
 import { getPublicClient } from "@wagmi/core";
 import { getMACIABI } from "common/src/allo/voting";
-import { getZupassRegistryAddress } from "common/src/allowlist";
 type SignPermitProps = {
   walletClient: WalletClient;
   contractAddress: Hex;
@@ -300,7 +299,7 @@ export const isRoundZuProofReused = async (
 ) => {
   const alloContractAddress = getAlloAddress(chainId);
 
-  const ZuPassRegistryAddress = getZupassRegistryAddress(chainId);
+  const ZuPassRegistryAddress = getZuPassRegistryAddress(chainId);
 
   const publicClient = getPublicClient({
     chainId,
@@ -336,7 +335,10 @@ import {
   Message,
 } from "maci-domainobjs";
 import { generateWitness } from "./pcd";
-import { getAlloAddress } from "common/dist/allo/backends/allo-v2";
+import {
+  getAlloAddress,
+  getZuPassRegistryAddress,
+} from "common/dist/allo/backends/allo-v2";
 
 /**
  * Convert to MACI Message object

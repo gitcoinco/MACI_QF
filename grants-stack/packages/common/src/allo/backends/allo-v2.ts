@@ -55,19 +55,44 @@ function getStrategyAddress(strategy: RoundCategory, chainId: ChainId): string {
       };
       break;
 
+    case ChainId.SCROLL: {
+      strategyAddresses = {
+        [RoundCategory.QuadraticFunding]:
+          "0x000000000000000000000000000000000000000",
+        [RoundCategory.Direct]: "0x000000000000000000000000000000000000000",
+        [RoundCategory.Maci]: "0x0A6fFd2e74FC582C17b3bD10b8102E61D07Cf298",
+      };
+      break;
+    }
+
     default:
       throw new Error(`Unsupported chain ID ${chainId}`);
-      break;
   }
   return strategyAddresses[strategy];
 }
 
-const ClonableMACIFactoryAddress = getAddress(
-  "0x272DfA1B365E4e72690F834c6e0a2823Fa5120e5"
-);
-const ZuPassRegistryAddress = getAddress(
-  "0x455cC27badb067cb9b7cdE52F153DfebC83B1A99"
-);
+export const getClonableMACIFactoryAddress = (chainId: ChainId): Hex => {
+  switch (chainId) {
+    case ChainId.SEPOLIA:
+      return getAddress("0x272DfA1B365E4e72690F834c6e0a2823Fa5120e5");
+    case ChainId.SCROLL:
+      return getAddress("0x474C223EBBCbBba7E2F932c52fbd80514E9382dB");
+    default:
+      throw new Error(`Unsupported chain ID ${chainId}`);
+  }
+};
+
+export const getZuPassRegistryAddress = (chainId: ChainId): Hex => {
+  switch (chainId) {
+    case ChainId.SEPOLIA:
+      return getAddress("0x455cC27badb067cb9b7cdE52F153DfebC83B1A99");
+    case ChainId.SCROLL:
+      return getAddress("0x70FafcC2b1746f017018BE92D3f5856d68246037");
+    default:
+      throw new Error(`Unsupported chain ID ${chainId}`);
+  }
+};
+
 const NonAllowlistGatingAddress = getAddress(zeroAddress);
 
 function applicationStatusToNumber(status: ApplicationStatus) {
@@ -471,10 +496,8 @@ export class AlloV2 implements Allo {
       // Choose only the unique event IDs create a map and then convert it to an array again
       const eventIDs = Array.from(new Set(array));
 
-      const allowlistGatingContractInitData = new ethers.utils.AbiCoder().encode(
-        ["uint256[]"],
-        [eventIDs]
-      );
+      const allowlistGatingContractInitData =
+        new ethers.utils.AbiCoder().encode(["uint256[]"], [eventIDs]);
 
       // In the future we might support more than one MACI instance
       const maciID = 0n;
@@ -484,9 +507,9 @@ export class AlloV2 implements Allo {
         address,
         // coordinatorPubKey:
         [BigInt(pubk.asContractParam().x), BigInt(pubk.asContractParam().y)],
-        ClonableMACIFactoryAddress,
+        getClonableMACIFactoryAddress(this.chainId),
         // Allowlist gating verifier address
-        ZuPassRegistryAddress,
+        getZuPassRegistryAddress(this.chainId),
         // Non-allowlist gating verifier address
         NonAllowlistGatingAddress,
         // maci_id
@@ -546,9 +569,9 @@ export class AlloV2 implements Allo {
           data: txData.data,
           value: BigInt(txData.value),
         });
-  
+
         emit("transaction", txResult);
-  
+
         if (txResult.type === "error") {
           return txResult;
         }
