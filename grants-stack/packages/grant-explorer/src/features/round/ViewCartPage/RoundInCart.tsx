@@ -419,7 +419,13 @@ const RoundAllowlist = ({
               You successfuly proved your Zuzalu commitment you can
             </p>
             <p className="text-sm italic mb-5 mr-2">
-              now contribute up to {maxContributionAllowlisted} ETH.
+              now contribute up to {maxContributionAllowlisted} ETH (
+              {parseInt((Number(maxContributionAllowlisted) * 1e5).toString())}{" "}
+              voice credits).
+            </p>
+            <p className="text-sm italic mr-2">
+              For each vote, the number of voice credits decreases by the square
+              of the number of votes cast.
             </p>
           </div>
         ) : (
@@ -428,7 +434,15 @@ const RoundAllowlist = ({
               You have already used your Zupass for this round. You can
             </p>
             <p className="text-sm italic mb-5 mr-2">
-              contribute up to {maxContributionNonAllowlisted} ETH.
+              contribute up to {maxContributionNonAllowlisted} ETH (
+              {parseInt(
+                (Number(maxContributionNonAllowlisted) * 1e5).toString()
+              )}{" "}
+              voice credits).
+            </p>
+            <p className="text-sm italic mr-2">
+              For each vote, the number of voice credits decreases by the square
+              of the number of votes cast.
             </p>
           </div>
         )}
