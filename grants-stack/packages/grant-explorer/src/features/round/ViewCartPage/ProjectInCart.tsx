@@ -37,6 +37,8 @@ export function ProjectInCart(
 
   const store = useCartStorage();
 
+  const [hasExceededVoteLimit, setHasExceededVoteLimit] = useState(false);
+
   const groupedProjects = groupProjectsInCart(projects);
   const roundProjects = groupedProjects[project.chainId][project.roundId];
 
@@ -54,6 +56,22 @@ export function ProjectInCart(
     updateProjectAmount(index, parseInt(newVotes));
   };
 
+  const incrementVote = () => {
+    const newVotes = votes === "" ? "0" : votes;
+
+    updateProjectAmount(index, parseInt(newVotes) + 1);
+  };
+
+  const decrementVote = () => {
+    const newVotes = votes === "" ? "0" : votes;
+
+    if (parseInt(newVotes) === 0) {
+      return;
+    }
+
+    updateProjectAmount(index, parseInt(newVotes) - 1);
+  };
+
   const updateProjectAmount = (currentIndex: number, votes: number) => {
     const voiceCredits = votes ** 2;
     const newAmount = voiceCredits;
@@ -62,15 +80,11 @@ export function ProjectInCart(
     const totalAmountOfOtherProjects = roundProjects
       .filter((_, i) => i !== currentIndex)
       .reduce((acc, project) => acc + Number(project.amount), 0);
+
+    setHasExceededVoteLimit(false);
+
     if (totalAmountOfOtherProjects + newAmount > totalAmount * 1e5) {
-      store.updateUserDonationAmount(
-        project.chainId,
-        project.roundId,
-        project.grantApplicationId,
-        project.amount,
-        props.walletAddress
-      );
-      return;
+      setHasExceededVoteLimit(true);
     }
 
     store.updateUserDonationAmount(
@@ -155,19 +169,47 @@ export function ProjectInCart(
         </div>
         <div className="flex w-1/2 justify-between items-center">
           <div className="flex flex-col items-center ml-4">
-            <input
-              aria-label={`Donation votes for project ${project.projectMetadata?.title}`}
-              value={votes}
-              onChange={handleVotesChange}
-              className="rounded-xl w-20 text-center"
-              min={0}
-              type="number"
-            />
-            <p className="text-gray-400">quadratic votes</p>
+            <div className="flex flex -row items-center">
+              <div
+                className="text-3xl p-2 pr-4"
+                role="button"
+                onClick={decrementVote}
+              >
+                -
+              </div>
+              <input
+                aria-label={`Donation votes for project ${project.projectMetadata?.title}`}
+                value={votes}
+                onChange={handleVotesChange}
+                className={`rounded-xl w-20 text-center ${hasExceededVoteLimit ? "text-red-400" : ""}`}
+                min={0}
+                type="number"
+              />
+              <div
+                className="text-3xl p-2 pl-4"
+                role="button"
+                onClick={incrementVote}
+              >
+                +
+              </div>
+            </div>
+            <p
+              className={`${hasExceededVoteLimit ? "text-red-400" : "text-gray-400"}`}
+            >
+              {hasExceededVoteLimit ? "Exceeded limit" : "quadratic votes"}
+            </p>
           </div>
           <div className="flex flex-col items-center">
-            <p className="text-sm text-gray-400">{Number(votes) ** 2}</p>
-            <p className="text-gray-400">voice credits</p>
+            <p
+              className={`text-sm ${hasExceededVoteLimit ? "text-red-400" : "text-gray-400"}`}
+            >
+              {Number(votes) ** 2}
+            </p>
+            <p
+              className={`${hasExceededVoteLimit ? "text-red-400" : "text-gray-400"}`}
+            >
+              voice credits
+            </p>
           </div>
           <TrashIcon
             data-testid="remove-from-cart"

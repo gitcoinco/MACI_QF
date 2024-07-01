@@ -128,6 +128,8 @@ export function RoundInCart(
       ).toString()
     : "0.1";
 
+  const balanceVoiceCredits = voiceCreditBalance - usedVoiceCredits;
+
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     let value = event.target.value;
     value =
@@ -234,7 +236,8 @@ export function RoundInCart(
             <div
               className={` ${voiceCreditBalance > 0 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-500"} p-2 rounded-lg`}
             >
-              Your voice credits: {voiceCreditBalance - usedVoiceCredits} /{" "}
+              Your voice credits:{" "}
+              {balanceVoiceCredits < 0 ? 0 : balanceVoiceCredits} /{" "}
               {voiceCreditBalance}
             </div>
           </div>
