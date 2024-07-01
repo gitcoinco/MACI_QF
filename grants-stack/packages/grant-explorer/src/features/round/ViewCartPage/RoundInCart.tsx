@@ -414,16 +414,14 @@ const RoundAllowlist = ({
             </p>
           </div>
         ) : !isZupasReused ? (
-          <div className="flex flex-col">
+          <div className="flex">
             <p className="text-sm pt-2 italic ">
-              You successfuly proved your Zuzalu commitment you can
-            </p>
-            <p className="text-sm italic mb-5 mr-2">
-              now contribute up to {maxContributionAllowlisted} ETH (
+              You successfuly proved your Zuzalu commitment, you can now
+              contribute up to {maxContributionAllowlisted} ETH (
               {parseInt((Number(maxContributionAllowlisted) * 1e5).toString())}{" "}
               voice credits).
             </p>
-            <p className="text-sm italic mr-2">
+            <p className="text-sm italic mb-5 mr-2">
               For each vote, the number of voice credits decreases by the square
               of the number of votes cast.
             </p>
@@ -432,15 +430,13 @@ const RoundAllowlist = ({
           <div className="flex flex-col">
             <p className="text-sm pt-2 italic ">
               You have already used your Zupass for this round. You can
-            </p>
-            <p className="text-sm italic mb-5 mr-2">
               contribute up to {maxContributionNonAllowlisted} ETH (
               {parseInt(
                 (Number(maxContributionNonAllowlisted) * 1e5).toString()
               )}{" "}
               voice credits).
             </p>
-            <p className="text-sm italic mr-2">
+            <p className="text-sm italic mb-5 mr-2">
               For each vote, the number of voice credits decreases by the square
               of the number of votes cast.
             </p>
