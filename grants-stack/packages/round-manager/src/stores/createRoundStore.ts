@@ -58,6 +58,13 @@ export const useCreateRoundStore = create<CreateRoundStoreState>((set) => ({
             });
           }
         })
+        .on("transaction", (res) => {
+          if (res.type != "success") {
+            set({
+              contractDeploymentStatus: ProgressStatus.IS_ERROR,
+            });
+          }
+        })
         .on("transactionStatus", (res) => {
           if (res.type === "success") {
             set({
