@@ -17,6 +17,8 @@ export const genAndSubmitProofs = async ({
   maciAddress,
   tallyContractAddress,
   mpContractAddress,
+  startBlock,
+  quiet,
 }: {
   coordinatorKeypair: Keypair;
   outputDir: string;
@@ -26,10 +28,12 @@ export const genAndSubmitProofs = async ({
   maciAddress: string;
   tallyContractAddress: string;
   mpContractAddress: string;
+  startBlock?: number;
+  quiet?: boolean;
 }) => {
   const tallyFile = getTalyFilePath(outputDir);
 
-  console.log("Generating proofs");
+  const network = await coordinator.provider?.getNetwork();
 
   const MaciState = (
     await genMaciStateFromContract(
@@ -37,7 +41,7 @@ export const genAndSubmitProofs = async ({
       maciAddress,
       coordinatorKeypair,
       0n,
-      0,
+      startBlock,
       50,
       undefined,
       undefined
@@ -74,13 +78,13 @@ export const genAndSubmitProofs = async ({
     tallyWasm: tallyWasm,
     useWasm: true,
     stateFile: stateFilePath,
-    startBlock: undefined,
+    startBlock: startBlock,
     blocksPerBatch: 50,
     endBlock: undefined,
     signer: coordinator,
     tallyAddress: tallyContractAddress,
     useQuadraticVoting: true,
-    quiet: false,
+    quiet: quiet,
   } as GenProofsArgs);
 
   // Submit proofs to MACI contract
@@ -91,8 +95,6 @@ export const genAndSubmitProofs = async ({
     messageProcessorAddress: mpContractAddress,
     tallyAddress: tallyContractAddress,
     signer: coordinator,
-    quiet: true,
+    quiet: quiet,
   });
-
-  console.log("finished proveOnChain");
 };

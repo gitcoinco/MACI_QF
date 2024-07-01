@@ -7,7 +7,9 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {IZuPassVerifier} from "../interfaces/IZuPassVerifier.sol";
 
-contract ZuPassRegistry is Ownable {
+import {IGatingVerifier} from "../interfaces/IGatingVerifier.sol";
+
+contract ZuPassRegistry is Ownable, IGatingVerifier {
 
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -67,19 +69,28 @@ contract ZuPassRegistry is Ownable {
         }
     }
 
-    function roundRegistration(uint256[] memory _eventIds) external {
-        for (uint256 i = 0; i < _eventIds.length; i++) {
-            if (!eventIds.contains(_eventIds[i])) {
+    function setRoundVerifier(bytes memory encodedEventIds) external {
+        (uint256[] memory _eventIds) = abi.decode(encodedEventIds, (uint256[]));
+        for (uint256 i = 0; i < _eventIds.length;) {
+            uint256 eventId = _eventIds[i];
+            if (!eventIds.contains(eventId)) {
                 revert EventIsNotRegistered();
             }
-            contractToEventIds[msg.sender].add(_eventIds[i]);
+            contractToEventIds[msg.sender].add(eventId);
+            unchecked {
+                i++;
+            }
         }
     }
 
     /// @notice Get the whitelisted events for a FundingRound (Strategy)
-    /// @return List of whitelisted event IDs
     function getWhitelistedEvents(address _contract) external view returns (uint256[] memory) {
-        return contractToEventIds[_contract].values();
+        uint256[] memory _eventIds = new uint256[](contractToEventIds[_contract].length());
+        for (uint256 i = 0; i < contractToEventIds[_contract].length(); i++) {
+            uint256 eventId = contractToEventIds[_contract].at(i);
+            _eventIds[i] = eventId;
+        }
+        return _eventIds;
     }
 
     /// @notice Get the Zupass signer for an event
@@ -94,16 +105,19 @@ contract ZuPassRegistry is Ownable {
     /// ===================================
 
     /// @notice Validate proof of attendance
-    /// @param _pA Proof part A
-    /// @param _pB Proof part B
-    /// @param _pC Proof part C
-    /// @param _pubSignals The public signals
-    function validateProofOfAttendance(
-        uint[2] memory _pA,
-        uint[2][2] memory _pB,
-        uint[2] memory _pC,
-        uint[38] memory _pubSignals
+    /// @param _EncodedProof Proof
+    function validateUser(
+        bytes calldata _EncodedProof,
+        address _sender
     ) external returns (bool) {
+        // Decode the proof
+        (
+            uint[2] memory _pA,
+            uint[2][2] memory _pB,
+            uint[2] memory _pC,
+            uint[38] memory _pubSignals
+        ) = abi.decode(_EncodedProof, (uint[2], uint[2][2], uint[2], uint[38]));
+
         // The eventID used to generate the proof as public input
         uint256 eventID = _pubSignals[1];
 
@@ -128,6 +142,9 @@ contract ZuPassRegistry is Ownable {
             return false;
         }
 
+        // Preventing frontrunning the transaction by adding the watermark as the transaction origin
+        // NOTE this needs to be tested we cannot have a proof for this one in the tests
+
         // Get the nullifier used in the proof this is the email hash of the zupass
         uint256 ZupassNullifier = _pubSignals[9];
 
@@ -137,6 +154,16 @@ contract ZuPassRegistry is Ownable {
         // Mark the nullifier as used
         usedRoundNullifiers[msg.sender][ZupassNullifier] = true;
 
+        if(getWaterMarkFromPublicSignals(_pubSignals) != uint256(uint160(_sender))) {
+            return false;
+        }
+
         return true;
     }
+    
+    function getWaterMarkFromPublicSignals(
+		uint256[38] memory _pubSignals
+	) public pure returns (uint256) {
+		return _pubSignals[37];
+	}
 }

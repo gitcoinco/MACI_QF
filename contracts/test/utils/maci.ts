@@ -171,6 +171,7 @@ export const publishBatch = async ({
 export const prepareAllocationData = async ({
   publicKey,
   amount,
+  isAllowlisted,
   proof,
 }: IAllocateArgs) => {
   if (!PubKey.isValidSerializedPubKey(publicKey)) {
@@ -179,31 +180,23 @@ export const prepareAllocationData = async ({
 
   const userMaciPubKey = PubKey.deserialize(publicKey);
 
-  // uint[2] memory _pA,
-  // uint[2][2] memory _pB,
-  // uint[2] memory _pC,
-  // uint[38] memory _pubSignals
   let types = [
     // Contributor PubKey
     "(uint256,uint256)",
     // Contribution amount
     "uint256",
-    // ZK Proof for Zuzalu circuit
-    "uint[2]",
-    "uint[2][2]",
-    "uint[2]",
-    "uint[38]",
+    // isAllowlisted or not allowlisted proof we send to the contract
+    "bool",
+    // gating proof
+    "bytes",
   ];
-
   let data;
   try {
     data = AbiCoder.defaultAbiCoder().encode(types, [
       [userMaciPubKey.asContractParam().x, userMaciPubKey.asContractParam().y],
       amount,
-      proof.pA,
-      proof.pB,
-      proof.pC,
-      proof.pubSignals,
+      isAllowlisted,
+      "0x",
     ]);
   } catch (e) {
     console.log(e);
@@ -458,7 +451,7 @@ export async function addTallyResultsBatch(
       tallyData.newTallyCommitment
     );
   }
-
+  // Prevent creating proofs for non-existent recipients
   let totalRecipients = await MACIQF.getRecipientCount();
 
   for (let i = startIndex; i < totalRecipients; i = i + batchSize) {
@@ -468,7 +461,7 @@ export async function addTallyResultsBatch(
       tallyData,
       batchSize
     );
-    proofs.map((i: any) => console.log(i.result));
+    
     const tx = await MACIQF.addTallyResultsBatch(
       proofs.map((i: any) => i.recipientIndex),
       proofs.map((i: any) => i.result),

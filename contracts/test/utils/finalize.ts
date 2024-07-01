@@ -34,11 +34,6 @@ export const finalize = async ({
     recipientTreeDepth
   );
 
-  console.log(
-    "Tally total spent voice credits",
-    tally.totalSpentVoiceCredits.spent
-  );
-
   // Finalize round
   let finalize = await MACIQFStrategy.connect(Coordinator).finalize(
     tally.totalSpentVoiceCredits.spent,

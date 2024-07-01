@@ -1,46 +1,47 @@
 {
-  "name": "allo_maci_qf",
-  "scripts": {
-    "compile": "hardhat compile",
-    "test:solidity": "hardhat test --network sepolia",
-    "test:live": "hardhat test --network localhost"
-  },
-  "devDependencies": {
-    "@nomicfoundation/hardhat-chai-matchers": "^2.0.6",
-    "@nomicfoundation/hardhat-ignition": "^0.15.4",
-    "@nomicfoundation/hardhat-ignition-ethers": "^0.15.4",
-    "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "@nomicfoundation/hardhat-verify": "^2.0.7",
-    "@nomicfoundation/ignition-core": "^0.15.4",
-    "@openzeppelin/contracts": "^5.0.2",
-    "@openzeppelin/contracts-upgradeable": "^5.0.2",
-    "@openzeppelin/hardhat-upgrades": "^3.1.0",
-    "@typechain/ethers-v6": "^0.5.1",
-    "@typechain/hardhat": "^9.1.0",
-    "@types/chai": "^4.3.16",
-    "@types/mocha": "^10.0.6",
-    "@types/node": "^20.12.12",
-    "chai": "^4.4.1",
-    "ethers": "^6.12.1",
-    "hardhat": "^2.22.5",
-    "hardhat-artifactor": "^0.2.0",
-    "hardhat-gas-reporter": "^1.0.10",
-    "ipfs-only-hash": "^4.0.0",
-    "maci-cli": "^1.2.3",
-    "maci-contracts": "^1.2.3",
-    "maci-domainobjs": "^1.2.3",
-    "solidity-coverage": "^0.8.12",
-    "ts-node": "^10.9.2",
-    "typechain": "^8.3.2",
-    "typescript": "^5.4.5"
-  },
-  "overrides": {
-    "@openzeppelin/hardhat-upgrades": {
-      "@openzeppelin/defender-sdk-base-client": "1.13.1",
-      "@openzeppelin/defender-sdk-deploy-client": "1.13.1",
-      "@openzeppelin/defender-sdk-monitor-client": "1.13.1",
-      "@openzeppelin/defender-sdk-network-client": "1.13.1"
+    "name": "allo_maci_qf",
+    "scripts": {
+        "compile": "hardhat compile",
+        "test:solidity": "hardhat test ./test/e2e.finalize.ts --network sepolia",
+        "test:live": "hardhat test ./test/e2e.test_maciqf.ts --network localhost",
+        "test:3.1.1": "hardhat test ./test/3_1_1.test.ts --network localhost",
+        "test:3.3.5": "hardhat test ./test/3_3_5.test.ts --network localhost",
+        "test:emergency": "hardhat test ./test/emergencyWithdraw.test.ts --network localhost",
+        "test:cancel": "hardhat test ./test/cancelRound.test.ts --network localhost"
+
+    },
+    "devDependencies": {
+        "@nomicfoundation/hardhat-chai-matchers": "^2.0.6",
+        "@nomicfoundation/hardhat-ignition": "^0.15.4",
+        "@nomicfoundation/hardhat-ignition-ethers": "^0.15.4",
+        "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
+        "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+        "@nomicfoundation/hardhat-verify": "^2.0.7",
+        "@nomicfoundation/ignition-core": "^0.15.4",
+        "@openzeppelin/contracts": "^5.0.2",
+        "@openzeppelin/contracts-upgradeable": "^5.0.2",
+        "@openzeppelin/hardhat-upgrades": "^3.1.1",
+        "@typechain/ethers-v6": "^0.5.1",
+        "@typechain/hardhat": "^9.1.0",
+        "@types/chai": "^4.3.16",
+        "@types/mocha": "^10.0.6",
+        "@types/node": "^20.12.12",
+        "chai": "^4.4.1",
+        "ethers": "^6.12.1",
+        "hardhat": "^2.22.5",
+        "hardhat-artifactor": "^0.2.0",
+        "hardhat-gas-reporter": "^1.0.10",
+        "ipfs-only-hash": "^4.0.0",
+        "maci-cli": "1.2.3",
+        "maci-contracts": "1.2.3",
+        "maci-core": "1.2.3",
+        "maci-domainobjs": "1.2.3",
+        "solidity-coverage": "^0.8.12",
+        "ts-node": "^10.9.2",
+        "typechain": "^8.3.2",
+        "typescript": "^5.4.5"
+    },
+    "dependencies": {
+        "@pcd/util": "^0.5.2"
     }
-  }
 }

@@ -283,16 +283,26 @@ describe("e2e", function test() {
     expect(isFinalized).to.be.true;
   });
 
-  it("Should Distribute Founds ", async () => {
-    const distributeResponse = await distribute({
-      outputDir,
-      AlloContract,
-      MACIQFStrategy,
-      distributor: Coordinator,
-      recipientTreeDepth: voteOptionTreeDepth,
-      roundId: 1,
-      batchSize: 1,
-    });
-    expect(distributeResponse.poolAmountAfterDistribution).to.be.lessThan(distributeResponse.poolAmountBeforeDistribution);
+  it("Should revert to use emergency withdraw when duration before valid emergency withdraw period", async () => {
+    expect(
+      MACIQFStrategy.emergencyWithdraw(MACIQFStrategy.NATIVE())
+    ).to.revertedWith(`INVALID`);
+      
+  });
+
+  it("Should Time travel to emergency time and withdraw full amount", async () => {
+    const hour = 3600;
+    const day = 24 * hour;
+    const month = 30 * day;
+    await timeTravel(Coordinator.provider as unknown as EthereumProvider, month + 1);
+    const emergencyWithdrawTx = await MACIQFStrategy.connect(Coordinator).emergencyWithdraw(MACIQFStrategy.NATIVE());
+    await emergencyWithdrawTx.wait();
+    // Check if the pool amount is 0
+    const provider = Coordinator.provider!;
+
+    const poolAmountAfterEmergencyWithdrawal = await provider.getBalance(
+      await MACIQFStrategy.getAddress()
+    );
+    expect(poolAmountAfterEmergencyWithdrawal).to.be.equal(0);
   });
 });

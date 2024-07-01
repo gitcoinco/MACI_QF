@@ -7,7 +7,7 @@ import {
   deployVerifier,
 } from "maci-contracts";
 import { ethers, upgrades } from "hardhat";
-import { BigNumberish, Signer } from "ethers";
+import { BigNumberish, Signer,ZeroAddress } from "ethers";
 import {
   Allo,
   Registry,
@@ -78,7 +78,7 @@ export const deployAlloContracts = async () => {
     0,
     0,
   ]);
-
+  // 0xd90FBbE044D9775CF77513dCF122699a41f1aeC4
   const alloAddress = await Allo.getAddress();
 
   const ALLO = await ethers.getContractAt("Allo", alloAddress);
@@ -246,6 +246,13 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
     deployParams.stateTreeDepth,
     verifierContractAddress,
     vkRegistryContractAddress,
+    [
+      4904028317433377177773123885584230878115556059208431880161186712332781831975n,
+      344732312350052944041104345325295111408747975338908491763817872057138864163n,
+      19445814455012978799483892811950396383084183210860279923207176682490489907069n,
+      10621810780690303482827422143389858049829670222244900617652404672125492013328n,
+      17077690379337026179438044602068085690662043464643511544329656140997390498741n,
+    ],
   ]);
 
   await setMaciParameters.wait();
@@ -299,6 +306,7 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
       .timestamp
   );
 
+
   let initializeParams = [
     // RegistryGatting
     false,
@@ -307,7 +315,7 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
     // RegistrationStartTime
     BigInt(time + BigInt(1)),
     // RegistrationEndTime
-    BigInt(time + BigInt(200)),
+    BigInt(time + BigInt(199)),
     // AllocationStartTime
     BigInt(time + BigInt(200)),
     // AllocationEndTime
@@ -315,6 +323,15 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
   ];
 
   let CoordinatorKeypair = new Keypair();
+
+  let AbiCoder = new ethers.AbiCoder();
+
+  const eventIDs = ["192993346581360151154216832563903227660"];
+
+  let encodedEventIDs = AbiCoder.encode(
+    ["uint256[]"],
+    [eventIDs]
+  );
 
   let MaciParams = [
     // coordinator:
@@ -326,27 +343,29 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
     ],
     ClonableMACIFactoryAddress,
     AlloContracts.ZuPassRegistryAddress,
+    ZeroAddress,
     // maci_id
     0,
     // VALID_EVENT_IDS
-    [192993346581360151154216832563903227660n],
+    encodedEventIDs,
+    "0x",
     // maxContributionAmountForZupass
-    10n ** 18n *  100n,
+    10n ** 18n * 100n,
     // maxContributionAmountForNonZupass
-    10n ** 18n *  100n,
+    10n ** 18n * 100n,
   ];
 
   let initStruct = [initializeParams, MaciParams];
 
   let types = [
-    "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,uint8,uint256[],uint256,uint256))",
+    "((bool,bool,uint256,uint256,uint256,uint256),(address,(uint256,uint256),address,address,address,uint8,bytes,bytes,uint256,uint256))",
   ];
 
-  let AbiCoder = new ethers.AbiCoder();
 
   let bytes = AbiCoder.encode(types, [initStruct]);
 
-  const createPool = await AlloContracts.Allo.createPool(
+  let createPool =
+    await AlloContracts.Allo.createPool(
     profileId,
     MACIQFStrategyAddress,
     bytes,
@@ -373,9 +392,9 @@ export const deployTestContracts = async (): Promise<ITestContracts> => {
 
   const MACIQF_STRATEGY = await ethers.getContractAt("MACIQF", poolAddress);
 
-  const maci = await MACIQF_STRATEGY._maci();
+  const maci = await MACIQF_STRATEGY.maci();
 
-  const pollContracts = await MACIQF_STRATEGY._pollContracts();
+  const pollContracts = await MACIQF_STRATEGY.pollContracts();
 
   const signer2 = new ethers.Wallet(
     PRIVATE_KEY_USER1!,

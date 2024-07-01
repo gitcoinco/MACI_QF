@@ -92,7 +92,7 @@ task("compile", async (args, hre, runSuper) => {
   await hre.run("copy-maci-artifacts");
 
   // After compilation, run the subtask to copy MACI build info
-  await hre.run("copy-maci-build-info");
+  // await hre.run("copy-maci-build-info");
 });
 
 const config: HardhatUserConfig = {
