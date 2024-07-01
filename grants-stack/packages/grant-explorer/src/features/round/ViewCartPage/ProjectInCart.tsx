@@ -6,7 +6,7 @@ import { EyeIcon } from "@heroicons/react/24/solid";
 import { TrashIcon } from "@heroicons/react/24/outline";
 import { renderToPlainText, VotingToken } from "common";
 import { useCartStorage } from "../../../store";
-import { Box, Flex, Image, Text, Input } from "@chakra-ui/react";
+import { Box, Flex, Image, Text, Input, Center } from "@chakra-ui/react";
 import { groupProjectsInCart } from "../../api/utils";
 
 export function ProjectInCart(
@@ -113,111 +113,69 @@ export function ProjectInCart(
   }, [project.amount, votes, totalAmount]);
 
   return (
-    <Box
+    <div
+      className="mb-4 p-4 border border-gray-200 rounded-md"
       data-testid="cart-project"
-      mb={4}
-      p={4}
-      borderWidth={1}
-      borderRadius="md"
     >
-      <Flex justify="space-between" align="center">
-        <Flex>
-          <Box
-            position="relative"
-            w="64px"
-            h="64px"
-            overflow="hidden"
-            borderRadius="full"
-          >
-            <Image
-              boxSize="64px"
+      <div className="flex justify-between items-center">
+        <div className="flex">
+          <div className="relative w-16 h-16 overflow-hidden rounded-full">
+            <img
+              className="w-16 h-16 rounded-full"
               src={
                 project.projectMetadata?.logoImg
                   ? `https://${process.env.REACT_APP_PINATA_GATEWAY}/ipfs/${project.projectMetadata?.logoImg}`
                   : DefaultLogoImage
               }
-              alt={"Project Logo"}
-              borderRadius="full"
+              alt="Project Logo"
             />
             <Link to={`${roundRoutePath}/${project.grantApplicationId}`}>
-              <Flex
-                position="absolute"
-                top={0}
-                right={0}
-                bottom={0}
-                left={0}
-                justifyContent="center"
-                alignItems="center"
-                bg="gray.500"
-                opacity={0}
-                _hover={{ opacity: 0.7 }}
-                transition="opacity 0.3s"
-                borderRadius="full"
-              >
+              <div className="absolute inset-0 flex justify-center items-center bg-gray-500 opacity-0 hover:opacity-70 transition-opacity duration-300 rounded-full">
                 <EyeIcon
                   className="fill-gray-200 w-6 h-6 cursor-pointer"
                   data-testid={`${project.projectRegistryId}-project-link`}
                 />
-              </Flex>
+              </div>
             </Link>
-          </Box>
-          <Box pl={6}>
+          </div>
+          <div className="pl-6">
             <Link
               to={`${roundRoutePath}/${project.grantApplicationId}`}
-              data-testid={"cart-project-link"}
+              data-testid="cart-project-link"
             >
-              <Text
-                fontWeight="semibold"
-                fontSize="lg"
-                mb={2}
-                isTruncated
-                maxW="400px"
-              >
+              <h2 className="font-semibold text-lg mb-2 truncate max-w-[400px]">
                 {project.projectMetadata?.title}
-              </Text>
+              </h2>
             </Link>
-            <Text fontSize="sm" isTruncated maxW="400px">
+            <p className="text-sm truncate max-w-[400px]">
               {renderToPlainText(
                 project.projectMetadata?.description ?? ""
               ).substring(0, 130)}
-            </Text>
-          </Box>
-        </Flex>
-        <Flex align="center">
-          <Box>
-            {/* <InputGroup size="sm"> */}
-            <Input
-              aria-label={`Donation votes for project ${project.projectMetadata?.title}`}
-              value={votes}
-              onChange={handleVotesChange}
-              className="rounded-xl"
-              min={0}
-              type="number"
-              width="80px"
-              textAlign="center"
-            />
-            {/* <InputRightElement width="2.5rem" children="%" />
-            </InputGroup> */}
-          </Box>
-          {props.payoutTokenPrice && (
-            <Box ml={2}>
-              <Text fontSize="sm" color="gray.400">
-                ${" "}
-                {(
-                  (Number(project.amount) / 1e5) *
-                  props.payoutTokenPrice
-                ).toFixed(2)}
-              </Text>
-            </Box>
-          )}
-          <TrashIcon
-            data-testid="remove-from-cart"
-            onClick={() => removeProjectFromCart(project, props.walletAddress)}
-            className="w-5 h-5 ml-2 cursor-pointer"
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col items-center">
+          <input
+            aria-label={`Donation votes for project ${project.projectMetadata?.title}`}
+            value={votes}
+            onChange={handleVotesChange}
+            className="rounded-xl w-20 text-center"
+            min={0}
+            type="number"
           />
-        </Flex>
-      </Flex>
-      {!props.last && <Box as="hr" borderColor="gray.100" mt={4} />}
-    </Box>
+          <p className="text-gray-400">quadratic votes</p>
+        </div>
+        <div className="flex flex-col items-center">
+          <p className="text-sm text-gray-400">{Number(votes) ** 2}</p>
+          <p className="text-gray-400">voice credits</p>
+        </div>
+        <TrashIcon
+          data-testid="remove-from-cart"
+          onClick={() => removeProjectFromCart(project, props.walletAddress)}
+          className="w-5 h-5 ml-2 cursor-pointer"
+        />
+      </div>
+      {!props.last && <hr className="border-gray-100 mt-4" />}
+    </div>
   );
 }

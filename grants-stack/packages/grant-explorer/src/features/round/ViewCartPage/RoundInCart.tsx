@@ -217,9 +217,9 @@ export function RoundInCart(
             <div className="flex pt-2 items-center mb-5 mr-2">
               <label
                 htmlFor="totalDonationETH"
-                className="text-lg font-normal inline mr-2"
+                className="text-md font-normal inline mr-2"
               >
-                Your Contribution{"  "}
+                Your Contribution (ETH): {"  "}
               </label>
               <input
                 type="text"
@@ -227,18 +227,13 @@ export function RoundInCart(
                 value={donationInput}
                 typeof="number"
                 onChange={handleInputChange}
-                className="px-3 py-2 w-20 bg-white border shadow-sm border-slate-300 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-sky-500 block rounded-md sm:text-sm focus:ring-1"
+                className="px-5 py-2 w-20 bg-white border shadow-sm border-slate-300 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-sky-500 block rounded-lg sm:text-sm focus:ring-1"
                 placeholder="Enter amount in ETH"
               />
-              <label
-                htmlFor="totalDonationETH"
-                className="text-lg font-normal inline mx-2"
-              >
-                ETH
-              </label>
             </div>
             <div className="bg-blue-500 p-2 text-white rounded-lg">
-              Your voice credits: {voiceCreditBalance}
+              Your voice credits: {voiceCreditBalance - usedVoiceCredits} /{" "}
+              {voiceCreditBalance}
             </div>
           </div>
           <div>
@@ -264,7 +259,7 @@ export function RoundInCart(
             <div className="p-4 bg-grey-100 rounded-b-xl font-medium text-lg">
               <div className="flex justify-end">
                 <div className="flex flex-row">
-                  <p className="mb-2 mr-4">Total voice credits allocated:</p>
+                  <p className="mb-2 mr-2">Total voice credits allocated:</p>
                   <p className="mb-2">{usedVoiceCredits.toString()}</p>
                 </div>
               </div>
