@@ -65,6 +65,7 @@ export function SummaryContainer(props: {
   const [openChainConfirmationModal, setOpenChainConfirmationModal] =
     useState(false);
   const [openMRCProgressModal, setOpenMRCProgressModal] = useState(false);
+  const [isCheckOutCompleted, setIsCheckOutCompleted] = useState(false);
 
   const filteredProjects = projects.filter(
     (project) =>
@@ -102,7 +103,23 @@ export function SummaryContainer(props: {
         removeProjectFromCart(project, walletAddress);
       });
     }
-  }, [filteredProjects, removeProjectFromCart, round, walletAddress]);
+  }, [filteredProjects, round, walletAddress]);
+
+  useEffect(() => {
+    if (isCheckOutCompleted) {
+      let goToThankYou = false;
+      if (projects.length - filteredProjects.length === 0) {
+        goToThankYou = true;
+      }
+      filteredProjects.forEach((project) => {
+        removeProjectFromCart(project, walletAddress);
+      });
+      setIsCheckOutCompleted(false);
+      if (goToThankYou) {
+        navigate("/thankyou");
+      }
+    }
+  }, [isCheckOutCompleted]);
 
   useEffect(() => {
     let newTotalDonations: bigint;
@@ -153,7 +170,7 @@ export function SummaryContainer(props: {
       );
       if (isSuccess) {
         setOpenMRCProgressModal(false);
-        navigate("/thankyou");
+        setIsCheckOutCompleted(true);
       }
     }
   };

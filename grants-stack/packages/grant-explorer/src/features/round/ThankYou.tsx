@@ -1,14 +1,9 @@
 import { datadogLogs } from "@datadog/browser-logs";
 import Footer from "common/src/components/Footer";
 import { Button } from "common/src/styles";
-import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import bgImage from "../../assets/thank-you.svg";
 import Navbar from "../common/Navbar";
-import { useCartStorage } from "../../store";
-import { useCheckoutStore } from "../../checkoutStore";
-import { ProgressStatus } from "../api/types";
-import { ChainId } from "common";
 import { useAccount } from "wagmi";
 
 export default function ThankYou() {
@@ -18,45 +13,7 @@ export default function ThankYou() {
   datadogLogs.logger.info(`====> URL: ${window.location.href}`);
 
   const navigate = useNavigate();
-
-  const cart = useCartStorage();
-  const checkoutStore = useCheckoutStore();
   const { address } = useAccount();
-
-  /** Remove checked out projects from cart, but keep the ones we didn't yet check out succesfully. */
-  const checkedOutChains = useMemo(
-    () =>
-      Object.keys(checkoutStore.voteStatus)
-        .filter(
-          (key) =>
-            checkoutStore.voteStatus[Number(key) as ChainId] ===
-            ProgressStatus.IS_SUCCESS
-        )
-        .map(Number),
-    [checkoutStore]
-  );
-
-  /** Cleanup */
-  useEffect(() => {
-    address &&
-      cart.userProjects[address]
-        .filter((proj) => checkedOutChains.includes(proj.chainId))
-        .forEach((proj) => {
-          cart.removeUserProject(proj, address);
-        });
-
-    checkoutStore.setChainsToCheckout([]);
-
-    checkedOutChains.forEach((chain) => {
-      checkoutStore.setVoteStatusForChain(chain, ProgressStatus.NOT_STARTED);
-      checkoutStore.setPermitStatusForChain(chain, ProgressStatus.NOT_STARTED);
-      checkoutStore.setChainSwitchStatusForChain(
-        chain,
-        ProgressStatus.NOT_STARTED
-      );
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <>

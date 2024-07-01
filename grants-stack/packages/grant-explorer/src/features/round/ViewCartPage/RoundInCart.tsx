@@ -188,16 +188,7 @@ export function RoundInCart(
       )
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [donatedAmount, donationInput, props.roundCart]);
-
-  if (!isLoading && status?.hasDonated && !isActiveRound) {
-    props.roundCart.forEach((project) => {
-      props.handleRemoveProjectFromCart(project, address as string);
-    });
-  }
-  if (!isActiveRound) {
-    return null;
-  }
+  }, [donatedAmount, donationInput, roundCart]);
 
   return (
     <div className="my-4 flex w-full">

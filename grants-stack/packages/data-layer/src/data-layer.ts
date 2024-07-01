@@ -914,6 +914,8 @@ export class DataLayer {
   }): Promise<{
     voiceCreditBalance: string;
     stateIndex: string;
+    chainId: string;
+    roundId: string;
     messages: string[];
   }> {
     const requestVariables = {
@@ -926,6 +928,8 @@ export class DataLayer {
       contributions: {
         voiceCreditBalance: string;
         stateIndex: string;
+        chainId: string;
+        roundId: string;
         messages: string[];
       }[];
     } = await request(

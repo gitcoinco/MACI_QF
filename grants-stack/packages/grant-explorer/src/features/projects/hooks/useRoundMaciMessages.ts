@@ -239,6 +239,8 @@ export const useAlreadyContributed = (
         hasContributed: response.voiceCreditBalance !== undefined,
         hasDonated: response.messages.length > 0,
         stateIndex: Number(response.stateIndex) ?? 0,
+        chainId: Number(response.chainId),
+        roundId: response.roundId,
       };
     }
   );
