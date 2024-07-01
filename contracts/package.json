@@ -42,6 +42,7 @@
         "typescript": "^5.4.5"
     },
     "dependencies": {
-        "@pcd/util": "^0.5.2"
+        "@pcd/util": "^0.5.2",
+        "@pinata/sdk": "^2.1.0"
     }
 }

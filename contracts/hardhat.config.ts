@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { task, subtask } from "hardhat/config";
-
+import "./tasks/index";
 import path from "path";
 import fs from "fs";
 
@@ -41,41 +41,15 @@ function copyDirectory(source: string, target: string): void {
 subtask("copy-maci-artifacts", async (_, { config }) => {
   const sourceDir = path.resolve(
     __dirname,
-    "node_modules/maci-contracts/build/artifacts/contracts/",
+    "node_modules/maci-contracts/build/artifacts/contracts/"
   );
   const destDir = path.resolve(
     config.paths.artifacts,
     "maci-contracts",
-    "contracts",
+    "contracts"
   );
 
   copyDirectory(sourceDir, destDir);
-});
-
-subtask("copy-maci-build-info", async (_, { config }) => {
-  const sourceDir2 = path.resolve(
-    __dirname,
-    "node_modules/maci-contracts/build/artifacts/@openzeppelin/",
-  );
-  const destDir2 = path.resolve(
-    config.paths.artifacts,
-    "maci-contracts",
-    "@openzeppelin",
-  );
-
-  copyDirectory(sourceDir2, destDir2);
-
-  const sourceDir3 = path.resolve(
-    __dirname,
-    "node_modules/maci-contracts/build/artifacts/build-info/",
-  );
-  const destDir3 = path.resolve(
-    config.paths.artifacts,
-    "maci-contracts",
-    "build-info",
-  );
-
-  copyDirectory(sourceDir3, destDir3);
 });
 
 // Override the existing compile task
@@ -88,9 +62,6 @@ task("compile", async (args, hre, runSuper) => {
 
   // After compilation, run the subtask to copy MACI artifacts
   await hre.run("copy-maci-artifacts");
-
-  // After compilation, run the subtask to copy MACI build info
-  // await hre.run("copy-maci-build-info");
 });
 
 const config: HardhatUserConfig = {

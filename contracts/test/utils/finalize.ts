@@ -18,7 +18,7 @@ export const finalize = async ({
 }) => {
   const tallyFile = getTalyFilePath(outputDir);
 
-  const tally = JSONFile.read(tallyFile) as any;
+  const tally = await JSONFile.read(tallyFile) as any;
 
   const recipientTreeDepth = voteOptionTreeDepth;
 
