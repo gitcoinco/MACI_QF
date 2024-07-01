@@ -712,6 +712,8 @@ export const getVoiceCreditsByChainIdAndRoundId = gql`
     ) {
       voiceCreditBalance
       stateIndex
+      chainId
+      roundId
       messages {
         messageId
       }

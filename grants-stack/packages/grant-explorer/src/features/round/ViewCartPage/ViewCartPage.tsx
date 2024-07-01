@@ -21,9 +21,6 @@ export default function ViewCart() {
 
   const groupedCartProjects = groupProjectsInCart(projects);
   const groupedProjectsByChainId = Object.keys(groupedCartProjects);
-  const combinedGroupedCartByChainId = Array.from(
-    new Set([...groupedProjectsByChainId])
-  );
 
   const breadCrumbs: BreadcrumbItem[] = [
     {
@@ -51,9 +48,9 @@ export default function ViewCart() {
             ) : (
               <div className={"grid sm:grid-cols-2 gap-5 w-full mx-5"}>
                 <div className="flex flex-col gap-5 sm:col-span-2 order-2 sm:order-1">
-                  {combinedGroupedCartByChainId &&
+                  {groupedProjectsByChainId &&
                     projects.length > 0 &&
-                    combinedGroupedCartByChainId.map((chainId) => (
+                    groupedProjectsByChainId.map((chainId) => (
                       <div key={Number(chainId)}>
                         <CartWithProjects
                           cart={groupedCartProjects[Number(chainId)]}
