@@ -1,4 +1,64 @@
 {
+  "534352": {
+    "VkRegistry": {
+      "name": "VkRegistry",
+      "vkRegistryContractAddress": "0x75849046b2EAd803e095769e94D7d1Db14dFfFD7"
+    },
+    "Verifier": {
+      "name": "Verifier",
+      "verifierContractAddress": "0x5bBFa3cE3a81645897dEeE892557f50756940d6f"
+    },
+    "PosseidonAddresses": [
+      {
+        "name": "PoseidonT3",
+        "address": "0x86b4329E7CB8674b015477C81356420D79c71A53"
+      },
+      {
+        "name": "PoseidonT4",
+        "address": "0x8Ad0a1111B3d8453Ea9C444cA7d708A65BF81Def"
+      },
+      {
+        "name": "PoseidonT5",
+        "address": "0xa45279201F7CC70DD4Fae115C3AcdFe14428F39b"
+      },
+      {
+        "name": "PoseidonT6",
+        "address": "0xBD50a5E3fD41Bda33baC3e557C14507d929dA446"
+      }
+    ],
+    "Groth16Verifier": {
+      "name": "Groth16Verifier",
+      "Groth16VerifierAddress": "0x2Afae5678c13dAdbB8e8Db59d0d7e12cfa6bE548"
+    },
+    "ZuPassRegistry": {
+      "name": "ZuPassRegistry",
+      "ZuPassRegistryAddress": "0x70FafcC2b1746f017018BE92D3f5856d68246037"
+    },
+    "PollFactory": {
+      "name": "PollFactory",
+      "pollAddress": "0x1bFda15Ad5FC82E74Da81F0B8DcA486b3Ad14c71"
+    },
+    "MessageProcessorFactory": {
+      "name": "MessageProcessorFactory",
+      "mpAddr": "0x1Be548B90b130E81fE320EBA9742720cD5C442CF"
+    },
+    "TallyFactory": {
+      "name": "TallyFactory",
+      "tallyAddr": "0xA429cfBCC169D820CD30d3B11Ee086719FdAA19F"
+    },
+    "ClonableMACI": {
+      "name": "ClonableMACI",
+      "ClonableMACIAddress": "0xF119467D3f2c18296E3a3A491f905e2D2D3808f8"
+    },
+    "ClonableMACIFactory": {
+      "name": "ClonableMACIFactory",
+      "ClonableMACIFactoryAddress": "0x474C223EBBCbBba7E2F932c52fbd80514E9382dB"
+    },
+    "MACIQFStrategy": {
+      "name": "MACIQFStrategyv1.0",
+      "MACIQFStrategyAddress": "0x0A6fFd2e74FC582C17b3bD10b8102E61D07Cf298"
+    }
+  },
   "11155111": {
     "VkRegistry": {
       "name": "VkRegistry",
@@ -32,31 +92,31 @@
     },
     "ZuPassRegistry": {
       "name": "ZuPassRegistry",
-      "ZuPassRegistryAddress": "0x455cC27badb067cb9b7cdE52F153DfebC83B1A99"
+      "ZuPassRegistryAddress": "0x611709bEB6A7D413d1F5Eb3213Bd65221685C293"
     },
     "PollFactory": {
       "name": "PollFactory",
-      "pollAddress": "0xEb02eD9A81c4FfCF1689e041Ecc3360233Ee3dD1"
+      "pollAddress": "0x99eECAf42298b748F50C8770091A358c7a1Df0B3"
     },
     "MessageProcessorFactory": {
       "name": "MessageProcessorFactory",
-      "mpAddr": "0x2F5c0201EC393d07C7e864FAa13bf29c561F7E02"
+      "mpAddr": "0xAFBC18e33795aab31f0b2B865cBe563E8040C56d"
     },
     "TallyFactory": {
       "name": "TallyFactory",
-      "tallyAddr": "0xF45F45B4f6EfFec8a51D6095aB66a100B663C601"
+      "tallyAddr": "0x2EAB3d42300521Feb03c282F78FB81e29FCBD8a6"
     },
     "ClonableMACI": {
       "name": "ClonableMACI",
-      "ClonableMACIAddress": "0x69140036F285d351cc11c71394179a30AcF1AA11"
+      "ClonableMACIAddress": "0xA1Fb125CCeAdBB97e3339724f61fAC09b0FF96e0"
     },
     "ClonableMACIFactory": {
       "name": "ClonableMACIFactory",
-      "ClonableMACIFactoryAddress": "0x272DfA1B365E4e72690F834c6e0a2823Fa5120e5"
+      "ClonableMACIFactoryAddress": "0xFDF4230931E0B659000D86973B85e997805D0b45"
     },
     "MACIQFStrategy": {
-      "name": "MACIQFStrategy",
-      "MACIQFStrategyAddress": "0xF59618C80d3D624edB91c56d200675cD9a4837fc"
+      "name": "MACIQFStrategyv1.0",
+      "MACIQFStrategyAddress": "0xB84be727Ff04B64D5f85e0a669Af0ef8e14f530B"
     }
   }
 }

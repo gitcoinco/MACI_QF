@@ -56,29 +56,19 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @param recipientId The recipientId
     /// @param status The status of the review
     /// @param sender The sender of the transaction
-    event RecipientStatusUpdated(
-        address indexed recipientId,
-        IStrategy.Status status,
-        address sender
-    );
+    event RecipientStatusUpdated(address indexed recipientId, IStrategy.Status status, address sender);
 
     /// @notice Emitted when a recipient updates their registration
     /// @param recipientId ID of the recipient
     /// @param data The encoded data - (address recipientId, address recipientAddress, Metadata metadata)
     /// @param sender The sender of the transaction
     /// @param status The updated status of the recipient
-    event UpdatedRegistration(
-        address indexed recipientId,
-        bytes data,
-        address sender,
-        IStrategy.Status status
-    );
-    
+    event UpdatedRegistration(address indexed recipientId, bytes data, address sender, IStrategy.Status status);
+
     /// @notice Emitted when a recipient is added
     /// @param recipientId ID of the recipient
     /// @param recipientIndex ID of the recipient"s MACI voting option
     event RecipientVotingOptionAdded(address recipientId, uint256 recipientIndex);
-
 
     /// @notice Emitted when the pool timestamps are updated
     /// @param registrationStartTime The start time for the registration
@@ -262,20 +252,11 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         _registry = allo.getRegistry();
 
         // Validate the timestamps
-        _isPoolTimestampValid(
-            registrationStartTime,
-            registrationEndTime,
-            allocationStartTime,
-            allocationEndTime
-        );
+        _isPoolTimestampValid(registrationStartTime, registrationEndTime, allocationStartTime, allocationEndTime);
 
         // Emit an event indicating that the timestamps have been updated
         emit TimestampsUpdated(
-            registrationStartTime,
-            registrationEndTime,
-            allocationStartTime,
-            allocationEndTime,
-            msg.sender
+            registrationStartTime, registrationEndTime, allocationStartTime, allocationEndTime, msg.sender
         );
     }
 
@@ -301,7 +282,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
             revert INVALID();
         }
 
-        for (uint256 i; i < length; ) {
+        for (uint256 i; i < length;) {
             address recipientId = _recipients[i];
             uint64 latestUpdateTime = _latestUpdateTimes[i];
             Recipient storage recipient = recipients[recipientId];
@@ -315,7 +296,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
                     i++;
                 }
                 continue;
-            }   
+            }
 
             // If the recipient is accepted, add them to the accepted recipients list
             // If the recipient is already accepted or status changed after acceptance but accepted once
@@ -357,7 +338,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         // This is to ensure that accidentally sent tokens can be withdrawn by the pool manager
         if (getPoolToken() != _token) {
             uint256 amount = _getBalance(_token, address(this));
-            _transferAmount(_token, msg.sender,amount);
+            _transferAmount(_token, msg.sender, amount);
         } else {
             // Only if the pool is cancelled the funds can be withdrawn
             // Otherwise the funds will be taken from the winners of the pool
@@ -368,11 +349,11 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
             // Which includes the contributions. This is to ensure if the round is cancelled
             // Contributors can withdraw their contributions.
             uint256 amount = _getBalance(_token, address(this)) - totalContributed;
-            _transferAmount(_token, msg.sender, amount);        
-        }        
+            _transferAmount(_token, msg.sender, amount);
+        }
     }
 
-    /// @notice Emergency withdraw of tokens from the pool in case of recipient Distributions fail 
+    /// @notice Emergency withdraw of tokens from the pool in case of recipient Distributions fail
     /// @dev This can only be called after the pool has been finalized and the emergency withdrawal
     /// delay has passed only the coordinator can call this function
     /// @param _token The token to withdraw
@@ -409,13 +390,12 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         uint64 _allocationEndTime
     ) internal pure {
         if (
-            _registrationStartTime > _registrationEndTime ||
-            _allocationStartTime > _allocationEndTime ||
+            _registrationStartTime > _registrationEndTime || _allocationStartTime > _allocationEndTime
             // Added condition to ensure registrationEndTime cannot be greater than allocationStartTime
             // This is to prevent accepting a recipient after the allocation has started
             // Because in MACI votes are encrypted if a recipient is REJECTED after the allocation has started
             // the votes for that recipient will be wasted toghether with the matching funds of the contributors
-            _registrationEndTime > _allocationStartTime
+            || _registrationEndTime > _allocationStartTime
         ) {
             revert INVALID();
         }
@@ -432,10 +412,12 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @param _data The data to be decoded
     /// @param _sender The sender of the transaction
     /// @return The ID of the recipient
-    function _registerRecipient(
-        bytes memory _data,
-        address _sender
-    ) internal override onlyActiveRegistration returns (address) {
+    function _registerRecipient(bytes memory _data, address _sender)
+        internal
+        override
+        onlyActiveRegistration
+        returns (address)
+    {
         if (msg.value != 0) {
             revert INVALID();
         }
@@ -447,18 +429,12 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         address recipientId;
 
         if (useRegistryAnchor) {
-            (recipientId, recipientAddress, metadata) = abi.decode(
-                _data,
-                (address, address, Metadata)
-            );
+            (recipientId, recipientAddress, metadata) = abi.decode(_data, (address, address, Metadata));
             if (!_isProfileMember(recipientId, _sender)) {
                 revert UNAUTHORIZED();
             }
         } else {
-            (registryAnchor, recipientAddress, metadata) = abi.decode(
-                _data,
-                (address, address, Metadata)
-            );
+            (registryAnchor, recipientAddress, metadata) = abi.decode(_data, (address, address, Metadata));
             isUsingRegistryAnchor = registryAnchor != address(0);
             recipientId = isUsingRegistryAnchor ? registryAnchor : _sender;
             if (isUsingRegistryAnchor && !_isProfileMember(recipientId, _sender)) {
@@ -489,7 +465,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
             // If the recipient is rejected, the recipient can appeal
             if (recipientStatus == Status.Rejected) {
                 recipient.status = Status.Appealed;
-            }else if (recipientStatus == Status.Accepted) {
+            } else if (recipientStatus == Status.Accepted) {
                 recipient.status = Status.InReview;
             }
 
@@ -570,10 +546,12 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @notice Returns the payout summary for a recipient
     /// @param _recipientId The ID of the recipient
     /// @return _payoutSummary The payout summary
-    function _getPayout(
-        address _recipientId,
-        bytes memory data
-    ) internal view override returns (PayoutSummary memory _payoutSummary) {}
+    function _getPayout(address _recipientId, bytes memory data)
+        internal
+        view
+        override
+        returns (PayoutSummary memory _payoutSummary)
+    {}
 
     /// @notice Ensures the pool amount can be increased
     function _beforeIncreasePoolAmount(uint256) internal view override {
@@ -615,11 +593,11 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @param _totalVotesSquares Total of the squares of votes
     /// @param _totalSpent Total amount of spent voice credits
     /// @return _alpha value
-    function calcAlpha(
-        uint256 _budget,
-        uint256 _totalVotesSquares,
-        uint256 _totalSpent
-    ) public view returns (uint256 _alpha) {
+    function calcAlpha(uint256 _budget, uint256 _totalVotesSquares, uint256 _totalSpent)
+        public
+        view
+        returns (uint256 _alpha)
+    {
         // make sure budget = contributions + matching pool
         uint256 contributions = _totalSpent * voiceCreditFactor;
 
@@ -633,19 +611,14 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
             revert NoProjectHasMoreThanOneVote();
         }
 
-        return
-            ((_budget - contributions) * ALPHA_PRECISION) /
-            (voiceCreditFactor * (_totalVotesSquares - _totalSpent));
+        return ((_budget - contributions) * ALPHA_PRECISION) / (voiceCreditFactor * (_totalVotesSquares - _totalSpent));
     }
 
     /// @notice Calculates the allocated token amount without verification
     /// @param _tallyResult The result of the vote tally for the recipient
     /// @param _spent The amount of voice credits spent on the recipient
     /// @return The allocated token amount
-    function _getAllocatedAmount(
-        uint256 _tallyResult,
-        uint256 _spent
-    ) internal view returns (uint256) {
+    function _getAllocatedAmount(uint256 _tallyResult, uint256 _spent) internal view returns (uint256) {
         uint256 quadratic = alpha * voiceCreditFactor * _tallyResult * _tallyResult;
         uint256 totalSpentCredits = voiceCreditFactor * _spent;
         uint256 linearPrecision = ALPHA_PRECISION * totalSpentCredits;

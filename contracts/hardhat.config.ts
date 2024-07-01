@@ -41,40 +41,38 @@ function copyDirectory(source: string, target: string): void {
 subtask("copy-maci-artifacts", async (_, { config }) => {
   const sourceDir = path.resolve(
     __dirname,
-    "node_modules/maci-contracts/build/artifacts/contracts/"
+    "node_modules/maci-contracts/build/artifacts/contracts/",
   );
   const destDir = path.resolve(
     config.paths.artifacts,
     "maci-contracts",
-    "contracts"
+    "contracts",
   );
 
   copyDirectory(sourceDir, destDir);
-
 });
 
 subtask("copy-maci-build-info", async (_, { config }) => {
-
   const sourceDir2 = path.resolve(
     __dirname,
-    "node_modules/maci-contracts/build/artifacts/@openzeppelin/"
+    "node_modules/maci-contracts/build/artifacts/@openzeppelin/",
   );
   const destDir2 = path.resolve(
     config.paths.artifacts,
     "maci-contracts",
-    "@openzeppelin"
+    "@openzeppelin",
   );
 
   copyDirectory(sourceDir2, destDir2);
 
   const sourceDir3 = path.resolve(
     __dirname,
-    "node_modules/maci-contracts/build/artifacts/build-info/"
+    "node_modules/maci-contracts/build/artifacts/build-info/",
   );
   const destDir3 = path.resolve(
     config.paths.artifacts,
     "maci-contracts",
-    "build-info"
+    "build-info",
   );
 
   copyDirectory(sourceDir3, destDir3);

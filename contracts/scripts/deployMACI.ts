@@ -464,7 +464,7 @@ async function main() {
 
     const MACIQFStrategy = await MACIQFStrategyFactory.deploy(
       Allo,
-      "MACIQF_STRATEGY_V1",
+      "MACIQFStrategyv1.0",
     );
 
     const MACIQFStrategyAddress = await MACIQFStrategy.getAddress();
@@ -472,7 +472,7 @@ async function main() {
     console.log("MACIQFStrategy deployed at:", MACIQFStrategyAddress);
 
     DeployedContracts.MACIQFStrategy = {
-      name: "MACIQFStrategy",
+      name: "MACIQFStrategyv1.0",
       MACIQFStrategyAddress: MACIQFStrategyAddress,
     };
     deployments.write(DeployedContracts);
