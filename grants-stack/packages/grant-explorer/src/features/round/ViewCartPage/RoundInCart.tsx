@@ -310,7 +310,7 @@ export function RoundInCart(
                 closeOnClick={false}
                 hasArrow
               >
-                <span className="underline cursor-pointer"> those</span>
+                <span className="underline cursor-pointer"> these</span>
               </Tooltip>{" "}
               events to join the allowlist.
             </p>
