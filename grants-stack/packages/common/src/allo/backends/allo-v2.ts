@@ -539,16 +539,23 @@ export class AlloV2 implements Allo {
 
       const txData = this.allo.createPool(createPoolArgs);
 
-      const txResult = await sendRawTransaction(this.transactionSender, {
-        to: txData.to,
-        data: txData.data,
-        value: BigInt(txData.value),
-      });
-
-      emit("transaction", txResult);
-
-      if (txResult.type === "error") {
-        return txResult;
+      let txResult;
+      try {
+        txResult = await sendRawTransaction(this.transactionSender, {
+          to: txData.to,
+          data: txData.data,
+          value: BigInt(txData.value),
+        });
+  
+        emit("transaction", txResult);
+  
+        if (txResult.type === "error") {
+          return txResult;
+        }
+      } catch (err) {
+        const result = new AlloError("Failed to create Pool", err);
+        emit("transaction", error(result));
+        return error(result);
       }
 
       // --- wait for transaction to be mined
