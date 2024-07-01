@@ -414,7 +414,7 @@ const RoundAllowlist = ({
             </p>
           </div>
         ) : !isZupasReused ? (
-          <div className="flex">
+          <div className="flex flex-col">
             <p className="text-sm pt-2 italic ">
               You successfuly proved your Zuzalu commitment, you can now
               contribute up to {maxContributionAllowlisted} ETH (
