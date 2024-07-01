@@ -392,8 +392,9 @@ const RoundAllowlist = ({
               {parseInt(
                 (Number(maxContributionNonAllowlisted) * 1e5).toString()
               )}{" "}
-              voice credits). To contriute upto {maxContributionAllowlisted} ETH
-              ({parseInt((Number(maxContributionAllowlisted) * 1e5).toString())}{" "}
+              voice credits). To contribute upto {maxContributionAllowlisted}{" "}
+              ETH (
+              {parseInt((Number(maxContributionAllowlisted) * 1e5).toString())}{" "}
               voice credits),{" "}
               <Tooltip
                 label="Click to join the allowlist"
