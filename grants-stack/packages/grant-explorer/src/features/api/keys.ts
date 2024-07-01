@@ -2,7 +2,10 @@ import { WalletClient } from "wagmi";
 import { Keypair as GenKeyPair } from "../../features/api/voting";
 
 function getMessageToSign(chainID: number, roundID: string) {
-  return `Sign this message to get your public key for MACI voting on Allo for the round with address ${roundID} on chain ${chainID}`;
+  if (chainID === 11155111) {
+    return `Sign this message to get your public key for MACI voting on Allo for the round with address ${roundID} on chain ${chainID}`;
+  }
+  return `Sign this message to create your unique MACI KeyPair for rounId ${roundID} & chainId ${chainID} . This KeyPair is essential for securely encrypting and decrypting your donations. Think of this process like generating a seed phrase, with a new one created for each round.`;
 }
 export const getMACIKeys = async ({
   chainID,
