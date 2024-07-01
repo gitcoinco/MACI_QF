@@ -32,8 +32,8 @@ async function finalizeRound() {
       Coordinator
     )) as MACIQF;
 
-    const pollContracts = await MACIQFStrategy._pollContracts();
-    const maciContractAddress = await MACIQFStrategy._maci();
+    const pollContracts = await MACIQFStrategy.pollContracts();
+    const maciContractAddress = await MACIQFStrategy.maci();
     const tallyContractAddress = pollContracts[2];
     const mpContractAddress = pollContracts[1];
 

@@ -126,20 +126,24 @@ describe("e2e", function test() {
   });
 
   it("Should Review Recipients", async () => {
-    const recipient1LatestUpdate = (await MACIQFStrategy.recipients(recipient1)).lastUpdateAt;
-    const recipient2LatestUpdate = (await MACIQFStrategy.recipients(recipient2)).lastUpdateAt;
+    const recipient1LatestUpdate = (await MACIQFStrategy.recipients(recipient1))
+      .lastUpdateAt;
+    const recipient2LatestUpdate = (await MACIQFStrategy.recipients(recipient2))
+      .lastUpdateAt;
     const reviewRecipientsTx = await MACIQFStrategy.connect(
       Coordinator
-    ).reviewRecipients([recipient1, recipient2] , [recipient1LatestUpdate,recipient2LatestUpdate] , [2, 2]);
+    ).reviewRecipients(
+      [recipient1, recipient2],
+      [recipient1LatestUpdate, recipient2LatestUpdate],
+      [2, 2]
+    );
 
     await reviewRecipientsTx.wait();
   });
 
   it("Should allow the contribution to gain tokens and allocate", async () => {
-
     // Time travel to the allocation period
     await timeTravel(Coordinator.provider as unknown as EthereumProvider, 210);
-
 
     // Donate to the pool without proof
     await allocate({
@@ -168,7 +172,7 @@ describe("e2e", function test() {
       messages: [
         {
           stateIndex: 1n,
-          voteOptionIndex: votingOption1, 
+          voteOptionIndex: votingOption1,
           nonce: 1n,
           newVoteWeight: bnSqrt(SINGLEVOTE * 78n),
         },
@@ -273,26 +277,49 @@ describe("e2e", function test() {
     expect(recipient.totalVotesReceived).to.be.greaterThan(0);
   });
 
-  it("Should Finalize the Round", async () => {
-    let isFinalized = await finalize({
-      MACIQFStrategy,
-      Coordinator,
-      voteOptionTreeDepth,
-      outputDir,
-    });
-    expect(isFinalized).to.be.true;
+  it("Should cancel the Round", async () => {
+    const cancelRoundTx = await MACIQFStrategy.connect(Coordinator).cancel();
+    await cancelRoundTx.wait();
   });
 
-  it("Should Distribute Founds ", async () => {
-    const distributeResponse = await distribute({
-      outputDir,
-      AlloContract,
-      MACIQFStrategy,
-      distributor: Coordinator,
-      recipientTreeDepth: voteOptionTreeDepth,
-      roundId: 1,
-      batchSize: 1,
-    });
-    expect(distributeResponse.poolAmountAfterDistribution).to.be.lessThan(distributeResponse.poolAmountBeforeDistribution);
+  it("Should allow contributors to withdraw their funds when round is canceled", async () => {
+    const contributor1withdrawTx = await MACIQFStrategy.connect(
+      allocator
+    ).withdrawContribution();
+    await contributor1withdrawTx.wait();
+
+    const contributor2withdrawTx = await MACIQFStrategy.connect(
+      recipient1
+    ).withdrawContribution();
+    await contributor2withdrawTx.wait();
+  });
+
+  it("Should allow coordinator to withdraw matching pool amount when round is canceled", async () => {
+    const matchingPoolWithdrawTx = await MACIQFStrategy.connect(
+      Coordinator
+    ).withdraw(await MACIQFStrategy.NATIVE());
+    await matchingPoolWithdrawTx.wait();
+  });
+
+  it("should validate that the round funds are empty after withdraw", async () => {
+    const provider = Coordinator.provider!;
+    const poolAmount = await provider.getBalance(
+      await MACIQFStrategy.getAddress()
+    );
+    expect(poolAmount).to.be.equal(0);
+  });
+
+  it("Should Time travel to emergency time and prevent to withdraw when round is canceled", async () => {
+    const hour = 3600;
+    const day = 24 * hour;
+    const month = 30 * day;
+    await timeTravel(
+      Coordinator.provider as unknown as EthereumProvider,
+      month + 1
+    );
+
+    expect(
+      MACIQFStrategy.emergencyWithdraw(MACIQFStrategy.NATIVE())
+    ).to.revertedWith(`INVALID`);
   });
 });

@@ -246,6 +246,8 @@ export interface IAllocateArgs {
    */
   publicKey: string;
 
+  isAllowlisted: boolean;
+
   amount: BigInt;
 
   proof: ProofArgs;

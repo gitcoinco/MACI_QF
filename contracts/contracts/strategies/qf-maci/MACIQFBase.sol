@@ -14,7 +14,6 @@ import {Metadata} from "../../core/libraries/Metadata.sol";
 import {BaseStrategy} from "../BaseStrategy.sol";
 
 // External Libraries
-// TODO - Do we really need this?
 import {Multicall} from "@openzeppelin/contracts/utils/Multicall.sol";
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -39,13 +38,14 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
 
     /// @notice The details of a recipient in the pool
     struct Recipient {
-        bool useRegistryAnchor;
-        bool tallyVerified;
-        Status status;
-        address recipientAddress;
-        uint256 totalVotesReceived;
-        Metadata metadata;
-        bool acceptedOnce;
+        bool useRegistryAnchor; // Flag to indicate if the recipient is using the registry anchor
+        bool tallyVerified; // Flag to indicate if the tally has been verified
+        Status status; // The status of the recipient
+        address recipientAddress; // The address of the recipient to receive the funds
+        uint256 totalVotesReceived; // The total number of votes received by the recipient
+        Metadata metadata; // The metadata of the recipient
+        bool acceptedOnce; // Flag to indicate if the recipient has been accepted once
+        uint64 lastUpdateAt; // The last time the recipient updated their registration
     }
 
     /// ======================
@@ -146,6 +146,9 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @notice The total amount spent from the pool
     uint256 public totalSpent;
 
+    /// @notice The timestamp when the pool was finalized
+    uint64 public finalizedAt;
+
     /// @notice Flag to indicate if the pool has been finalized
     bool public isFinalized;
 
@@ -162,12 +165,13 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     string public tallyHash;
 
     /// @notice The MACI contract address
-    address public _maci;
+    address public maci;
 
     // Constants
     uint256 public constant MAX_VOICE_CREDITS = 10 ** 9; // MACI allows 2 ** 32 voice credits max
     uint256 public constant MAX_CONTRIBUTION_AMOUNT = 10 ** 4; // In tokens
     uint256 public constant ALPHA_PRECISION = 10 ** 18; // to account for loss of precision in division
+    uint256 public constant EMERGENCY_WITHDRAWAL_DELAY = 30 days;
 
     /// @notice Mapping from vote index to recipient address
     mapping(uint256 => address) public recipientVoteIndexToAddress;
@@ -176,7 +180,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     mapping(address => bool) public paidOut;
 
     /// @notice Mapping from recipient ID to recipient details
-    mapping(address => Recipient) public _recipients;
+    mapping(address => Recipient) public recipients;
 
     /// @notice Mapping from contributor address to total credits
     mapping(address => uint256) public contributorCredits;
@@ -233,7 +237,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @notice Internal initialize function
     /// @param _poolId The ID of the pool
     /// @param _params The initialization parameters for the strategy
-    function __MACIQFBaseStrategy_init(uint256 _poolId, InitializeParams memory _params) internal {
+    function _maciQFBaseStrategy_init(uint256 _poolId, InitializeParams memory _params) internal {
         __BaseStrategy_init(_poolId);
 
         IAllo.Pool memory pool = allo.getPool(_poolId);
@@ -283,25 +287,30 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// This because the recipients are not allowed to change their status during the allocation period as this will
     /// affect the votes and the matching pool amount.
     /// @dev This function is used to set the status of recipients to either Accepted, Rejected or InReview
-    /// @param recipients An array of recipient addresses
+    /// @param _recipients An array of recipient addresses
+    /// @param _latestUpdateTimes An array of the latest update times for the recipients in the same order to prevent front-running reviews
     /// @param _statuses An array of statuses corresponding to the recipients
     function reviewRecipients(
-        address[] memory recipients,
+        address[] memory _recipients,
+        uint64[] memory _latestUpdateTimes,
         Status[] memory _statuses
     ) external onlyActiveRegistration onlyPoolManager(msg.sender) {
-        uint256 length = recipients.length;
+        uint256 length = _latestUpdateTimes.length;
 
-        if (length != _statuses.length) {
+        if (length != _statuses.length && length != _recipients.length) {
             revert INVALID();
         }
 
         for (uint256 i; i < length; ) {
-            address recipientId = recipients[i];
-            Recipient storage recipient = _recipients[recipientId];
+            address recipientId = _recipients[i];
+            uint64 latestUpdateTime = _latestUpdateTimes[i];
+            Recipient storage recipient = recipients[recipientId];
 
             // If the recipient is not in review, skip the recipient
             // This is to prevent updating the status of a recipient that is not registered
-            if (recipient.status == Status.None) {
+            // Or if the recipient updated their metadata before the review process with outdated metadata
+            // This is to prevent front-running reviews
+            if (recipient.status == Status.None || recipient.lastUpdateAt != latestUpdateTime) {
                 unchecked {
                     i++;
                 }
@@ -343,11 +352,12 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
 
     /// @notice Withdraws tokens from the pool
     /// @param _token The token to withdraw
-    function withdraw(address _token) external onlyPoolManager(msg.sender) {
+    function withdraw(address _token) external onlyCoordinator {
         // If the token is not the pool token, transfer the token to the sender
         // This is to ensure that accidentally sent tokens can be withdrawn by the pool manager
-        if (allo.getPool(poolId).token != _token) {
-            _transferAmount(_token, msg.sender, _getBalance(_token, address(this)));
+        if (getPoolToken() != _token) {
+            uint256 amount = _getBalance(_token, address(this));
+            _transferAmount(_token, msg.sender,amount);
         } else {
             // Only if the pool is cancelled the funds can be withdrawn
             // Otherwise the funds will be taken from the winners of the pool
@@ -360,6 +370,18 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
             uint256 amount = _getBalance(_token, address(this)) - totalContributed;
             _transferAmount(_token, msg.sender, amount);        
         }        
+    }
+
+    /// @notice Emergency withdraw of tokens from the pool in case of recipient Distributions fail 
+    /// @dev This can only be called after the pool has been finalized and the emergency withdrawal
+    /// delay has passed only the coordinator can call this function
+    /// @param _token The token to withdraw
+    function emergencyWithdraw(address _token) external onlyCoordinator {
+        bool isEmergencyTime = block.timestamp > finalizedAt + EMERGENCY_WITHDRAWAL_DELAY;
+        if (isCancelled || !isEmergencyTime || !isFinalized) {
+            revert INVALID();
+        }
+        _transferAmount(_token, msg.sender, _getBalance(_token, address(this)));
     }
 
     /// @notice Allows the contract to receive native currency
@@ -403,7 +425,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @param _recipientId The ID of the recipient
     /// @return The recipient details
     function getRecipient(address _recipientId) external view returns (Recipient memory) {
-        return _recipients[_recipientId];
+        return recipients[_recipientId];
     }
 
     /// @notice Registers a recipient
@@ -452,7 +474,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
             revert RECIPIENT_ERROR(recipientId);
         }
 
-        Recipient storage recipient = _recipients[recipientId];
+        Recipient storage recipient = recipients[recipientId];
         recipient.recipientAddress = recipientAddress;
         recipient.metadata = metadata;
         recipient.useRegistryAnchor = useRegistryAnchor ? true : isUsingRegistryAnchor;
@@ -470,6 +492,9 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
             }else if (recipientStatus == Status.Accepted) {
                 recipient.status = Status.InReview;
             }
+
+            recipient.lastUpdateAt = uint64(block.timestamp);
+
             emit UpdatedRegistration(recipientId, _data, _sender, recipient.status);
         }
         return recipientId;
@@ -511,7 +536,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @param _recipientId The ID of the recipient
     /// @return The status of the recipient
     function _getRecipientStatus(address _recipientId) internal view override returns (Status) {
-        return _recipients[_recipientId].status;
+        return recipients[_recipientId].status;
     }
 
     /// @notice Ensures the registration period is active
@@ -575,6 +600,10 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
         return !paidOut[_recipient];
     }
 
+    function getPoolToken() internal view returns (address) {
+        return allo.getPool(poolId).token;
+    }
+
     /// ====================================
     /// ============ QF Helpers ============
     /// ====================================
@@ -613,7 +642,7 @@ abstract contract MACIQFBase is BaseStrategy, Multicall {
     /// @param _tallyResult The result of the vote tally for the recipient
     /// @param _spent The amount of voice credits spent on the recipient
     /// @return The allocated token amount
-    function getAllocatedAmount(
+    function _getAllocatedAmount(
         uint256 _tallyResult,
         uint256 _spent
     ) internal view returns (uint256) {

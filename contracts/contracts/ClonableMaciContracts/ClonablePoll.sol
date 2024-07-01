@@ -19,7 +19,7 @@ import { CurveBabyJubJub } from "maci-contracts/contracts/crypto/BabyJubJub.sol"
 /// @dev Do not deploy this directly. Use PollFactory.deploy() which performs some
 /// checks on the Poll constructor arguments.
 contract ClonablePoll is Params, Utilities, SnarkCommon, OwnableUpgradeable, IPoll {
-    uint256[5] public emptyBallotRoots;
+    uint256[] public emptyBallotRoots;
 
     using SafeERC20 for ERC20;
 
@@ -321,8 +321,8 @@ contract ClonablePoll is Params, Utilities, SnarkCommon, OwnableUpgradeable, IPo
     // Needed function to set the emptyBallotRoots because we cannot set them in the constructor
     // due to the fact that the Poll is a Proxy contract
     function _setEmptyBallotRoots(uint256[] memory _emptyBallotRoots) internal {
-        for (uint256 i = 0; i < 5; i++) {
-            emptyBallotRoots[i] = _emptyBallotRoots[i];
+        for (uint256 i = 0; i < _emptyBallotRoots.length; i++) {
+            emptyBallotRoots.push(_emptyBallotRoots[i]);
         }
     }
 }

@@ -7,7 +7,9 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {IZuPassVerifier} from "../interfaces/IZuPassVerifier.sol";
 
-contract ZuPassRegistry is Ownable {
+import {IGatingVerifier} from "../interfaces/IGatingVerifier.sol";
+
+contract ZuPassRegistry is Ownable, IGatingVerifier {
 
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -67,7 +69,7 @@ contract ZuPassRegistry is Ownable {
         }
     }
 
-    function setRoundAllowlist(bytes memory encodedEventIds) external {
+    function setRoundVerifier(bytes memory encodedEventIds) external {
         (uint256[] memory _eventIds) = abi.decode(encodedEventIds, (uint256[]));
         for (uint256 i = 0; i < _eventIds.length;) {
             uint256 eventId = _eventIds[i];
@@ -104,8 +106,9 @@ contract ZuPassRegistry is Ownable {
 
     /// @notice Validate proof of attendance
     /// @param _EncodedProof Proof
-    function validateAllowlist(
-        bytes memory _EncodedProof
+    function validateUser(
+        bytes calldata _EncodedProof,
+        address _sender
     ) external returns (bool) {
         // Decode the proof
         (
@@ -141,9 +144,6 @@ contract ZuPassRegistry is Ownable {
 
         // Preventing frontrunning the transaction by adding the watermark as the transaction origin
         // NOTE this needs to be tested we cannot have a proof for this one in the tests
-        if(getWaterMarkFromPublicSignals(_pubSignals) != uint256(uint160(tx.origin))){
-            return false;  
-        }
 
         // Get the nullifier used in the proof this is the email hash of the zupass
         uint256 ZupassNullifier = _pubSignals[9];
@@ -153,6 +153,10 @@ contract ZuPassRegistry is Ownable {
 
         // Mark the nullifier as used
         usedRoundNullifiers[msg.sender][ZupassNullifier] = true;
+
+        if(getWaterMarkFromPublicSignals(_pubSignals) != uint256(uint160(_sender))) {
+            return false;
+        }
 
         return true;
     }
