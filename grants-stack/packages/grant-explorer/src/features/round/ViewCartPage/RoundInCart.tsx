@@ -406,7 +406,7 @@ const RoundAllowlist = ({
               >
                 <a
                   onClick={openModal}
-                  className="text-md pt-2 font-bold mb-5 mr-2 cursor-pointer"
+                  className="text-md pt-2 font-bold mb-5 mr-2 cursor-pointer underline"
                   style={{ color: "black", fontStyle: "normal" }}
                 >
                   join the allowlist.
