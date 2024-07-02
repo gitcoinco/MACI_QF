@@ -20,6 +20,7 @@ import {
   ProgressStatus,
   ProgressStep,
   ProjectStatus,
+  Round,
 } from "../api/types";
 import ConfirmationModal from "../common/ConfirmationModal";
 import {
@@ -39,6 +40,7 @@ import ErrorModal from "../common/ErrorModal";
 import { getRoundStrategyType, renderToPlainText, useAllo } from "common";
 import { roundApplicationsToCSV } from "../api/exports";
 import { useWallet } from "../common/Auth";
+import moment from "moment";
 
 export async function exportAndDownloadCSV(
   roundId: string,
@@ -72,12 +74,14 @@ export async function exportAndDownloadCSV(
 
 type Props = {
   isDirectRound?: boolean;
+  round: Round;
 };
 
 // Approve or reject applications received in bulk, both in QF & direct grants
 
 export default function ApplicationsToApproveReject({
-  isDirectRound = false,
+  round,
+  isDirectRound = false
 }: Props) {
   const { id } = useParams();
   const { chain } = useWallet();
@@ -130,6 +134,11 @@ export default function ApplicationsToApproveReject({
           : ProgressStatus.NOT_STARTED,
     },
   ];
+
+  const canReviewApplication = moment().isBetween(
+    round.applicationsStartTime,
+    round.applicationsEndTime
+  );
 
   useEffect(() => {
     if (!isLoading || !bulkSelect) {
@@ -282,7 +291,7 @@ export default function ApplicationsToApproveReject({
             {bulkSelect ? (
               <Cancel onClick={() => setBulkSelect(false)} />
             ) : (
-              <Select onClick={() => setBulkSelect(true)} />
+              <Select hidden={!canReviewApplication} onClick={() => setBulkSelect(true)} />
             )}
           </div>
         )}
