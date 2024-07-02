@@ -50,7 +50,6 @@ import {
   mapApplicationToRound,
   useApplication,
 } from "../projects/hooks/useApplication";
-import { PassportWidget } from "../common/PassportWidget";
 
 const CalendarIcon = (props: React.SVGProps<SVGSVGElement>) => {
   return (
@@ -167,7 +166,7 @@ export default function ViewProjectDetails() {
           project.roundId === roundId
       )
     : false;
-  
+
   const cartProject = projectToRender as CartProject;
 
   if (cartProject !== undefined) {
@@ -241,11 +240,6 @@ export default function ViewProjectDetails() {
           <div className="flex items-center pt-2" data-testid="bread-crumbs">
             <Breadcrumb items={breadCrumbs} />
           </div>
-          {walletAddress && round && isSybilDefenseEnabled && (
-            <div data-testid="passport-widget">
-              <PassportWidget round={round} alignment="right" />
-            </div>
-          )}
         </div>
         <div className="mb-4">
           <ProjectBanner
