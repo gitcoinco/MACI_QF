@@ -89,6 +89,14 @@ const useProjectDetailsParams = useParams<{
 export default function ViewProjectDetails() {
   const [selectedTab, setSelectedTab] = useState(0);
 
+  const { data: status, isLoading } = useAlreadyContributed(
+    dataLayer,
+    address ?? "",
+    Number(props.chainId),
+    props.roundId
+  );
+
+
   datadogLogs.logger.info(
     "====> Route: /round/:chainId/:roundId/:applicationId"
   );
@@ -531,7 +539,9 @@ function Sidebar(props: {
   return (
     <div className="min-w-[320px] h-fit mb-6 rounded-3xl bg-gray-50">
       <ProjectStats />
-      {props.isBeforeRoundEndDate && (
+      {props.isBeforeRoundEndDate &&
+      !status?.hasDonated 
+       (
         <CartButtonToggle
           isAlreadyInCart={props.isAlreadyInCart}
           addToCart={props.addToCart}
