@@ -57,6 +57,7 @@ export function RoundInCart(
   const [pcdFetched, setPcdFetched] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [hasExceededVoteLimit, setHasExceededVoteLimit] = useState(false);
   const [donationInput, setDonationInput] = useState<string>(
     (
       roundCart.reduce(
@@ -128,6 +129,8 @@ export function RoundInCart(
       ).toString()
     : "0.1";
 
+  const balanceVoiceCredits = voiceCreditBalance - usedVoiceCredits;
+
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     let value = event.target.value;
     value =
@@ -139,6 +142,7 @@ export function RoundInCart(
             ? maxContributionNonAllowlisted
             : value;
     value = value === "" ? "0.0" : value;
+    setHasExceededVoteLimit(false);
 
     if (/^\d*\.?\d*$/.test(value)) {
       setDonationInput(value);
@@ -192,8 +196,8 @@ export function RoundInCart(
 
   return (
     <div className="my-4 flex w-full">
-      <div className="flex flex-col flex-grow w-3/4">
-        <div className="bg-grey-50 px-4 py-6 rounded-xl mb-4 flex-grow mr-2">
+      <div className="flex flex-col flex-grow w-3/4 bg-grey-50 rounded-xl">
+        <div className="px-4 py-6 flex-grow mr-2">
           <div className="flex flex-row items-end justify-between">
             <div className="flex flex-col">
               <div>
@@ -212,12 +216,14 @@ export function RoundInCart(
                 />
               </div>
             </div>
-            <div className="flex items-center pt-2  mb-5 mr-2">
+          </div>
+          <div className="flex flex-row items-end justify-between items-center">
+            <div className="flex pt-2 items-center mb-5 mr-2">
               <label
                 htmlFor="totalDonationETH"
-                className="text-lg font-semibold inline mr-2"
+                className="text-md font-normal inline mr-2"
               >
-                Total Donation:{"  "}
+                Your Contribution (ETH): {"  "}
               </label>
               <input
                 type="text"
@@ -225,9 +231,16 @@ export function RoundInCart(
                 value={donationInput}
                 typeof="number"
                 onChange={handleInputChange}
-                className="px-3 py-2 w-20 bg-white border shadow-sm border-slate-300 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-sky-500 block rounded-md sm:text-sm focus:ring-1"
+                className="px-5 py-2 w-20 bg-white border shadow-sm border-slate-300 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-sky-500 block rounded-lg sm:text-sm focus:ring-1"
                 placeholder="Enter amount in ETH"
               />
+            </div>
+            <div
+              className={` ${voiceCreditBalance > 0 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-500"} p-2 rounded-lg`}
+            >
+              Your voice credits:{" "}
+              {balanceVoiceCredits < 0 ? 0 : balanceVoiceCredits} /{" "}
+              {voiceCreditBalance}
             </div>
           </div>
           <div>
@@ -246,6 +259,8 @@ export function RoundInCart(
                     payoutTokenPrice={payoutTokenPrice}
                     alreadyContributed={status?.hasDonated ?? false}
                     walletAddress={address as `0x${string}`}
+                    hasExceededVoteLimit={hasExceededVoteLimit}
+                    setHasExceededVoteLimit={setHasExceededVoteLimit}
                   />
                 </div>
               );
@@ -253,18 +268,10 @@ export function RoundInCart(
           </div>
         </div>
         <div className="p-4 bg-grey-100 rounded-b-xl font-medium text-lg">
-          <div className="flex flex-row justify-between items-center">
-            <div className="flex flex-row gap-3 justify-center pt-1 pr-2">
-              <div className="font-semibold">
-                <p>
-                  <span className="mr-2">voiceCreditBalance</span>
-                  {voiceCreditBalance}
-                </p>
-                <p>
-                  <span className="mr-2">usedVoiceCredits</span>
-                  {usedVoiceCredits.toString()}
-                </p>
-              </div>
+          <div className="flex justify-end">
+            <div className="flex flex-row">
+              <p className="mb-2 mr-2">Total voice credits allocated:</p>
+              <p className="mb-2">{usedVoiceCredits.toString()}</p>
             </div>
           </div>
         </div>
@@ -382,41 +389,61 @@ const RoundAllowlist = ({
     <div className="flex flex-col items-center">
       <div className="flex flex-col">
         {!pcdFetched ? (
-          <p className="text-sm pt-2 italic mb-5 mr-2">
-            Your max allowed contribution amount is{" "}
-            {maxContributionNonAllowlisted} ETH.{" "}
-            <Tooltip
-              label="Click to join the allowlist"
-              aria-label="Click to join the allowlist"
-            >
-              <a
-                onClick={openModal}
-                className="text-md pt-2 font-bold mb-5 mr-2 cursor-pointer"
-                style={{ color: "black", fontStyle: "normal" }}
+          <div className="mb-5">
+            <p className="text-sm pt-2 italic  mr-2">
+              Your max allowed contribution amount is{" "}
+              {maxContributionNonAllowlisted} ETH (
+              {parseInt(
+                (Number(maxContributionNonAllowlisted) * 1e5).toString()
+              )}{" "}
+              voice credits). To contribute upto {maxContributionAllowlisted}{" "}
+              ETH (
+              {parseInt((Number(maxContributionAllowlisted) * 1e5).toString())}{" "}
+              voice credits),{" "}
+              <Tooltip
+                label="Click to join the allowlist"
+                aria-label="Click to join the allowlist"
               >
-                Join the allowlist
-              </a>
-            </Tooltip>
-            <div className="text-sm italic mb-5 mr-2">
-              to contribute up to {maxContributionAllowlisted} ETH.
-            </div>
-          </p>
+                <a
+                  onClick={openModal}
+                  className="text-md pt-2 font-bold mb-5 mr-2 cursor-pointer"
+                  style={{ color: "black", fontStyle: "normal" }}
+                >
+                  join the allowlist.
+                </a>
+              </Tooltip>
+            </p>
+            <p className="text-sm italic mr-2">
+              For each vote, the number of voice credits decreases by the square
+              of the number of votes cast.
+            </p>
+          </div>
         ) : !isZupasReused ? (
           <div className="flex flex-col">
             <p className="text-sm pt-2 italic ">
-              You successfuly proved your Zuzalu commitment you can
+              You successfuly proved your Zuzalu commitment, you can now
+              contribute up to {maxContributionAllowlisted} ETH (
+              {parseInt((Number(maxContributionAllowlisted) * 1e5).toString())}{" "}
+              voice credits).
             </p>
             <p className="text-sm italic mb-5 mr-2">
-              now contribute up to {maxContributionAllowlisted} ETH.
+              For each vote, the number of voice credits decreases by the square
+              of the number of votes cast.
             </p>
           </div>
         ) : (
           <div className="flex flex-col">
             <p className="text-sm pt-2 italic ">
               You have already used your Zupass for this round. You can
+              contribute up to {maxContributionNonAllowlisted} ETH (
+              {parseInt(
+                (Number(maxContributionNonAllowlisted) * 1e5).toString()
+              )}{" "}
+              voice credits).
             </p>
             <p className="text-sm italic mb-5 mr-2">
-              contribute up to {maxContributionNonAllowlisted} ETH.
+              For each vote, the number of voice credits decreases by the square
+              of the number of votes cast.
             </p>
           </div>
         )}

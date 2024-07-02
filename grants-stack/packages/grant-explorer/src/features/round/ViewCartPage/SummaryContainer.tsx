@@ -281,7 +281,7 @@ export function SummaryContainer(props: {
             !alreadyDonated && (
               <p className="rounded-md bg-red-50 py-2 text-pink-500 flex justify-center my-4 text-sm">
                 <InformationCircleIcon className="w-4 h-4 mr-1 mt-0.5" />
-                <span>You must enter donations for all the projects</span>
+                <span>You must enter votes for all the projects</span>
               </p>
             )}
         </div>
