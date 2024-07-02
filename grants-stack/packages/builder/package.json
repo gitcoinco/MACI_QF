@@ -13,7 +13,6 @@
     "@emotion/react": "^11",
     "@emotion/styled": "^11",
     "@ethersproject/address": "^5.7.0",
-    "@gitcoinco/passport-sdk-types": "^0.2.0",
     "@headlessui/react": "^1.6.5",
     "@heroicons/react": "^2.0.11",
     "@lagunovsky/redux-react-router": "^2.2.0",
