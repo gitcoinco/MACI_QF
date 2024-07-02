@@ -3,11 +3,9 @@ import { Network, Web3Provider } from "@ethersproject/providers";
 import { useEffect, useState } from "react";
 import { useParams as useRouterParams } from "react-router";
 import { useOutletContext } from "react-router-dom";
-import z from "zod";
 import { ChainId } from "./chain-ids";
 import { Round } from "data-layer";
 import { getAlloVersion, getConfig } from "./config";
-import { c } from "vitest/dist/reporters-5f784f42";
 
 export * from "./icons";
 export * from "./markdown";
@@ -19,100 +17,6 @@ export { ChainId };
 export function useParams<T extends Record<string, string> = never>() {
   return useRouterParams<T>() as T;
 }
-
-export enum PassportState {
-  NOT_CONNECTED,
-  INVALID_PASSPORT,
-  SCORE_AVAILABLE,
-  LOADING,
-  ERROR,
-  INVALID_RESPONSE,
-}
-
-const PassportEvidenceSchema = z.object({
-  type: z.string().nullish(),
-  rawScore: z.coerce.number(),
-  threshold: z.union([z.string().nullish(), z.coerce.number()]),
-});
-
-export type PassportResponse = z.infer<typeof PassportResponseSchema>;
-
-export const PassportResponseSchema = z.object({
-  address: z.string().nullish(),
-  score: z.string().nullish(),
-  status: z.string().nullish(),
-  evidence: PassportEvidenceSchema.nullish(),
-  error: z.string().nullish(),
-  detail: z.string().nullish(),
-});
-
-/**
- * Endpoint used to fetch the passport score for a given address
- *
- * @param address
- * @param communityId
- * @param apiKey
- * @returns
- */
-export const fetchPassport = (
-  address: string,
-  communityId: string,
-  apiKey: string
-): Promise<Response> => {
-  const url = `${process.env.REACT_APP_PASSPORT_API_ENDPOINT}/registry/score/${communityId}/${address}`;
-  return fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-  });
-};
-
-/**
- * Endpoint used to submit user's passport score for given communityId
- *
- * @param address string
- * @param communityId string
- * @param apiKey string
- * @returns
- */
-export const submitPassport = (
-  address: string,
-  communityId: string,
-  apiKey: string
-): Promise<Response> => {
-  const url = `${process.env.REACT_APP_PASSPORT_API_ENDPOINT}/registry/submit-passport`;
-
-  return fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-API-Key": `${apiKey}`,
-    },
-    body: JSON.stringify({
-      address: address,
-      community: communityId,
-      signature: "",
-      nonce: "",
-    }),
-  });
-};
-
-export const submitPassportLite = (
-  address: string,
-  apiKey: string
-): Promise<Response> => {
-  const url = `${process.env.REACT_APP_PASSPORT_API_ENDPOINT}/passport/analysis/${address}`;
-
-  return fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "X-API-Key": `${apiKey}`,
-    },
-  });
-};
 
 export function classNames(...classes: (false | null | undefined | string)[]) {
   return classes.filter(Boolean).join(" ");
@@ -294,7 +198,8 @@ export const ROUND_PAYOUT_MERKLE = "allov1.QF";
 export const ROUND_PAYOUT_DIRECT = "allov1.Direct";
 export const ROUND_PAYOUT_DIRECT_OLD = "DIRECT";
 export const ROUND_PAYOUT_MACIQF = "allov2.MACIQF";
-export const ROUND_PAYOUT_DIRECT_GRANTS_LITE = "allov2.DirectGrantsLiteStrategy";
+export const ROUND_PAYOUT_DIRECT_GRANTS_LITE =
+  "allov2.DirectGrantsLiteStrategy";
 export type RoundPayoutType =
   | typeof ROUND_PAYOUT_DIRECT_OLD
   | typeof ROUND_PAYOUT_MERKLE_OLD
@@ -413,56 +318,6 @@ export interface Web3Instance {
 }
 
 export { graphQlEndpoints, graphql_fetch } from "./graphql_fetch";
-
-export function roundToPassportIdAndKeyMap(round: Round): {
-  communityId: string;
-  apiKey: string;
-} {
-  const chainId = round?.chainId;
-  switch (chainId) {
-    case ChainId.AVALANCHE:
-      return {
-        communityId: getConfig().passport.passportAvalancheCommunityId,
-        apiKey: getConfig().passport.passportAvalancheAPIKey,
-      };
-    default:
-      return {
-        communityId: getConfig().passport.passportCommunityId,
-        apiKey: getConfig().passport.passportAPIKey,
-      };
-  }
-}
-
-export function roundToPassportURLMap(round: Round) {
-  const chainId = round.chainId;
-  switch (chainId) {
-    case ChainId.AVALANCHE:
-      return "https://passport.gitcoin.co/#/dashboard/avalanche";
-    default:
-      return "https://passport.gitcoin.co";
-  }
-}
-
-const passportLiteRounds = [
-  //GG20 rounds
-  { roundId: "23", chainId: 42161 }, // Hackathon Alumni
-  { roundId: "24", chainId: 42161 }, // ENS
-  { roundId: "25", chainId: 42161 }, // dApps & Apps
-  { roundId: "26", chainId: 42161 }, // WEB3 Infrastructure
-  { roundId: "27", chainId: 42161 }, // Developer Tooling
-  { roundId: "28", chainId: 42161 }, // Hypercerts Ecosystem
-  { roundId: "29", chainId: 42161 }, // Climate Solutions
-  { roundId: "31", chainId: 42161 }, // Open Civics
-  { roundId: "9", chainId: 10 }, // Token Engineering Commons (TEC)
-];
-
-export function isRoundUsingPassportLite(round: Round) {
-  const roundId = round.id;
-  const chainId = round.chainId;
-  return passportLiteRounds.some(
-    (r) => r.roundId === roundId && r.chainId === chainId
-  );
-}
 
 export * from "./allo/transaction-builder";
 export type { VotingToken } from "./types";
