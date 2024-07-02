@@ -66,6 +66,9 @@ importers:
       '@ethersproject/address':
         specifier: ^5.7.0
         version: 5.7.0
+      '@gitcoinco/passport-sdk-types':
+        specifier: ^0.2.0
+        version: 0.2.0
       '@headlessui/react':
         specifier: ^1.6.5
         version: 1.7.19(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -614,7 +617,7 @@ importers:
         version: 2.8.2(@emotion/react@11.11.4(@types/react@18.3.3)(react@18.3.1))(@emotion/styled@11.11.5(@emotion/react@11.11.4(@types/react@18.3.3)(react@18.3.1))(@types/react@18.3.3)(react@18.3.1))(@types/react@18.3.3)(framer-motion@10.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@craco/craco':
         specifier: ^7.1.0
-        version: 7.1.0(@types/node@17.0.45)(postcss@8.4.38)(react-scripts@5.0.1(@babel/plugin-syntax-flow@7.24.7(@babel/core@7.24.7))(@babel/plugin-transform-react-jsx@7.24.7(@babel/core@7.24.7))(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(typescript@5.5.2)
+        version: 7.1.0(@types/node@17.0.45)(postcss@8.4.38)(react-scripts@5.0.1(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(typescript@5.5.2)
       '@datadog/browser-logs':
         specifier: ^4.19.0
         version: 4.50.1(@datadog/browser-rum@4.50.1)
@@ -740,7 +743,7 @@ importers:
         version: link:../common
       craco-esbuild:
         specifier: ^0.5.2
-        version: 0.5.2(@craco/craco@7.1.0(@types/node@17.0.45)(postcss@8.4.38)(react-scripts@5.0.1(@babel/plugin-syntax-flow@7.24.7(@babel/core@7.24.7))(@babel/plugin-transform-react-jsx@7.24.7(@babel/core@7.24.7))(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(typescript@5.5.2))(esbuild@0.18.20)(react-scripts@5.0.1(@babel/plugin-syntax-flow@7.24.7(@babel/core@7.24.7))(@babel/plugin-transform-react-jsx@7.24.7(@babel/core@7.24.7))(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(webpack@5.92.1(esbuild@0.18.20))
+        version: 0.5.2(@craco/craco@7.1.0(@types/node@17.0.45)(postcss@8.4.38)(react-scripts@5.0.1(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(typescript@5.5.2))(esbuild@0.18.20)(react-scripts@5.0.1(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(webpack@5.92.1(esbuild@0.18.20))
       crypto-browserify:
         specifier: ^3.12.0
         version: 3.12.0
@@ -999,7 +1002,7 @@ importers:
         version: 7.24.7
       '@craco/craco':
         specifier: ^7.1.0
-        version: 7.1.0(@types/node@17.0.45)(postcss@8.4.38)(react-scripts@5.0.1(@babel/plugin-syntax-flow@7.24.7(@babel/core@7.24.7))(@babel/plugin-transform-react-jsx@7.24.7(@babel/core@7.24.7))(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(typescript@5.5.2)
+        version: 7.1.0(@types/node@17.0.45)(postcss@8.4.38)(react-scripts@5.0.1(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(typescript@5.5.2)
       '@datadog/browser-logs':
         specifier: ^4.17.1
         version: 4.50.1(@datadog/browser-rum@4.50.1)
@@ -1282,7 +1285,7 @@ importers:
         version: 10.4.19(postcss@8.4.38)
       craco-esbuild:
         specifier: ^0.5.2
-        version: 0.5.2(@craco/craco@7.1.0(@types/node@17.0.45)(postcss@8.4.38)(react-scripts@5.0.1(@babel/plugin-syntax-flow@7.24.7(@babel/core@7.24.7))(@babel/plugin-transform-react-jsx@7.24.7(@babel/core@7.24.7))(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(typescript@5.5.2))(esbuild@0.18.20)(react-scripts@5.0.1(@babel/plugin-syntax-flow@7.24.7(@babel/core@7.24.7))(@babel/plugin-transform-react-jsx@7.24.7(@babel/core@7.24.7))(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(webpack@5.92.1(esbuild@0.18.20))
+        version: 0.5.2(@craco/craco@7.1.0(@types/node@17.0.45)(postcss@8.4.38)(react-scripts@5.0.1(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(typescript@5.5.2))(esbuild@0.18.20)(react-scripts@5.0.1(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(webpack@5.92.1(esbuild@0.18.20))
       crypto:
         specifier: 1.0.0
         version: 1.0.0
@@ -17191,7 +17194,7 @@ snapshots:
     dependencies:
       chalk: 4.1.2
 
-  '@craco/craco@7.1.0(@types/node@17.0.45)(postcss@8.4.38)(react-scripts@5.0.1(@babel/plugin-syntax-flow@7.24.7(@babel/core@7.24.7))(@babel/plugin-transform-react-jsx@7.24.7(@babel/core@7.24.7))(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(typescript@5.5.2)':
+  '@craco/craco@7.1.0(@types/node@17.0.45)(postcss@8.4.38)(react-scripts@5.0.1(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(typescript@5.5.2)':
     dependencies:
       autoprefixer: 10.4.19(postcss@8.4.38)
       cosmiconfig: 7.1.0
@@ -24238,9 +24241,9 @@ snapshots:
     optionalDependencies:
       typescript: 5.5.2
 
-  craco-esbuild@0.5.2(@craco/craco@7.1.0(@types/node@17.0.45)(postcss@8.4.38)(react-scripts@5.0.1(@babel/plugin-syntax-flow@7.24.7(@babel/core@7.24.7))(@babel/plugin-transform-react-jsx@7.24.7(@babel/core@7.24.7))(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(typescript@5.5.2))(esbuild@0.18.20)(react-scripts@5.0.1(@babel/plugin-syntax-flow@7.24.7(@babel/core@7.24.7))(@babel/plugin-transform-react-jsx@7.24.7(@babel/core@7.24.7))(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(webpack@5.92.1(esbuild@0.18.20)):
+  craco-esbuild@0.5.2(@craco/craco@7.1.0(@types/node@17.0.45)(postcss@8.4.38)(react-scripts@5.0.1(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(typescript@5.5.2))(esbuild@0.18.20)(react-scripts@5.0.1(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(webpack@5.92.1(esbuild@0.18.20)):
     dependencies:
-      '@craco/craco': 7.1.0(@types/node@17.0.45)(postcss@8.4.38)(react-scripts@5.0.1(@babel/plugin-syntax-flow@7.24.7(@babel/core@7.24.7))(@babel/plugin-transform-react-jsx@7.24.7(@babel/core@7.24.7))(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(typescript@5.5.2)
+      '@craco/craco': 7.1.0(@types/node@17.0.45)(postcss@8.4.38)(react-scripts@5.0.1(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10))(typescript@5.5.2)
       esbuild-jest: 0.5.0(esbuild@0.18.20)
       esbuild-loader: 2.21.0(webpack@5.92.1(esbuild@0.18.20))
       react-scripts: 5.0.1(@babel/plugin-syntax-flow@7.24.7(@babel/core@7.24.7))(@babel/plugin-transform-react-jsx@7.24.7(@babel/core@7.24.7))(@rspack/core@0.5.7(@swc/helpers@0.5.3))(@types/babel__core@7.20.5)(@types/webpack@5.28.0(esbuild@0.18.20))(bufferutil@4.0.8)(esbuild@0.18.20)(eslint@8.57.0)(react@18.3.1)(ts-node@10.9.2(@types/node@17.0.45)(typescript@5.5.2))(type-fest@2.19.0)(typescript@5.5.2)(utf-8-validate@5.0.10)
