@@ -24,6 +24,8 @@ export function ProjectInCart(
     ) => void;
     walletAddress: string;
     alreadyContributed: boolean;
+    hasExceededVoteLimit: boolean;
+    setHasExceededVoteLimit: (value: boolean) => void;
   }
 ) {
   const {
@@ -36,8 +38,6 @@ export function ProjectInCart(
   } = props;
 
   const store = useCartStorage();
-
-  const [hasExceededVoteLimit, setHasExceededVoteLimit] = useState(false);
 
   const groupedProjects = groupProjectsInCart(projects);
   const roundProjects = groupedProjects[project.chainId][project.roundId];
@@ -81,10 +81,10 @@ export function ProjectInCart(
       .filter((_, i) => i !== currentIndex)
       .reduce((acc, project) => acc + Number(project.amount), 0);
 
-    setHasExceededVoteLimit(false);
+    props.setHasExceededVoteLimit(false);
 
     if (totalAmountOfOtherProjects + newAmount > totalAmount * 1e5) {
-      setHasExceededVoteLimit(true);
+      props.setHasExceededVoteLimit(true);
     }
 
     store.updateUserDonationAmount(
@@ -181,7 +181,7 @@ export function ProjectInCart(
                 aria-label={`Donation votes for project ${project.projectMetadata?.title}`}
                 value={votes}
                 onChange={handleVotesChange}
-                className={`rounded-xl w-20 text-center ${hasExceededVoteLimit ? "text-red-400" : ""}`}
+                className={`rounded-xl w-20 text-center ${props.hasExceededVoteLimit ? "text-red-400" : ""}`}
                 min={0}
                 type="number"
               />
@@ -194,19 +194,21 @@ export function ProjectInCart(
               </div>
             </div>
             <p
-              className={`${hasExceededVoteLimit ? "text-red-400" : "text-gray-400"}`}
+              className={`${props.hasExceededVoteLimit ? "text-red-400" : "text-gray-400"}`}
             >
-              {hasExceededVoteLimit ? "Exceeded limit" : "quadratic votes"}
+              {props.hasExceededVoteLimit
+                ? "Exceeded limit"
+                : "quadratic votes"}
             </p>
           </div>
           <div className="flex flex-col items-center">
             <p
-              className={`text-sm ${hasExceededVoteLimit ? "text-red-400" : "text-gray-400"}`}
+              className={`text-sm ${props.hasExceededVoteLimit ? "text-red-400" : "text-gray-400"}`}
             >
               {Number(votes) ** 2}
             </p>
             <p
-              className={`${hasExceededVoteLimit ? "text-red-400" : "text-gray-400"}`}
+              className={`${props.hasExceededVoteLimit ? "text-red-400" : "text-gray-400"}`}
             >
               voice credits
             </p>

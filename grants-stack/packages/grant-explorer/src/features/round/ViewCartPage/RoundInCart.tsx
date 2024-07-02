@@ -57,6 +57,7 @@ export function RoundInCart(
   const [pcdFetched, setPcdFetched] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [hasExceededVoteLimit, setHasExceededVoteLimit] = useState(false);
   const [donationInput, setDonationInput] = useState<string>(
     (
       roundCart.reduce(
@@ -141,6 +142,7 @@ export function RoundInCart(
             ? maxContributionNonAllowlisted
             : value;
     value = value === "" ? "0.0" : value;
+    setHasExceededVoteLimit(false);
 
     if (/^\d*\.?\d*$/.test(value)) {
       setDonationInput(value);
@@ -257,6 +259,8 @@ export function RoundInCart(
                     payoutTokenPrice={payoutTokenPrice}
                     alreadyContributed={status?.hasDonated ?? false}
                     walletAddress={address as `0x${string}`}
+                    hasExceededVoteLimit={hasExceededVoteLimit}
+                    setHasExceededVoteLimit={setHasExceededVoteLimit}
                   />
                 </div>
               );
