@@ -99,7 +99,7 @@ export default function ViewApplicationPage() {
   const [openProgressModal, setOpenProgressModal] = useState(false);
   const [openErrorModal, setOpenErrorModal] = useState(false);
   // TODO: remove this
-  const [verifiedProviders] = useState<{
+  const [verifiedProviders, setVerifiedProviders] = useState<{
     [key: string]: VerifiedCredentialState;
   }>({
     github: VerifiedCredentialState.PENDING,
