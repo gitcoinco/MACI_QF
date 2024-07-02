@@ -29,7 +29,7 @@ import {
 import { groupBy, uniq } from "lodash-es";
 import { getEnabledChains } from "./app/chainConfig";
 import { WalletClient } from "wagmi";
-import { getPublicClient } from "@wagmi/core";
+import { getPublicClient, getWalletClient } from "@wagmi/core";
 import { decodeAbiParameters, parseAbiParameters } from "viem";
 import { Keypair, PCommand, PubKey, PrivKey } from "maci-domainobjs";
 import { genRandomSalt } from "maci-crypto";
@@ -192,7 +192,7 @@ export const useCheckoutStore = create<CheckoutState>()(
       stateIndex: number,
       chainId: ChainId,
       roundId: string,
-      walletClient: WalletClient,
+      walletclient: WalletClient,
       dataLayer: DataLayer,
       walletAddress: string,
       pcd?: string
@@ -229,7 +229,11 @@ export const useCheckoutStore = create<CheckoutState>()(
         currentChainBeingCheckedOut: chainId,
       });
 
-      await switchToChain(chainId, walletClient, get);
+      await switchToChain(chainId, walletclient, get);
+
+      const walletClient = (await getWalletClient({
+        chainId,
+      })) as WalletClient;
 
       const token = getVotingTokenForChain(chainId);
 
@@ -427,7 +431,7 @@ export const useCheckoutStore = create<CheckoutState>()(
       chainId: ChainId,
       roundId: string,
       voiceCreditsBalance: bigint,
-      walletClient: WalletClient,
+      walletclient: WalletClient,
       previousMessages: PCommand[],
       stateIndex: bigint,
       dataLayer: DataLayer,
@@ -457,7 +461,11 @@ export const useCheckoutStore = create<CheckoutState>()(
         currentChainBeingCheckedOut: chainId,
       });
 
-      await switchToChain(chainId, walletClient, get);
+      await switchToChain(chainId, walletclient, get);
+
+      const walletClient = (await getWalletClient({
+        chainId,
+      })) as WalletClient;
 
       const token = getVotingTokenForChain(chainId);
 
