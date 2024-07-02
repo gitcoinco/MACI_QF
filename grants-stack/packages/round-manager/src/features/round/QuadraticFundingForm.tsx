@@ -206,7 +206,7 @@ export default function QuadraticFundingForm(props: QuadraticFundingFormProps) {
                   Ensure that project supporters are not bots or sybil with
                   ZuPass. Learn more about ZuPass{" "}
                   <a
-                    href="https://zupass.org/"
+                    href="https://docs.passport.gitcoin.co/overview/readme"
                     className="text-violet-300"
                     target="_blank"
                     rel="noopener noreferrer"

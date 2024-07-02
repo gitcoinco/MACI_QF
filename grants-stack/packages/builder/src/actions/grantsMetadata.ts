@@ -82,6 +82,7 @@ export const transformAndDispatchProject =
       logoImg: project.metadata.logoImg,
       createdAt: project.metadata.createdAt,
       updatedAt: project.metadata.createdAt,
+      credentials: project.metadata.credentials,
       protocol: project.metadata.protocol,
       pointer: project.metadataCid,
       userGithub: project.metadata.userGithub,

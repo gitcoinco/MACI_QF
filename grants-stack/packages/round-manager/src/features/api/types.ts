@@ -3,6 +3,7 @@
  */
 import { Signer } from "@ethersproject/abstract-signer";
 import { Web3Provider } from "@ethersproject/providers";
+import { VerifiableCredential } from "@gitcoinco/passport-sdk-types";
 import { RoundVisibilityType } from "common";
 import { BigNumber } from "ethers";
 import { Address } from "viem";
@@ -302,6 +303,9 @@ export type ProjectStatus =
   | "CANCELLED"
   | "IN_REVIEW";
 
+export type ProjectCredentials = {
+  [key: string]: VerifiableCredential;
+};
 interface ProjectOwner {
   address: string;
 }
@@ -326,6 +330,7 @@ export type ProjectMetadata = {
   projectTwitter?: string;
   userGithub?: string;
   projectGithub?: string;
+  credentials?: ProjectCredentials;
   owners: ProjectOwner[];
 };
 
@@ -460,6 +465,7 @@ export type Project = {
   projectGithub?: string;
   userGithub?: string;
   projectTwitter?: string;
+  credentials: ProjectCredentials;
 };
 
 export type TransactionBlock = {

@@ -67,7 +67,10 @@ export const publishGrant =
   (allo: Allo, id?: string) =>
   async (dispatch: Dispatch, getState: () => RootState) => {
     const state = getState();
-    const { metadata: formMetaData } = state.projectForm;
+
+    const { metadata: formMetaData, credentials: formCredentials } =
+      state.projectForm;
+
     const oldGrantMetadata = state.grantsMetadata[id || ""];
 
     if (formMetaData === undefined) {
@@ -99,6 +102,7 @@ export const publishGrant =
         console.log("ipfs: error uploading logo image", e);
       }
     }
+    application.credentials = formCredentials;
     application.createdAt = oldGrantMetadata
       ? oldGrantMetadata.metadata?.createdAt
       : Date.now();

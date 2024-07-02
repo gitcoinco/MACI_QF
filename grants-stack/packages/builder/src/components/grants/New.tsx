@@ -5,6 +5,7 @@ import Button, { ButtonVariants } from "../base/Button";
 import ProjectForm from "../base/ProjectForm";
 import Cross from "../icons/Cross";
 import ExitModal from "../base/ExitModal";
+import VerificationForm from "../base/VerificationForm";
 import { ProjectFormStatus } from "../../types";
 import Preview from "../base/Preview";
 import { formReset } from "../../actions/projectForm";
@@ -67,6 +68,12 @@ function NewProject() {
       case ProjectFormStatus.Metadata:
         return (
           <ProjectForm
+            setVerifying={(verifyUpdate) => setFormStatus(verifyUpdate)}
+          />
+        );
+      case ProjectFormStatus.Verification:
+        return (
+          <VerificationForm
             setVerifying={(verifyUpdate) => setFormStatus(verifyUpdate)}
           />
         );
