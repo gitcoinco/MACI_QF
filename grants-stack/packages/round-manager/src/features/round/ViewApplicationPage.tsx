@@ -427,12 +427,25 @@ export default function ViewApplicationPage() {
     ? getRoundStrategyType(application.payoutStrategy.strategyName)
     : undefined;
 
-  const showReviewButton = () =>
+  const showReviewButton = (): boolean => {
+    return moment().isBetween(
+      round?.applicationsStartTime,
+      round?.applicationsEndTime
+    ) &&
     strategyType === "DirectGrants" &&
     application?.status === "PENDING" &&
     application?.inReview === false;
+  }
 
   const showApproveReject = () => {
+    const canReviewApplication = moment().isBetween(
+      round?.applicationsStartTime,
+      round?.applicationsEndTime
+    );
+    if (!canReviewApplication) {
+      return false;
+    }
+
     if (strategyType !== "DirectGrants") {
       return true;
     }
@@ -615,7 +628,6 @@ export default function ViewApplicationPage() {
                             {application?.inReview ? "Reviewing" : "In Review"}
                           </Button>
                         )}
-
                         {/* APPROVE */}
                         {showApproveReject() && (
                           <Button

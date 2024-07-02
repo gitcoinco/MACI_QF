@@ -330,6 +330,7 @@ export default function ViewRoundPage() {
                         fetchRoundStatus={fetchRoundStatus}
                         chainId={`${chain.id}`}
                         roundId={id}
+                        round={round}
                       />
                     </Tab.Panel>
                     {!isDirectRound(round) && (
@@ -385,6 +386,7 @@ function GrantApplications(props: {
   fetchRoundStatus: ProgressStatus;
   chainId: string;
   roundId: string | undefined;
+  round: Round | undefined;
 }) {
   const pendingApplications = (props.applications || [])
     .filter((a) => a.status === ApplicationStatus.PENDING.toString())
@@ -515,6 +517,7 @@ function GrantApplications(props: {
                     <ApplicationsToReview />
                   ) : (
                     <ApplicationsToApproveReject
+                      round={props.round!}
                       isDirectRound={Boolean(props.isDirectRound)}
                     />
                   )}
@@ -522,6 +525,7 @@ function GrantApplications(props: {
                 {props.isDirectRound && (
                   <Tab.Panel>
                     <ApplicationsToApproveReject
+                      round={props.round!}
                       isDirectRound={Boolean(props.isDirectRound)}
                     />
                   </Tab.Panel>

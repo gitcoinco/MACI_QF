@@ -201,7 +201,7 @@ export function Cancel(props: { onClick: () => void }) {
   );
 }
 
-export function Select(props: { onClick: () => void }) {
+export function Select(props: { onClick: () => void , hidden?: boolean}) {
   return (
     <Button
       type="button"
@@ -209,6 +209,7 @@ export function Select(props: { onClick: () => void }) {
       className="text-xs bg-grey-150 border-none px-3.5 py-2"
       onClick={props.onClick}
       data-testid="select"
+      hidden={props.hidden}
     >
       Select
     </Button>
