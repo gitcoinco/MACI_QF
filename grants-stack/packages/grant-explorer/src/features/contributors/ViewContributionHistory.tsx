@@ -167,20 +167,16 @@ export function ViewContributionHistoryPage() {
     }
   }, [DecryptedContributions, signaturesReady, fetchDonationHistory]);
 
-  if (walletAddress === undefined) {
-    return null;
-  }
-
   return (
     <>
       <Navbar showWalletInteraction={true} />
       <ViewContributionHistoryFetcher
-        address={ensResolvedAddress ?? walletAddress}
+        address={ensResolvedAddress || walletAddress || ""}
         chainIds={chainIds}
         contributions={contributions}
         loadingMessage={loadingMessage}
-        hasDonations={hasDonations}
-        initialLoading={initialLoading}
+        hasDonations={isConnected ? hasDonations : false}
+        initialLoading={isConnected ? initialLoading : false}
       />
     </>
   );
