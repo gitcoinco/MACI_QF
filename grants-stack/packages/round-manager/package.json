@@ -128,6 +128,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^7.4.0",
+    "@gitcoinco/passport-sdk-types": "^0.1.2",
     "@rsbuild/core": "^0.4.1",
     "crypto" : "1.0.0",
     "@rsbuild/plugin-react": "^0.3.11",

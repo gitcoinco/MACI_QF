@@ -79,6 +79,7 @@ interface VotingIndexOption {
  * @param subgraph - The configuration for the subgraph API.
  * @param indexer - The configuration for the indexer API.
  * @param ipfs - The configuration for the IPFS gateway.
+ * @param passport - The configuration for the Passport verifier.
  * @param collections - The configuration for the collections source.
  *
  * @returns The DataLayer instance.
@@ -632,6 +633,7 @@ export class DataLayer {
             projectTwitter: application.project.metadata.projectTwitter,
             userGithub: application.project.metadata.userGithub,
             projectGithub: application.project.metadata.projectGithub,
+            credentials: application.project.metadata.credentials,
             owners: application.project.metadata.owners,
             createdAt: application.project.metadata.createdAt,
             lastUpdated: application.project.metadata.lastUpdated,

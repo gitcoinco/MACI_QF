@@ -1,4 +1,5 @@
 import { ChakraProvider } from "@chakra-ui/react";
+import { VerifiableCredential } from "@gitcoinco/passport-sdk-types";
 import { ReduxRouter } from "@lagunovsky/redux-react-router";
 import { render } from "@testing-library/react";
 import {
@@ -57,6 +58,35 @@ export const buildRound = (round: any): Round => ({
   ...round,
 });
 
+export const buildVerifiableCredential = (
+  type: string,
+  handle: string
+): VerifiableCredential => ({
+  "@context": ["https://www.w3.org/2018/credentials/v1"],
+  type: ["VerifiableCredential"],
+  credentialSubject: {
+    id: "did:pkh:eip155:1:subject",
+    provider: `ClearText${type}#${handle}`,
+    hash: "v0.0.0:hash",
+    "@context": [
+      {
+        hash: "https://schema.org/Text",
+        provider: "https://schema.org/Text",
+      },
+    ],
+  },
+  issuer: "did:key:key-1",
+  issuanceDate: "2022-09-16T12:10:59.019Z",
+  proof: {
+    type: "Ed25519Signature2018",
+    proofPurpose: "assertionMethod",
+    verificationMethod: "did:key:key-1#key-1",
+    created: "2022-09-16T12:10:59.020Z",
+    jws: "test-jws",
+  },
+  expirationDate: "2022-12-15T12:10:59.019Z",
+});
+
 export const buildProjectMetadata = (metadata: any): Metadata => ({
   protocol: 1,
   pointer: "0x7878",
@@ -69,6 +99,10 @@ export const buildProjectMetadata = (metadata: any): Metadata => ({
   userGithub: "user-github-1",
   projectGithub: "project-github-1",
   projectTwitter: "project-twitter-1",
+  credentials: {
+    github: buildVerifiableCredential("Github", "my-github"),
+    twitter: buildVerifiableCredential("Twitter", "my-twitter"),
+  },
   createdAt: 123,
   updatedAt: 123,
   chainId: 5,

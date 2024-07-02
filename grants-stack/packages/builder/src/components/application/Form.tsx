@@ -21,6 +21,7 @@ import { Link } from "react-router-dom";
 import { useNetwork } from "wagmi";
 import { ValidationError } from "yup";
 import { resetApplicationError } from "../../actions/roundApplication";
+import useValidateCredential from "../../hooks/useValidateCredential";
 import { RootState } from "../../reducers";
 import { editPath } from "../../routes";
 import {
@@ -148,6 +149,16 @@ export default function Form({
         !selectedProjectMetadata!.linkedChains.includes(Number(props.chainID)));
     setCreateLinkedProject(createLinkedProject);
   }
+
+  const twitterCredentialValidation = useValidateCredential(
+    selectedProjectMetadata?.credentials?.twitter,
+    selectedProjectMetadata?.projectTwitter
+  );
+
+  const githubCredentialValidation = useValidateCredential(
+    selectedProjectMetadata?.credentials?.github,
+    selectedProjectMetadata?.projectGithub
+  );
 
   const chainInfo = chains.find((i) => i.id === props.chainID);
   const schema = roundApplication.applicationSchema;
@@ -320,13 +331,34 @@ export default function Form({
   }
 
   if (
+    roundApplication.applicationSchema.requirements.twitter.verification &&
+    !twitterCredentialValidation.isLoading &&
+    !twitterCredentialValidation.isValid
+  ) {
+    projectRequirementsResult.push(
+      "Verification of project Twitter is required."
+    );
+  }
+
+  if (
     roundApplication.applicationSchema.requirements.github.required &&
     !selectedProjectMetadata?.projectGithub
   ) {
     projectRequirementsResult.push("Project Github is required.");
   }
 
+  if (
+    roundApplication.applicationSchema.requirements.github.verification &&
+    !githubCredentialValidation.isLoading &&
+    !githubCredentialValidation.isValid
+  ) {
+    projectRequirementsResult.push(
+      "Verification of project Github is required."
+    );
+  }
+
   const haveProjectRequirementsBeenMet = projectRequirementsResult.length === 0;
+
   const isDirectRound =
     round.payoutStrategy !== null &&
     round.payoutStrategy === RoundCategory.Direct;

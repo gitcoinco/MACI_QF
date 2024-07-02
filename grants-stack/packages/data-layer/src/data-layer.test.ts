@@ -21,6 +21,7 @@ const mockProjects: v2Project[] = [
       website: "https://test.com",
       bannerImg: "",
       createdAt: 1706114867213,
+      credentials: {},
       description:
         "Sint laborum minus debitis nulla nesciunt perferendis officia delectus. Explicabo saepe similique excepturi dolores architecto. Nesciunt perspiciatis praesentium porro facere aliquam voluptate quasi iusto.",
       logoImgData: new Blob(),

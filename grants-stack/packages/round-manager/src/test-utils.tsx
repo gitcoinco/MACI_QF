@@ -30,6 +30,7 @@ import {
   ApprovedProject,
   GrantApplication,
   Program,
+  ProjectCredentials,
   ProjectMetadata,
   ProjectStatus,
   Round,
@@ -353,6 +354,7 @@ export const makeGrantApplicationData = (
       logoImg: faker.random.alpha({ count: 59, casing: "lower" }),
       projectGithub: projectGithubOverride ?? undefined,
       projectTwitter: projectTwitterOverride ?? undefined,
+      credentials: makeProjectCredentials(credentialInputData, ownerAddress),
     },
     answers: applicationAnswers ?? [],
     projectsMetaPtr: {
@@ -369,6 +371,38 @@ export const makeGrantApplicationData = (
     anchorAddress: faker.finance.ethereumAddress(),
     createdAt: faker.datatype.number().toString(),
   };
+};
+
+export const makeProjectCredentials = (
+  credentialTypesToGenerate: ApplicationCredentialData[],
+  credentialSubjectAddress: string = faker.finance.ethereumAddress()
+): ProjectCredentials => {
+  return credentialTypesToGenerate.reduce(
+    (aggregator: ProjectCredentials, it: ApplicationCredentialData) => {
+      aggregator[it.credentialsProviderKey] = {
+        "@context": ["https://www.w3.org/2018/credentials/v1"],
+        type: ["VerifiableCredential"],
+        credentialSubject: {
+          id: `did:pkh:eip155:1:${credentialSubjectAddress}`,
+          "@context": [],
+          provider: it.credentialSubjectProviderString,
+        },
+        issuer: `${IAM_SERVER}`,
+        issuanceDate: "2022-08-10T16:09:56.284Z",
+        proof: {
+          type: "Ed25519Signature2018",
+          proofPurpose: "assertionMethod",
+          verificationMethod:
+            "did:key:z6Mks2YNwbkzDgKLuQs1TS3whP9RdXrGXtVqt5JcCLoQu86W#z6Mks2YNwbkzDgKLuQs1TS3whP9RdXrGXtVqt5JcCLoQu86W",
+          created: "2022-08-10T16:09:56.285Z",
+          jws: "eyJhbGciOiJFZERTQSIsImNyaXQiOlsiYjY0Il0sImI2NCI6ZmFsc2V9..DpYFl50koEsj_XGa2rK9AlYny8Uvn3UZ-sCC6a0AW06TCSNmS19_5Y5TExqQtJZWAYlWFAWsuAwNiwhVFY-oDw",
+        },
+        expirationDate: "2022-11-08T17:09:56.284Z",
+      };
+      return aggregator;
+    },
+    {}
+  );
 };
 
 export const renderWrapped = (ui: JSX.Element) => {
