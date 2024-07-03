@@ -63,7 +63,7 @@ export function ProjectInCart(
 
   const hanldeSetVotes = (amount: string) => {
     isExceeded(Number(amount));
-    return Number(amount === "" ? "0" : Math.sqrt(Number(amount))).toString();
+    return Number(!amount ? "0" : Math.sqrt(Number(amount))).toString();
   };
 
   const [votes, setVotes] = useState<string>(hanldeSetVotes(project.amount));
