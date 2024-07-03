@@ -231,7 +231,7 @@ export function RoundInCart(
                 value={donationInput}
                 typeof="number"
                 onChange={handleInputChange}
-                className="px-5 py-2 w-20 bg-white border shadow-sm border-slate-300 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-sky-500 block rounded-lg sm:text-sm focus:ring-1"
+                className="px-5 py-2 w-[7rem] bg-white border shadow-sm border-slate-300 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-sky-500 block rounded-lg sm:text-sm focus:ring-1"
                 placeholder="Enter amount in ETH"
               />
             </div>
@@ -406,7 +406,7 @@ const RoundAllowlist = ({
               >
                 <a
                   onClick={openModal}
-                  className="text-md pt-2 font-bold mb-5 mr-2 cursor-pointer"
+                  className="text-md pt-2 font-bold mb-5 mr-2 cursor-pointer underline"
                   style={{ color: "black", fontStyle: "normal" }}
                 >
                   join the allowlist.

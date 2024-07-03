@@ -50,6 +50,7 @@ import {
   mapApplicationToRound,
   useApplication,
 } from "../projects/hooks/useApplication";
+import { useAlreadyContributed } from "../projects/hooks/useRoundMaciMessages";
 
 const CalendarIcon = (props: React.SVGProps<SVGSVGElement>) => {
   return (
@@ -87,7 +88,7 @@ const useProjectDetailsParams = useParams<{
 }>;
 
 export default function ViewProjectDetails() {
-  const [selectedTab, setSelectedTab] = useState(0);
+  const [selectedTab, setSelectedTab] = useState(0)
 
   datadogLogs.logger.info(
     "====> Route: /round/:chainId/:roundId/:applicationId"
@@ -100,6 +101,15 @@ export default function ViewProjectDetails() {
   } = useProjectDetailsParams();
   const dataLayer = useDataLayer();
   const { address: walletAddress } = useAccount();
+
+
+  const { data: status } = useAlreadyContributed(
+    dataLayer,
+    walletAddress ?? "",
+    Number(chainId),
+    roundId
+  );
+
 
   let applicationId: string;
 
@@ -256,7 +266,7 @@ export default function ViewProjectDetails() {
           </div>
         </div>
         <div className="md:flex gap-4 flex-row-reverse">
-          {round && address && !isDirectRound(round) && (
+          {round && address && !isDirectRound(round) && !status?.hasDonated && (
             <Sidebar
               isAlreadyInCart={isAlreadyInCart}
               isBeforeRoundEndDate={!disableAddToCartButton}
@@ -531,7 +541,8 @@ function Sidebar(props: {
   return (
     <div className="min-w-[320px] h-fit mb-6 rounded-3xl bg-gray-50">
       <ProjectStats />
-      {props.isBeforeRoundEndDate && (
+      {props.isBeforeRoundEndDate &&
+       (
         <CartButtonToggle
           isAlreadyInCart={props.isAlreadyInCart}
           addToCart={props.addToCart}
