@@ -25,6 +25,7 @@ import { uuidToBigInt } from "@pcd/util";
 import { isRoundZuProofReused } from "../../api/voting";
 import { useAlreadyContributed } from "../../projects/hooks/useRoundMaciMessages";
 import { useDataLayer } from "data-layer";
+import { useCartStorage } from "../../../store";
 
 export function RoundInCart(
   props: React.ComponentProps<"div"> & {
@@ -53,27 +54,21 @@ export function RoundInCart(
   const { address } = useAccount();
   const dataLayer = useDataLayer();
 
+  const store = useCartStorage();
+
   const [pcd, setPcd] = useState<string | undefined>(undefined);
   const [pcdFetched, setPcdFetched] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hasExceededVoteLimit, setHasExceededVoteLimit] = useState(false);
-  const [donationInput, setDonationInput] = useState<string>(
-    (
-      roundCart.reduce(
-        (acc, project) =>
-          acc + (isNaN(Number(project.amount)) ? 0 : Number(project.amount)),
-        0
-      ) / 1e5
-    ).toString()
-  );
+  const [donationInput, setDonationInput] = useState<string>("0");
   const [donatedAmount, setDonatedAmount] = useState<bigint>(
     BigInt(parseInt(donationInput) * 1e18)
   );
 
-  const [voiceCreditBalance, setVoiceCreditBalance] = useState<number>(
-    Number(donatedAmount) / 1e13
-  );
+  const [voiceCreditBalance, setVoiceCreditBalance] = useState<number>(0);
+
+  const [balanceVoiceCredits, setBalanceVoiceCredits] = useState<number>(0);
 
   const [usedVoiceCredits, setUsedVoiceCredits] = useState<number>(
     parseInt(
@@ -129,10 +124,12 @@ export function RoundInCart(
       ).toString()
     : "0.1";
 
-  const balanceVoiceCredits = voiceCreditBalance - usedVoiceCredits;
-
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    let value = event.target.value;
+    handleValueChange(event.target.value);
+  };
+
+  const handleValueChange = (_value: string) => {
+    let value = _value;
     value =
       pcdFetched === true && Number(value) >= Number(maxContributionAllowlisted)
         ? maxContributionAllowlisted
@@ -148,9 +145,14 @@ export function RoundInCart(
       setDonationInput(value);
       const amountToDonate = parseUnits(value, votingToken.decimal);
       setDonatedAmount(amountToDonate);
-      setVoiceCreditBalance(
-        parseInt((Number(amountToDonate) / 1e13).toString())
+
+      const _voiceCreditBalance = parseInt(
+        (Number(amountToDonate) / 1e13).toString()
       );
+
+      setVoiceCreditBalance(_voiceCreditBalance);
+      store.updateRoundContributionAmount(chainId, roundId, value);
+      setBalanceVoiceCredits(_voiceCreditBalance - usedVoiceCredits);
     }
   };
 
@@ -193,6 +195,21 @@ export function RoundInCart(
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [donatedAmount, donationInput, roundCart]);
+
+  useEffect(() => {
+    const storedRoundContributionAmount = store.getContributionAmount(
+      chainId,
+      roundId
+    );
+
+    if (storedRoundContributionAmount) {
+      handleValueChange(storedRoundContributionAmount);
+    }
+  }, [chainId, roundId]);
+
+  useEffect(() => {
+    setBalanceVoiceCredits(voiceCreditBalance - usedVoiceCredits);
+  }, [voiceCreditBalance, usedVoiceCredits]);
 
   return (
     <div className="my-4 flex w-full">

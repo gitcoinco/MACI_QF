@@ -28,9 +28,16 @@ interface CartState {
     amount: string,
     walletAddress: string
   ) => void;
+  updateRoundContributionAmount: (
+    chainId: ChainId,
+    roundId: string,
+    amount: string
+  ) => void;
   setCart: (projects: CartProject[]) => void;
   setUserCart: (projects: CartProject[], walletAddress: string) => void;
   chainToVotingToken: Record<ChainId, VotingToken>;
+  contributionAmount: Record<string, string>;
+  getContributionAmount: (chainId: ChainId, roundId: string) => string;
   getVotingTokenForChain: (chainId: ChainId) => VotingToken;
   setVotingTokenForChain: (chainId: ChainId, votingToken: VotingToken) => void;
 }
@@ -107,6 +114,7 @@ export const useCartStorage = create<CartState>()(
       userProjects: {
         // walletAddress: [projects]
       },
+      contributionAmount: {},
 
       setCart: (projects: CartProject[]) => {
         set({
@@ -185,6 +193,17 @@ export const useCartStorage = create<CartState>()(
         });
       },
 
+      updateRoundContributionAmount: (chainId, roundId, amount) => {
+        set({
+          contributionAmount: {
+            ...get().contributionAmount,
+            [`${chainId}-${roundId}`]: amount,
+          },
+        });
+      },
+      getContributionAmount(chainId, roundId) {
+        return get().contributionAmount[`${chainId}-${roundId}`] ?? "0";
+      },
       updateDonationsForChain: (chainId: ChainId, amount: string) => {
         const newState = get().projects.map((project) => ({
           ...project,
