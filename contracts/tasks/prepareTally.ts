@@ -1,77 +1,51 @@
 import { task } from "hardhat/config";
 import dotenv from "dotenv";
-import path from "path";
-import { existsSync, mkdirSync } from "fs";
 import {
   JSONFile,
-  getIpfsHash,
   getTalyFilePath,
   mergeMaciSubtrees,
   genAndSubmitProofs,
   addTallyResultsBatch,
   Ipfs,
 } from "../test/utils/index";
-import { MACIQF, Allo } from "../typechain-types";
+import { MACIQF } from "../typechain-types";
 import { PrivKey, Keypair } from "maci-domainobjs";
+import { getCircuitsDir, getOutputDir } from "./helpers/utils";
+import ContractStates from "./helpers/contractStates";
 
 dotenv.config();
 
-let circuitDirectory = process.env.CIRCUIT_DIRECTORY || "./zkeys/zkeys";
-const proofOutputDirectory = process.env.PROOF_OUTPUT_DIR || "./proof_output";
+const circuitDirectory = getCircuitsDir();
 const tallyBatchSize = Number(process.env.TALLY_BATCH_SIZE || 8);
 const Debug = Boolean(process.env.DEBUG || false);
 const voteOptionTreeDepth = 3;
 const apiKey = process.env.IPFS_API_KEY as string;
 const secretApiKey = process.env.IPFS_SECRET_API_KEY as string;
 
+const SerializedPrivateKey = process.env.COORDINATOR_PRIVATE_KEY as string;
+const deserializedPrivKey = PrivKey.deserialize(SerializedPrivateKey);
+const CoordinatorKeypair = new Keypair(deserializedPrivKey);
+
 task(
   "prepareTally",
   "Merges MACI subtrees and generates/submits proofs until tally results are batched"
 ).setAction(async (_, hre) => {
   const { ethers, network } = hre;
-
-  if (!existsSync(circuitDirectory)) {
-    circuitDirectory = "../../zkeys/zkeys";
-  }
+  const [Coordinator] = await ethers.getSigners();
+  const roundId = Number(process.env.ROUND_ID as string);
+  const chainId = network.config.chainId!;
+  const contractStates = new ContractStates(chainId, roundId, Coordinator, hre);
+  const startBlock = Number(process.env.STARTING_BLOCK as string);
 
   try {
-    const [Coordinator] = await ethers.getSigners();
-
-    const SerializedPrivateKey = process.env.COORDINATOR_PRIVATE_KEY as string;
-    const deserializedPrivKey = PrivKey.deserialize(SerializedPrivateKey);
-    const CoordinatorKeypair = new Keypair(deserializedPrivKey);
-
-    const AlloContract = (await ethers.getContractAt(
-      "Allo",
-      "0x1133eA7Af70876e64665ecD07C0A0476d09465a1",
-      Coordinator
-    )) as Allo;
-
-    const roundId = Number(process.env.ROUND_ID as string);
-    const startBlock = Number(process.env.STARTING_BLOCK as string);
-    const chainId = network.config.chainId || "unknown";
-
-    const StrategyAddress = (await AlloContract.getPool(roundId)).strategy;
-
-    const MACIQFStrategy = (await ethers.getContractAt(
-      "MACIQF",
-      StrategyAddress,
-      Coordinator
-    )) as MACIQF;
+    const MACIQFStrategy = await contractStates.getMACIQFStrategy();
 
     const pollContracts = await MACIQFStrategy.pollContracts();
     const maciContractAddress = await MACIQFStrategy.maci();
-    const tallyContractAddress = pollContracts[2];
-    const mpContractAddress = pollContracts[1];
+    const tallyContractAddress = pollContracts.tally;
+    const mpContractAddress = pollContracts.messageProcessor;
 
-    const outputDir = path.join(
-      proofOutputDirectory,
-      `roundId_${roundId}_chainId_${chainId}`
-    );
-
-    if (!existsSync(outputDir)) {
-      mkdirSync(outputDir, { recursive: true });
-    }
+    const outputDir = getOutputDir(roundId, chainId);
 
     await mergeMaciSubtrees({
       maciAddress: maciContractAddress,
@@ -110,11 +84,9 @@ task(
       tally,
       tallyBatchSize
     );
-    console.log("Tally results added in batches");
+    console.log("Tally results added in batches of : ", tallyBatchSize);
   } catch (error) {
     console.error("Error in prepareTally:", error);
     process.exitCode = 1;
   }
 });
-
-export default {};

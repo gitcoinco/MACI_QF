@@ -1,8 +1,8 @@
 import { task } from "hardhat/config";
 import dotenv from "dotenv";
-import path from "path";
 import { distribute } from "../test/utils/index";
-import { MACIQF, Allo } from "../typechain-types";
+import { getOutputDir } from "./helpers/utils";
+import ContractStates from "./helpers/contractStates";
 
 dotenv.config();
 
@@ -11,32 +11,16 @@ const voteOptionTreeDepth = 3;
 
 task("distributeFunds", "Distributes the funds").setAction(async (_, hre) => {
   const { ethers, network } = hre;
+  const [Coordinator] = await ethers.getSigners();
+  const roundId = Number(process.env.ROUND_ID as string);
+  const chainId = network.config.chainId!;
+  const contractStates = new ContractStates(chainId, roundId, Coordinator, hre);
+  const outputDir = getOutputDir(roundId, chainId);
 
   try {
-    const [Coordinator] = await ethers.getSigners();
+    const AlloContract = await contractStates.getAlloContract();
 
-    const roundId = Number(process.env.ROUND_ID as string);
-    const chainId = network.config.chainId || "unknown";
-    const proofOutputDirectory =
-      process.env.PROOF_OUTPUT_DIR || "./proof_output";
-    const outputDir = path.join(
-      proofOutputDirectory,
-      `roundId_${roundId}_chainId_${chainId}`
-    );
-
-    const AlloContract = (await ethers.getContractAt(
-      "Allo",
-      "0x1133eA7Af70876e64665ecD07C0A0476d09465a1",
-      Coordinator
-    )) as Allo;
-
-    const StrategyAddress = (await AlloContract.getPool(roundId)).strategy;
-
-    const MACIQFStrategy = (await ethers.getContractAt(
-      "MACIQF",
-      StrategyAddress,
-      Coordinator
-    )) as MACIQF;
+    const MACIQFStrategy = await contractStates.getMACIQFStrategy();
 
     await distribute({
       outputDir,
@@ -54,5 +38,3 @@ task("distributeFunds", "Distributes the funds").setAction(async (_, hre) => {
     process.exitCode = 1;
   }
 });
-
-export default {};
