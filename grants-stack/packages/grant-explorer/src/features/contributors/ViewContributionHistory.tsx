@@ -28,9 +28,9 @@ const LOCAL_STORAGE_KEY = "lastConnectedWallet";
 
 export function ViewContributionHistoryPage() {
   const [signaturesReady, setSignaturesReady] = useState(false);
-  const [signaturesRequested, setSignaturesRequested] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [loadingMessage, setLoadingMessage] = useState<string>(
-    "Checking needed signatures..."
+    "Fetching your contributions..."
   );
   const [contributions, setContributions] = useState<Contribution[]>([]);
 
@@ -38,7 +38,6 @@ export function ViewContributionHistoryPage() {
   const { address: walletAddress, isConnected } = useAccount();
 
   const { data: ensResolvedAddress } = useEnsAddress({
-    /* If walletAddress is actually an address, don't resolve the ens address for it*/
     name: isAddress(walletAddress ?? "") ? undefined : walletAddress,
     chainId: 1,
   });
@@ -61,28 +60,24 @@ export function ViewContributionHistoryPage() {
     signaturesReady
   );
 
-  function getNeededPairs(
-    groupedRounds:
-      | {
-          chainId: number;
-          roundId: string;
-          address: string;
-        }[]
-      | undefined
-  ) {
-    if (!groupedRounds) return;
-    const pairs: {
-      chainId: number;
-      roundId: string;
-    }[] = [];
-    for (const { chainId, roundId } of groupedRounds ?? []) {
-      pairs.push({
+  const getNeededPairs = useCallback(
+    (
+      groupedRounds:
+        | {
+            chainId: number;
+            roundId: string;
+            address: string;
+          }[]
+        | undefined
+    ) => {
+      if (!groupedRounds) return null;
+      return groupedRounds.map(({ chainId, roundId }) => ({
         chainId,
         roundId,
-      });
-    }
-    return pairs.length ? pairs : null;
-  }
+      }));
+    },
+    []
+  );
 
   const hasDonations = useMemo(() => {
     if (maciContributions && maciContributions.groupedRounds) {
@@ -93,8 +88,6 @@ export function ViewContributionHistoryPage() {
   }, [maciContributions]);
 
   const getNeededSignatures = useCallback(async () => {
-    if (signaturesRequested) return;
-    setSignaturesRequested(true);
     const pairs = getNeededPairs(maciContributions?.groupedRounds);
 
     if (!pairs || pairs.length === 0) {
@@ -105,15 +98,14 @@ export function ViewContributionHistoryPage() {
 
     setLoadingMessage("Requesting signatures...");
     const walletClient = await getWalletClient();
-    if (pairs) {
-      await signAndStoreSignatures({
-        pairs,
-        walletClient: walletClient as WalletClient,
-        address: walletAddress as string,
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [maciContributions, walletAddress, signaturesRequested, hasDonations]);
+    await signAndStoreSignatures({
+      pairs,
+      walletClient: walletClient as WalletClient,
+      address: walletAddress as string,
+    });
+
+    setSignaturesReady(true);
+  }, [maciContributions, walletAddress, getNeededPairs]);
 
   const fetchDonationHistory = useCallback(async () => {
     const donations = await getDonationHistory(
@@ -124,14 +116,13 @@ export function ViewContributionHistoryPage() {
       DecryptedContributions?.decryptedMessagesByRound
     );
     setContributions(donations);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setInitialLoading(false);
   }, [
     dataLayer,
     applications,
     maciContributions,
     DecryptedContributions,
     walletAddress,
-    hasDonations,
   ]);
 
   useEffect(() => {
@@ -142,9 +133,9 @@ export function ViewContributionHistoryPage() {
       walletAddress.toLowerCase() !== lastWalletAddress?.toLowerCase()
     ) {
       localStorage.setItem(LOCAL_STORAGE_KEY, walletAddress.toLowerCase());
-      setSignaturesRequested(false);
       setSignaturesReady(false);
-      setLoadingMessage("Checking needed signatures...");
+      setInitialLoading(true);
+      setLoadingMessage("Fetching your contributions...");
     }
 
     if (maciContributions && walletAddress) {
@@ -161,42 +152,31 @@ export function ViewContributionHistoryPage() {
         getNeededSignatures();
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [maciContributions, walletAddress, getNeededSignatures, hasDonations]);
+  }, [isConnected, walletAddress, maciContributions, getNeededSignatures]);
 
   useEffect(() => {
     if (signaturesReady) {
       refetch();
     }
-  }, [signaturesReady, refetch, hasDonations]);
+  }, [signaturesReady, refetch]);
 
   useEffect(() => {
     if (DecryptedContributions && signaturesReady) {
       setLoadingMessage("Decrypting your donation history...");
       fetchDonationHistory();
     }
-  }, [
-    DecryptedContributions,
-    signaturesReady,
-    fetchDonationHistory,
-    hasDonations,
-  ]);
-
-  useEffect(() => {}, [contributions, loadingMessage]);
-
-  if (walletAddress === undefined) {
-    return null;
-  }
+  }, [DecryptedContributions, signaturesReady, fetchDonationHistory]);
 
   return (
     <>
       <Navbar showWalletInteraction={true} />
       <ViewContributionHistoryFetcher
-        address={ensResolvedAddress ?? walletAddress}
+        address={ensResolvedAddress || walletAddress || ""}
         chainIds={chainIds}
         contributions={contributions}
         loadingMessage={loadingMessage}
-        hasDonations={hasDonations}
+        hasDonations={isConnected ? hasDonations : false}
+        initialLoading={isConnected ? initialLoading : false}
       />
     </>
   );
@@ -208,6 +188,7 @@ function ViewContributionHistoryFetcher(props: {
   contributions: Contribution[];
   loadingMessage: string;
   hasDonations: boolean;
+  initialLoading: boolean;
 }) {
   const { data: ensName } = useEnsName({
     /* If props.address is an ENS name, don't pass in anything, as we already have the ens name*/
@@ -227,7 +208,7 @@ function ViewContributionHistoryFetcher(props: {
     },
     {
       name: "Donations",
-      path: `/contributors/${props.address}`,
+      path: `/contributor`,
     },
   ] as BreadcrumbItem[];
 
@@ -263,6 +244,7 @@ function ViewContributionHistoryFetcher(props: {
       address={props.address}
       breadCrumbs={breadCrumbs}
       ensName={ensName}
+      initialLoading={props.initialLoading}
     />
   );
 }
@@ -279,6 +261,7 @@ export function ViewContributionHistory(props: {
   addressLogo: string;
   ensName?: string | null;
   breadCrumbs: BreadcrumbItem[];
+  initialLoading: boolean;
 }) {
   const { data: price } = useTokenPrice("ETH");
 
@@ -398,7 +381,8 @@ export function ViewContributionHistory(props: {
         </div>
         <div className="text-2xl my-6">Donation History</div>
 
-        {props.contributions.data.length === 0 && props.hasDonations ? (
+        {props.initialLoading ||
+        (props.contributions.data.length === 0 && props.hasDonations) ? (
           <div className="flex flex-col items-center justify-center mt-[4%]">
             <Spinner />
             <p>{props.loadingMessage}</p>
@@ -464,7 +448,7 @@ export function ViewContributionHistoryWithoutDonations(props: {
             </div>
           </div>
           <CopyToClipboardButton
-            textToCopy={`${currentOrigin}/#/contributors/${props.address}`}
+            textToCopy={`${currentOrigin}/#/contributor`}
             styles="text-xs p-2"
             iconStyle="h-4 w-4 mr-1"
           />

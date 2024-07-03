@@ -77,7 +77,7 @@ export default function Navbar(props: NavbarProps) {
               <>
                 <div>
                   <Link
-                    to={`/contributors/${walletAddress}`}
+                    to={`/contributor`}
                     className="flex-shrink-0 flex items-center ph-no-capture"
                     data-testid={"contributions-link"}
                   >

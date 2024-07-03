@@ -107,7 +107,7 @@ root.render(
                       <Route path="/thankyou" element={<ThankYou />} />
 
                       <Route
-                        path="/contributors/:address"
+                        path="/contributor"
                         element={<ViewContributionHistoryPage />}
                       />
 

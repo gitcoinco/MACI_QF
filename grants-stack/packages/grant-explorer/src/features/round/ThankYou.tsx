@@ -31,7 +31,7 @@ export default function ThankYou() {
               <div className="flex gap-5 items-center justify-center">
                 <Button
                   type="button"
-                  onClick={() => navigate(`/contributors/${address}`)}
+                  onClick={() => navigate(`/contributor`)}
                   className="items-center justify-center text-xs text-black rounded-lg border border-solid bg-grey-100 border-grey-100 px-2 hover:shadow-md sm:px-10"
                   data-testid="donation-history-button"
                 >
