@@ -96,17 +96,7 @@ export function ProjectInCart(
     );
     setVotes(votes.toString());
   };
-  // function printPerfectSquaresWithMapping(n: number): void {
-  //   const results: string[] = [];
 
-  //   for (let i = 1; i <= n; i++) {
-  //     const square = i * i;
-  //     const mappedValue = (square / 1e5) * props.payoutTokenPrice;
-  //     results.push(`Square of ${i} is ${square}, mapped value: ${mappedValue}`);
-  //   }
-
-  //   console.log(results.join("\n"));
-  // }
   useEffect(() => {
     if (totalAmount === 0 || isNaN(Number(votes))) {
       store.updateUserDonationAmount(
@@ -121,7 +111,7 @@ export function ProjectInCart(
       return;
     }
     setVotes(votes);
-    // printPerfectSquaresWithMapping(10);
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.amount, votes, totalAmount]);
 
