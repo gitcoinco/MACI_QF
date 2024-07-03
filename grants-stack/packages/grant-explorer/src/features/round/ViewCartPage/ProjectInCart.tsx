@@ -42,13 +42,31 @@ export function ProjectInCart(
   const groupedProjects = groupProjectsInCart(projects);
   const roundProjects = groupedProjects[project.chainId][project.roundId];
 
-  const [votes, setVotes] = useState<string>(
-    totalAmount === 0
-      ? "0"
-      : Number(
-          project.amount === "" ? "0" : Math.sqrt(Number(project.amount))
-        ).toString()
-  );
+  const isExceeded = (votes: number) => {
+    const voiceCredits = votes ** 2;
+    const newAmount = voiceCredits;
+
+    // find the total amount of all projects in the round except the current project
+    const totalAmountOfOtherProjects = roundProjects.reduce(
+      (acc, project) => acc + Number(project.amount),
+      0
+    );
+
+    if (totalAmountOfOtherProjects + newAmount > totalAmount * 1e5) {
+      props.setHasExceededVoteLimit(true);
+      return true;
+    }
+
+    props.setHasExceededVoteLimit(false);
+    return false;
+  };
+
+  const hanldeSetVotes = (amount: string) => {
+    isExceeded(Number(amount));
+    return Number(!amount ? "0" : Math.sqrt(Number(amount))).toString();
+  };
+
+  const [votes, setVotes] = useState<string>(hanldeSetVotes(project.amount));
 
   const handleVotesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVotes = e.target.value === "" ? "0" : e.target.value;
@@ -96,34 +114,6 @@ export function ProjectInCart(
     );
     setVotes(votes.toString());
   };
-  // function printPerfectSquaresWithMapping(n: number): void {
-  //   const results: string[] = [];
-
-  //   for (let i = 1; i <= n; i++) {
-  //     const square = i * i;
-  //     const mappedValue = (square / 1e5) * props.payoutTokenPrice;
-  //     results.push(`Square of ${i} is ${square}, mapped value: ${mappedValue}`);
-  //   }
-
-  //   console.log(results.join("\n"));
-  // }
-  useEffect(() => {
-    if (totalAmount === 0 || isNaN(Number(votes))) {
-      store.updateUserDonationAmount(
-        project.chainId,
-        project.roundId,
-        project.grantApplicationId,
-        "0",
-        props.walletAddress
-      );
-      setVotes("0");
-
-      return;
-    }
-    setVotes(votes);
-    // printPerfectSquaresWithMapping(10);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project.amount, votes, totalAmount]);
 
   return (
     <div
