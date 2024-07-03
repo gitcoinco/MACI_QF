@@ -8,23 +8,22 @@ import {
   addTallyResultsBatch,
   Ipfs,
 } from "../test/utils/index";
-import { MACIQF } from "../typechain-types";
 import { PrivKey, Keypair } from "maci-domainobjs";
 import { getCircuitsDir, getOutputDir } from "./helpers/utils";
 import ContractStates from "./helpers/contractStates";
-
 dotenv.config();
 
-const circuitDirectory = getCircuitsDir();
+const SerializedPrivateKey = process.env.COORDINATOR_MACI_SECRET_KEY as string;
+const deserializedPrivKey = PrivKey.deserialize(SerializedPrivateKey);
+const CoordinatorKeypair = new Keypair(deserializedPrivKey);
+
 const tallyBatchSize = Number(process.env.TALLY_BATCH_SIZE || 8);
-const Debug = Boolean(process.env.DEBUG || false);
-const voteOptionTreeDepth = 3;
+const circuitDirectory = getCircuitsDir();
+
 const apiKey = process.env.IPFS_API_KEY as string;
 const secretApiKey = process.env.IPFS_SECRET_API_KEY as string;
 
-const SerializedPrivateKey = process.env.COORDINATOR_PRIVATE_KEY as string;
-const deserializedPrivKey = PrivKey.deserialize(SerializedPrivateKey);
-const CoordinatorKeypair = new Keypair(deserializedPrivKey);
+const Debug = Boolean(process.env.DEBUG || false);
 
 task(
   "prepareTally",
@@ -44,6 +43,9 @@ task(
     const maciContractAddress = await MACIQFStrategy.maci();
     const tallyContractAddress = pollContracts.tally;
     const mpContractAddress = pollContracts.messageProcessor;
+    const voteOptionTreeDepth = Number(
+      await contractStates.getVoteOptionTreeDepth()
+    );
 
     const outputDir = getOutputDir(roundId, chainId);
 
@@ -71,19 +73,24 @@ task(
     const tallyFile = getTalyFilePath(outputDir);
     const tally = JSONFile.read(tallyFile);
     const tallyHash = await Ipfs.pinFile(tallyFile, apiKey, secretApiKey);
-    console.log("Tally hash", tallyHash);
+
+    console.log("Tally hash url", `https://ipfs.io/ipfs/${tallyHash}`);
 
     let publishTallyHashReceipt = await MACIQFStrategy.connect(
       Coordinator
     ).publishTallyHash(tallyHash);
+
     await publishTallyHashReceipt.wait();
 
+    console.log("Tally hash published");
+
     await addTallyResultsBatch(
-      MACIQFStrategy.connect(Coordinator) as MACIQF,
+      MACIQFStrategy.connect(Coordinator),
       voteOptionTreeDepth,
       tally,
       tallyBatchSize
     );
+    
     console.log("Tally results added in batches of : ", tallyBatchSize);
   } catch (error) {
     console.error("Error in prepareTally:", error);

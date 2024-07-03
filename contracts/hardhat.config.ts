@@ -85,17 +85,17 @@ const config: HardhatUserConfig = {
   sourcify: {
     enabled: true,
   },
-  defaultNetwork: "scrollsepolia",
+  defaultNetwork: "scroll",
   networks: {
-    scrollsepolia: {
-      chainId: 534351,
-      url: `https://scroll-sepolia.drpc.org	`,
-      accounts: [process.env.SEPOLIA_KEY!],
+    scroll: {
+      chainId: 534352,
+      url: process.env.SCROLL_RPC_URL!,
+      accounts: [process.env.COORDINATOR_WALLET_PRIVATE_KEY!],
     },
     sepolia: {
       chainId: 11155111,
-      url: `https://eth-sepolia.g.alchemy.com/v2/w07A2I5WCXg65VfLx_lHcVBkh2LN7E7z`,
-      accounts: [process.env.SEPOLIA_KEY!],
+      url: process.env.SEPOLIA_RPC_URL!,
+      accounts: [process.env.COORDINATOR_WALLET_PRIVATE_KEY!],
     },
     localhost: {
       url: "http://127.0.0.1:8545",
@@ -103,11 +103,10 @@ const config: HardhatUserConfig = {
     },
   },
   etherscan: {
-    apiKey: "KNVT7KRT9B15Z5UTXZT8TG8HNMIJXWXRMY",
-    // {
-    //   scrollsepolia: "QXKSFDZATD75NKPN6VJ7K9EK1FR3ZYB7WN",
-    //   sepolia: "KNVT7KRT9B15Z5UTXZT8TG8HNMIJXWXRMY",
-    // },
+    apiKey: {
+      scroll: process.env.SCROLL_SCAN_API_KEY!,
+      sepolia: process.env.ETHERSCAN_API_KEY!,
+    },
     customChains: [
       {
         network: "scrollsepolia",

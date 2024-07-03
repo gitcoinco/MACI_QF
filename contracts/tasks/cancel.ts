@@ -18,7 +18,7 @@ task("cancel", "Cancels the round").setAction(async (_, hre) => {
 
   try {
     const MACIQFStrategy = await contractStates.getMACIQFStrategy();
-
+    
     const isFinalized = await MACIQFStrategy.isFinalized();
 
     if (isFinalized) {

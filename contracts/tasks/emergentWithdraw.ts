@@ -1,7 +1,6 @@
 import { task } from "hardhat/config";
 import dotenv from "dotenv";
 import ContractStates from "./helpers/contractStates";
-
 dotenv.config();
 
 task(
@@ -16,7 +15,7 @@ task(
 
   try {
     const MACIQFStrategy = await contractStates.getMACIQFStrategy();
-
+    
     const isFinalized = await MACIQFStrategy.isFinalized();
 
     if (!isFinalized) {

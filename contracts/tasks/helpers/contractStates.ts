@@ -43,6 +43,19 @@ class ContractStates {
     );
   }
 
+  public async getVoteOptionTreeDepth() {
+    const MACIQFStrategy = await this.getMACIQFStrategy();
+    const pollContracts = await MACIQFStrategy.pollContracts();
+    const PollContract = await this.hre.ethers.getContractAt(
+      "ClonablePoll",
+      pollContracts.poll,
+      this.signer
+    );
+    const voteOptionTreeDepth = (await PollContract.treeDepths())
+      .voteOptionTreeDepth;
+    return voteOptionTreeDepth;
+  }
+
   public async getMACIQFToken() {
     const alloContract = await this.getAlloContract();
     const token = (await alloContract.getPool(this.roundID)).token;

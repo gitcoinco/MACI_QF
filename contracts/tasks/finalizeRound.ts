@@ -9,24 +9,25 @@ import {
   genAndSubmitProofs,
   distribute,
 } from "../test/utils/index";
-import { MACIQF } from "../typechain-types";
 import { PrivKey, Keypair } from "maci-domainobjs";
 import { getCircuitsDir, getOutputDir, uploadToIpfs } from "./helpers/utils";
 import ContractStates from "./helpers/contractStates";
 
 dotenv.config();
 
-const tallyBatchSize = Number(process.env.TALLY_BATCH_SIZE || 8);
-const distributeBatchSize = Number(process.env.DISTRIBUTE_BATCH_SIZE || 1);
-const SerializedPrivateKey = process.env.COORDINATOR_PRIVATE_KEY as string;
+const SerializedPrivateKey = process.env.COORDINATOR_MACI_SECRET_KEY as string;
 const deserializedPrivKey = PrivKey.deserialize(SerializedPrivateKey);
 const CoordinatorKeypair = new Keypair(deserializedPrivKey);
+
+const tallyBatchSize = Number(process.env.TALLY_BATCH_SIZE || 8);
+const distributeBatchSize = Number(process.env.DISTRIBUTE_BATCH_SIZE || 1);
 const startBlock = Number(process.env.STARTING_BLOCK as string);
-const Debug = Boolean(process.env.DEBUG || false);
+const circuitDirectory = getCircuitsDir();
+
 const apiKey = process.env.IPFS_API_KEY as string;
 const secretApiKey = process.env.IPFS_SECRET_API_KEY as string;
-const voteOptionTreeDepth = 3;
-const circuitDirectory = getCircuitsDir();
+
+const Debug = Boolean(process.env.DEBUG || false);
 
 task("finalizeRound", "Finalizes the round and distributes funds").setAction(
   async (_, hre) => {
@@ -45,13 +46,14 @@ task("finalizeRound", "Finalizes the round and distributes funds").setAction(
 
     try {
       const AlloContract = await contractStates.getAlloContract();
-
       const MACIQFStrategy = await contractStates.getMACIQFStrategy();
-
       const pollContracts = await MACIQFStrategy.pollContracts();
       const maciContractAddress = await MACIQFStrategy.maci();
       const tallyContractAddress = pollContracts.tally;
       const mpContractAddress = pollContracts.messageProcessor;
+      const voteOptionTreeDepth = Number(
+        await contractStates.getVoteOptionTreeDepth()
+      );
 
       await mergeMaciSubtrees({
         maciAddress: maciContractAddress,
@@ -76,23 +78,26 @@ task("finalizeRound", "Finalizes the round and distributes funds").setAction(
 
       const tallyHash = await uploadToIpfs(outputDir, apiKey, secretApiKey);
 
-      console.log("Tally hash", tallyHash);
+      console.log("Tally hash url", `https://ipfs.io/ipfs/${tallyHash}`);
 
       let publishTallyHashReceipt = await MACIQFStrategy.connect(
         Coordinator
       ).publishTallyHash(tallyHash);
       await publishTallyHashReceipt.wait();
 
+      console.log("Tally hash published");
+
       const tallyFile = getTalyFilePath(outputDir);
       const tally = JSONFile.read(tallyFile);
 
       await addTallyResultsBatch(
-        MACIQFStrategy.connect(Coordinator) as MACIQF,
+        MACIQFStrategy.connect(Coordinator),
         voteOptionTreeDepth,
         tally,
         tallyBatchSize
       );
-      console.log("Tally results added in batches");
+
+      console.log("Tally results added in batches of : ", tallyBatchSize);
 
       let isFinalized = await finalize({
         MACIQFStrategy,
