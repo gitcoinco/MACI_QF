@@ -2,13 +2,19 @@
     "name": "allo_maci_qf",
     "scripts": {
         "compile": "hardhat compile",
-        "test:solidity": "hardhat test ./test/e2e.finalize.ts --network sepolia",
+        "prepareTally:sepolia": "hardhat prepareTally --network sepolia",
+        "prepareTally:scroll": "hardhat prepareTally --network scroll",
+        "finalize:sepolia": "hardhat finalize --network sepolia",
+        "finalize:scroll": " hardhat finalize --network scroll",
+        "distributeFunds:sepolia": "hardhat distributeFunds --network sepolia",
+        "distributeFunds:scroll": "hardhat distributeFunds --network scroll",
+        "e2e:sepolia": "hardhat finalizeRound --network sepolia",
+        "e2e:scroll": "hardhat finalizeRound --network scroll",
         "test:live": "hardhat test ./test/e2e.test_maciqf.ts --network localhost",
         "test:3.1.1": "hardhat test ./test/3_1_1.test.ts --network localhost",
         "test:3.3.5": "hardhat test ./test/3_3_5.test.ts --network localhost",
         "test:emergency": "hardhat test ./test/emergencyWithdraw.test.ts --network localhost",
         "test:cancel": "hardhat test ./test/cancelRound.test.ts --network localhost"
-
     },
     "devDependencies": {
         "@nomicfoundation/hardhat-chai-matchers": "^2.0.6",
@@ -42,6 +48,8 @@
         "typescript": "^5.4.5"
     },
     "dependencies": {
-        "@pcd/util": "^0.5.2"
+        "@pcd/util": "^0.5.2",
+        "@pinata/sdk": "^2.1.0",
+        "viem": "^2.17.0"
     }
 }

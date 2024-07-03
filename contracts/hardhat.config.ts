@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { task, subtask } from "hardhat/config";
-
+import "./tasks/index";
 import path from "path";
 import fs from "fs";
 
@@ -41,41 +41,15 @@ function copyDirectory(source: string, target: string): void {
 subtask("copy-maci-artifacts", async (_, { config }) => {
   const sourceDir = path.resolve(
     __dirname,
-    "node_modules/maci-contracts/build/artifacts/contracts/",
+    "node_modules/maci-contracts/build/artifacts/contracts/"
   );
   const destDir = path.resolve(
     config.paths.artifacts,
     "maci-contracts",
-    "contracts",
+    "contracts"
   );
 
   copyDirectory(sourceDir, destDir);
-});
-
-subtask("copy-maci-build-info", async (_, { config }) => {
-  const sourceDir2 = path.resolve(
-    __dirname,
-    "node_modules/maci-contracts/build/artifacts/@openzeppelin/",
-  );
-  const destDir2 = path.resolve(
-    config.paths.artifacts,
-    "maci-contracts",
-    "@openzeppelin",
-  );
-
-  copyDirectory(sourceDir2, destDir2);
-
-  const sourceDir3 = path.resolve(
-    __dirname,
-    "node_modules/maci-contracts/build/artifacts/build-info/",
-  );
-  const destDir3 = path.resolve(
-    config.paths.artifacts,
-    "maci-contracts",
-    "build-info",
-  );
-
-  copyDirectory(sourceDir3, destDir3);
 });
 
 // Override the existing compile task
@@ -88,9 +62,6 @@ task("compile", async (args, hre, runSuper) => {
 
   // After compilation, run the subtask to copy MACI artifacts
   await hre.run("copy-maci-artifacts");
-
-  // After compilation, run the subtask to copy MACI build info
-  // await hre.run("copy-maci-build-info");
 });
 
 const config: HardhatUserConfig = {
@@ -114,17 +85,17 @@ const config: HardhatUserConfig = {
   sourcify: {
     enabled: true,
   },
-  defaultNetwork: "scrollsepolia",
+  defaultNetwork: "scroll",
   networks: {
-    scrollsepolia: {
-      chainId: 534351,
-      url: `https://scroll-sepolia.drpc.org	`,
-      accounts: [process.env.SEPOLIA_KEY!],
+    scroll: {
+      chainId: 534352,
+      url: process.env.SCROLL_RPC_URL!,
+      accounts: [process.env.COORDINATOR_WALLET_PRIVATE_KEY!],
     },
     sepolia: {
       chainId: 11155111,
-      url: `https://eth-sepolia.g.alchemy.com/v2/w07A2I5WCXg65VfLx_lHcVBkh2LN7E7z`,
-      accounts: [process.env.SEPOLIA_KEY!],
+      url: process.env.SEPOLIA_RPC_URL!,
+      accounts: [process.env.COORDINATOR_WALLET_PRIVATE_KEY!],
     },
     localhost: {
       url: "http://127.0.0.1:8545",
@@ -132,11 +103,10 @@ const config: HardhatUserConfig = {
     },
   },
   etherscan: {
-    apiKey: "KNVT7KRT9B15Z5UTXZT8TG8HNMIJXWXRMY",
-    // {
-    //   scrollsepolia: "QXKSFDZATD75NKPN6VJ7K9EK1FR3ZYB7WN",
-    //   sepolia: "KNVT7KRT9B15Z5UTXZT8TG8HNMIJXWXRMY",
-    // },
+    apiKey: {
+      scroll: process.env.SCROLL_SCAN_API_KEY!,
+      sepolia: process.env.ETHERSCAN_API_KEY!,
+    },
     customChains: [
       {
         network: "scrollsepolia",

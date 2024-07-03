@@ -7,6 +7,7 @@ A QF implementation using MACI v1.2.3 integrated into the Allo protocol.
 ## Credits
 
 ### This project takes inspiration from:
+
 - [Allo-v2](https://github.com/allo-protocol/allo-v2/)
 - clr.fund code (https://github.com/clrfund/monorepo)
 - [ctrlc03](https://github.com/ctrlc03) minimalQF code (https://github.com/ctrlc03/minimalQF)
@@ -28,10 +29,12 @@ The MACIQF (Quadratic Funding MACI) strategy is a component of a larger decentra
 #### MACIQFBase
 
 - **Structs**
+
   - `InitializeParams`: Parameters for initializing the strategy.
   - `Recipient`: Details of a recipient.
 
 - **Storage Variables**
+
   - `totalRecipientVotes`: Total number of votes cast for all recipients.
   - `registrationStartTime`, `registrationEndTime`, `allocationStartTime`, `allocationEndTime`: Timestamps for different phases.
   - `useRegistryAnchor`, `metadataRequired`: Flags for registry and metadata requirements.
@@ -49,6 +52,7 @@ The MACIQF (Quadratic Funding MACI) strategy is a component of a larger decentra
   - `_maci`: MACI contract address.
 
 - **Events**
+
   - `RecipientStatusUpdated`: Emitted when a recipient's status is updated.
   - `UpdatedRegistration`: Emitted when a recipient updates their registration.
   - `TimestampsUpdated`: Emitted when pool timestamps are updated.
@@ -65,11 +69,13 @@ The MACIQF (Quadratic Funding MACI) strategy is a component of a larger decentra
 #### MACIQF
 
 - **Structs**
+
   - `MaciParams`: Parameters for initializing MACI.
   - `InitializeParamsMACI`: Combined parameters for initializing the strategy and MACI.
   - `claimFunds`: Data structure for claiming funds.
 
 - **Events**
+
   - `RecipientVotingOptionAdded`: Emitted when a recipient is added.
   - `TallyPublished`: Emitted when the tally hash is published.
   - `TallyResultsAdded`: Emitted when the tally results are added.
@@ -122,7 +128,7 @@ sequenceDiagram
   Alice->>Allo: Allocate to Pool (allocate())
   Allo-->>MACIQFStrategy: Forward Allocation _allocate()
   MACIQFStrategy-->>MACI: Sign Up Alice
-  MACI-->>Alice: FundsTransferred 
+  MACI-->>Alice: FundsTransferred
    %% Voting Phase
   Alice->>Poll: Submit (Encrypted MACI messages) Vote for Recipients
   %% Tally Phase
@@ -137,33 +143,33 @@ sequenceDiagram
   Coordinator->>Allo: Distribute Funds to Projects via distribute() anyone can call.
   Allo-->>MACIQFStrategy: _distribute()
   MACIQFStrategy-->>Tally: Verify Distributions
-  Tally-->>MACIQFStrategy: Distributions Verified? 
+  Tally-->>MACIQFStrategy: Distributions Verified?
   MACIQFStrategy-->>MACIQFStrategy: Handle Distribution
 ```
 
 ### Description
 
 1. **Initialization and Deployment**:
-    - The coordinator creates a pool with the MACIQFStrategy.
-    - The MACIQFStrategy initializes with MACI parameters and deploys the MACI instance, poll, and tally contracts.
+   - The coordinator creates a pool with the MACIQFStrategy.
+   - The MACIQFStrategy initializes with MACI parameters and deploys the MACI instance, poll, and tally contracts.
 2. **Bob Adds Project**:
-    - Bob registers his project through Allo.
-    - The MACIQFStrategy adds Bob's project to the pool.
+   - Bob registers his project through Allo.
+   - The MACIQFStrategy adds Bob's project to the pool.
 3. **Review Phase by Pool Manager**:
-    - The pool manager reviews and approves the projects.
+   - The pool manager reviews and approves the projects.
 4. **Alice Allocates to Pool**:
-    - Alice allocates funds to the pool through Allo.
-    - Allo forwards the allocation to the MACIQFStrategy which signs up Alice in the MACI.
+   - Alice allocates funds to the pool through Allo.
+   - Allo forwards the allocation to the MACIQFStrategy which signs up Alice in the MACI.
 5. **Voting Phase**:
-    - Alice casts her votes for the projects via the Poll contract using encrypted MACI messages.
+   - Alice casts her votes for the projects via the Poll contract using encrypted MACI messages.
 6. **Tally Phase**:
-    - The coordinator merges MACI subtrees, generates proofs, and submits them on-chain.
-    - The coordinator publishes the tally hash and adds tally results in batches.
+   - The coordinator merges MACI subtrees, generates proofs, and submits them on-chain.
+   - The coordinator publishes the tally hash and adds tally results in batches.
 7. **Finalization Phase**:
-    - The coordinator finalizes the round.
+   - The coordinator finalizes the round.
 8. **Distribution Phase**:
-    - The coordinator initiates fund distribution to projects via Allo.
-    - The MACIQFStrategy verifies distributions in the Tally contract and then handles the distribution to the projects (e.g., to Bob).
+   - The coordinator initiates fund distribution to projects via Allo.
+   - The MACIQFStrategy verifies distributions in the Tally contract and then handles the distribution to the projects (e.g., to Bob).
 
 ### Interactive Diagram Elements
 
@@ -177,20 +183,25 @@ sequenceDiagram
 8. **Finalize Round**: Finalizes the round after verifying all tallies.
 9. **Distribute Funds**: Distributes funds to the projects based on the vote tally.
 
+### Finalization guide
 
-### Deployment and Testing
+- [FINALIZE_ROUND.md](https://github.com/gitcoinco/MACI_QF/blob/main/contracts/FINALIZE_ROUND.md)
+
+### Testing
 
 1. **Download ZKeys**:
-  ```sh
-  chmod +x downloadArtifacts.sh  
-  ./downloadArtifacts.sh
-  ```
+
+```sh
+chmod +x downloadArtifacts.sh
+./downloadArtifacts.sh
+```
+
 2. **Install Dependencies**:
 
+```sh
+yarn install
+```
 
-  ```sh
-  yarn install
-  ```
 3. **Start Local Node**:
    ```sh
    npx hardhat node
@@ -205,6 +216,7 @@ sequenceDiagram
 ### Testing Script
 
 The provided script tests the end-to-end functionality of the MACIQF strategy. It includes:
+
 - Setting up test accounts and contracts.
 - Funding the pool and making contributions.
 - Registering recipients and reviewing them.
@@ -219,5 +231,6 @@ This project is licensed under the AGPL-3.0-only License.
 ### Improvements and Further Reading
 
 For more detailed information about quadratic funding and MACI, refer to the following resources:
+
 - [Quadratic Funding](https://wtfisqf.com/)
 - [MACI (Minimal Anti-Collusion Infrastructure)](https://github.com/appliedzkp/maci)

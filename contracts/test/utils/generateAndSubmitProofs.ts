@@ -33,8 +33,6 @@ export const genAndSubmitProofs = async ({
 }) => {
   const tallyFile = getTalyFilePath(outputDir);
 
-  const network = await coordinator.provider?.getNetwork();
-
   const MaciState = (
     await genMaciStateFromContract(
       coordinator.provider!,
@@ -50,7 +48,11 @@ export const genAndSubmitProofs = async ({
 
   // Create file and write the state
   const stateFilePath = path.join(outputDir, "state.json");
-  JSONFile.write(stateFilePath, MaciState);
+  await JSONFile.write(stateFilePath, MaciState);
+
+  console.log("Generating and submitting proofs...");
+
+  
 
   const {
     processZkFile,

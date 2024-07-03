@@ -18,7 +18,7 @@ export const finalize = async ({
 }) => {
   const tallyFile = getTalyFilePath(outputDir);
 
-  const tally = JSONFile.read(tallyFile) as any;
+  const tally = (await JSONFile.read(tallyFile)) as any;
 
   const recipientTreeDepth = voteOptionTreeDepth;
 
@@ -43,6 +43,9 @@ export const finalize = async ({
   );
 
   await finalize.wait();
+
+  // Add a 4sec timeout to make sure state is updated on-chain
+  await new Promise((r) => setTimeout(r, 4000));
 
   let isFinalized = await MACIQFStrategy.isFinalized();
 
