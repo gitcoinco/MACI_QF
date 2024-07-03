@@ -1285,27 +1285,6 @@ function PreRoundPage(props: {
                   {tokenData?.symbol ?? "..."}
                 </span>
               </p>
-              <p
-                className="text-lg my-2 text-grey-400 font-normal"
-                data-testid="matching-cap"
-              >
-                Matching Cap:
-                {round.roundMetadata?.quadraticFundingConfig
-                  ?.matchingCapAmount ? (
-                  <span>
-                    {" "}
-                    &nbsp;
-                    {
-                      round.roundMetadata?.quadraticFundingConfig
-                        ?.matchingCapAmount
-                    }
-                    &nbsp;
-                    {"%"}
-                  </span>
-                ) : (
-                  <span>None</span>
-                )}
-              </p>
             </div>
           )}
           <p className="text-lg my-5 text-grey-400 font-normal border-t py-5 border-b">
