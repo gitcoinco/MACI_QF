@@ -186,21 +186,25 @@ export function ProjectInCart(
             <p
               className={`${props.hasExceededVoteLimit ? "text-red-400" : "text-gray-400"}`}
             >
-              {props.hasExceededVoteLimit
-                ? "Exceeded limit"
-                : "quadratic votes"}
+              {props.hasExceededVoteLimit ? "Exceeded limit" : "votes"}
             </p>
           </div>
           <div className="flex flex-col items-center">
             <p
-              className={`text-sm ${props.hasExceededVoteLimit ? "text-red-400" : "text-gray-400"}`}
+              className={`text-sm ${props.hasExceededVoteLimit ? "text-red-400" : "text-gray-600"} text-lg`}
             >
-              {Number(votes) ** 2}
+              {Number(votes) ** 2} credits
             </p>
             <p
-              className={`${props.hasExceededVoteLimit ? "text-red-400" : "text-gray-400"}`}
+              className={`${props.hasExceededVoteLimit ? "text-red-400" : "text-gray-400"} text-sm`}
             >
-              voice credits
+              $
+              {Number(votes) > 0
+                ? (
+                    ((Number(votes) ** 2 * totalAmount) / (totalAmount * 1e5)) *
+                    props.payoutTokenPrice
+                  ).toFixed(2)
+                : 0}
             </p>
           </div>
           <TrashIcon

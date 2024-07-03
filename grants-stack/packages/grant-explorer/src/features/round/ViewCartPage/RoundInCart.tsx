@@ -254,14 +254,17 @@ export function RoundInCart(
                 className="px-5 py-2 w-[7rem] bg-white border shadow-sm border-slate-300 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-sky-500 block rounded-lg sm:text-sm focus:ring-1"
                 placeholder="Enter amount in ETH"
               />
+              <span className="text-md font-normal inline ml-2 text-gray-400">
+                {" "}
+                ${(Number(donationInput) * payoutTokenPrice).toFixed(2)}
+              </span>
             </div>
-            <div
-              className={` ${voiceCreditBalance > 0 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-500"} p-2 rounded-lg`}
-            >
-              Your voice credits:{" "}
-              {balanceVoiceCredits < 0 ? 0 : balanceVoiceCredits} /{" "}
-              {voiceCreditBalance}
-            </div>
+            {voiceCreditBalance > 0 && (
+              <div className="bg-blue-500 text-white p-2 rounded-lg">
+                Voice Credits:{" "}
+                {balanceVoiceCredits < 0 ? 0 : balanceVoiceCredits}
+              </div>
+            )}
           </div>
           <div>
             {roundCart.map((project, key) => {
@@ -285,14 +288,6 @@ export function RoundInCart(
                 </div>
               );
             })}
-          </div>
-        </div>
-        <div className="p-4 bg-grey-100 rounded-b-xl font-medium text-lg">
-          <div className="flex justify-end">
-            <div className="flex flex-row">
-              <p className="mb-2 mr-2">Total voice credits allocated:</p>
-              <p className="mb-2">{usedVoiceCredits.toString()}</p>
-            </div>
           </div>
         </div>
       </div>
@@ -400,11 +395,11 @@ const RoundAllowlist = ({
                       className="text-md pt-2 font-bold mb-5 ml-1 mr-1 cursor-pointer underline"
                       style={{ color: "black", fontStyle: "normal" }}
                     >
-                      joining the allowlist
+                      joining the allowlist.
                     </a>
-                  </Tooltip>
-                  to be able to contribute up to {maxContributionAllowlisted}{" "}
-                  ETH (
+                  </Tooltip>{" "}
+                  Verified members can contribute up to{" "}
+                  {maxContributionAllowlisted} ETH (
                   {parseInt(
                     (Number(maxContributionAllowlisted) * 1e5).toString()
                   )}{" "}
@@ -415,7 +410,7 @@ const RoundAllowlist = ({
               <>
                 <p className="text-sm pt-2 italic mr-2">
                   Your max allowed contribution amount is{" "}
-                  {maxContributionNonAllowlisted} ETH (
+                  {maxContributionNonAllowlisted} ETH which gives you{" "}
                   {parseInt(
                     (Number(maxContributionNonAllowlisted) * 1e5).toString()
                   )}{" "}
