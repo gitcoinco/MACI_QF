@@ -17,7 +17,6 @@ import {
 } from "@chakra-ui/react";
 import { VotingToken } from "common";
 import { SummaryContainer } from "./SummaryContainer";
-import { Switch } from "@headlessui/react";
 import { zuAuthPopup } from "@pcd/zuauth";
 import { fieldsToReveal } from "../../api/pcd";
 import { ZuzaluEvents } from "../../../constants/ZuzaluEvents";
@@ -26,7 +25,6 @@ import { isRoundZuProofReused } from "../../api/voting";
 import { useAlreadyContributed } from "../../projects/hooks/useRoundMaciMessages";
 import { useDataLayer } from "data-layer";
 import { useCartStorage } from "../../../store";
-import { set } from "lodash";
 
 export function RoundInCart(
   props: React.ComponentProps<"div"> & {
