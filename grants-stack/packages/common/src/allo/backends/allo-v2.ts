@@ -464,7 +464,7 @@ export class AlloV2 implements Allo {
 
       const pubk = PubKey.deserialize(CoordinatorKeypair as string);
 
-      const address = getAddress(
+      const coordinator = getAddress(
         args.roundData.roundMetadataWithProgramContractAddress?.maciParameters
           ?.coordinatorAddress as string
       ) as Address;
@@ -504,7 +504,7 @@ export class AlloV2 implements Allo {
 
       const MaciParams = [
         // coordinator:
-        address,
+        coordinator,
         // coordinatorPubKey:
         [BigInt(pubk.asContractParam().x), BigInt(pubk.asContractParam().y)],
         getClonableMACIFactoryAddress(this.chainId),
@@ -543,9 +543,12 @@ export class AlloV2 implements Allo {
         throw new Error("Program contract address is required");
       }
 
-      const managers = args.roundData.roundOperators.map((address) =>
-        getAddress(address)
+      const managersSet = new Set(
+        args.roundData.roundOperators.map((address) => getAddress(address))
       );
+      managersSet.add(coordinator);
+
+      const managers = Array.from(managersSet);
 
       const createPoolArgs: CreatePoolArgs = {
         profileId: profileId as Hex,
