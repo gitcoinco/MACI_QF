@@ -17,7 +17,6 @@ import {
 } from "@chakra-ui/react";
 import { VotingToken } from "common";
 import { SummaryContainer } from "./SummaryContainer";
-import { Switch } from "@headlessui/react";
 import { zuAuthPopup } from "@pcd/zuauth";
 import { fieldsToReveal } from "../../api/pcd";
 import { ZuzaluEvents } from "../../../constants/ZuzaluEvents";
@@ -58,9 +57,9 @@ export function RoundInCart(
 
   const [pcd, setPcd] = useState<string | undefined>(undefined);
   const [pcdFetched, setPcdFetched] = useState(false);
-  const [enabled, setEnabled] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hasExceededVoteLimit, setHasExceededVoteLimit] = useState(false);
+  const [generateProofClicked, setGenerateProofClicked] = useState(false);
   const [donationInput, setDonationInput] = useState<string>("0");
   const [donatedAmount, setDonatedAmount] = useState<bigint>(
     BigInt(parseInt(donationInput) * 1e18)
@@ -87,7 +86,7 @@ export function RoundInCart(
 
   const [isZupasReused, setIsZupasReused] = useState(false);
 
-  const { isLoading, data: status } = useAlreadyContributed(
+  const { data: status } = useAlreadyContributed(
     dataLayer,
     address as string,
     chainId,
@@ -108,9 +107,6 @@ export function RoundInCart(
   );
   const eventsList = filteredEvents.map((event) => event.eventName).join("\n");
 
-  const currentTime = new Date();
-  const isActiveRound = round && round.roundEndTime > currentTime;
-
   const maxContributionAllowlisted = round
     ? Number(
         round.roundMetadata?.maciParameters?.maxContributionAmountAllowlisted ??
@@ -123,7 +119,6 @@ export function RoundInCart(
           ?.maxContributionAmountNonAllowlisted ?? "0.1"
       ).toString()
     : "0.1";
-
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     handleValueChange(event.target.value);
   };
@@ -161,11 +156,17 @@ export function RoundInCart(
 
   const getProof = useCallback(async () => {
     if (!address) return;
+    setGenerateProofClicked(true);
+
     const result = await zuAuthPopup({
       fieldsToReveal,
       watermark: address,
       config: filteredEvents,
     });
+    if (result.pcdStr === undefined) {
+      setGenerateProofClicked(false);
+      return;
+    }
     const isReused = await isRoundZuProofReused(
       JSON.parse(result.pcdStr).pcd,
       chainId,
@@ -210,6 +211,8 @@ export function RoundInCart(
   useEffect(() => {
     setBalanceVoiceCredits(voiceCreditBalance - usedVoiceCredits);
   }, [voiceCreditBalance, usedVoiceCredits]);
+
+  useEffect(() => {}, [generateProofClicked]);
 
   return (
     <div className="my-4 flex w-full">
@@ -329,64 +332,41 @@ export function RoundInCart(
               </Tooltip>{" "}
               events to join the allowlist.
             </p>
-            {!pcdFetched && (
-              <Switch.Group
-                as="div"
-                className="flex items-center justify-between mt-4"
-              >
-                <span className="flex flex-grow flex-col">
-                  <Switch.Label
-                    as="span"
-                    className="text-sm font-medium leading-6 text-gray-900"
-                    passive
-                  >
-                    Join Allowlist
-                  </Switch.Label>
-                  <Switch.Description
-                    as="span"
-                    className="text-sm text-gray-500"
-                  >
-                    Toggle to generate proof and join the allowlist.
-                  </Switch.Description>
-                </span>
-                <Switch
-                  checked={enabled}
-                  onChange={setEnabled}
-                  className={classNames(
-                    enabled ? "bg-indigo-600" : "bg-gray-200",
-                    "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2"
-                  )}
-                >
-                  <span
-                    aria-hidden="true"
-                    className={classNames(
-                      enabled ? "translate-x-5" : "translate-x-0",
-                      "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                    )}
-                  />
-                </Switch>
-              </Switch.Group>
-            )}
 
             {pcdFetched && !isZupasReused && (
               <div className="mt-4 text-green-600">
                 You can now contribute up to {maxContributionAllowlisted} ETH.
               </div>
             )}
+            {isZupasReused && (
+              <div className="mt-4 text-red-600">
+                You have already used your Zupass for this round. You cannot
+                contribute twice.
+              </div>
+            )}
           </ModalBody>
           <ModalFooter>
-            <Button onClick={enabled && !pcdFetched ? getProof : closeModal}>
-              {enabled && !pcdFetched ? "Generate proof" : "Close"}
+            <Button
+              onClick={async () => {
+                if (!pcdFetched && !generateProofClicked) {
+                  await getProof();
+                } else if (pcdFetched && generateProofClicked) {
+                  closeModal();
+                }
+              }}
+              disabled={generateProofClicked}
+            >
+              {!pcdFetched && !generateProofClicked
+                ? "Generate proof"
+                : pcdFetched
+                  ? "Close"
+                  : "Generating proof"}
             </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
     </div>
   );
-}
-
-function classNames(...classes: string[]) {
-  return classes.filter(Boolean).join(" ");
 }
 
 const RoundAllowlist = ({
@@ -407,38 +387,68 @@ const RoundAllowlist = ({
       <div className="flex flex-col">
         {!pcdFetched ? (
           <div className="mb-5">
-            <p className="text-sm pt-2 italic  mr-2">
-              Your max allowed contribution amount is{" "}
-              {maxContributionNonAllowlisted} ETH (
-              {parseInt(
-                (Number(maxContributionNonAllowlisted) * 1e5).toString()
-              )}{" "}
-              voice credits). To contribute upto {maxContributionAllowlisted}{" "}
-              ETH (
-              {parseInt((Number(maxContributionAllowlisted) * 1e5).toString())}{" "}
-              voice credits),{" "}
-              <Tooltip
-                label="Click to join the allowlist"
-                aria-label="Click to join the allowlist"
-              >
-                <a
-                  onClick={openModal}
-                  className="text-md pt-2 font-bold mb-5 mr-2 cursor-pointer underline"
-                  style={{ color: "black", fontStyle: "normal" }}
-                >
-                  join the allowlist.
-                </a>
-              </Tooltip>
-            </p>
-            <p className="text-sm italic mr-2">
-              For each vote, the number of voice credits decreases by the square
-              of the number of votes cast.
-            </p>
+            {Number(maxContributionNonAllowlisted) <= 0 ? (
+              <>
+                <p className="text-sm pt-2 italic mr-2">
+                  You can only contribute by{" "}
+                  <Tooltip
+                    label="Click to join the allowlist"
+                    aria-label="Click to join the allowlist"
+                  >
+                    <a
+                      onClick={openModal}
+                      className="text-md pt-2 font-bold mb-5 ml-1 mr-1 cursor-pointer underline"
+                      style={{ color: "black", fontStyle: "normal" }}
+                    >
+                      joining the allowlist
+                    </a>
+                  </Tooltip>
+                  to be able to contribute up to {maxContributionAllowlisted}{" "}
+                  ETH (
+                  {parseInt(
+                    (Number(maxContributionAllowlisted) * 1e5).toString()
+                  )}{" "}
+                  voice credits).
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm pt-2 italic mr-2">
+                  Your max allowed contribution amount is{" "}
+                  {maxContributionNonAllowlisted} ETH (
+                  {parseInt(
+                    (Number(maxContributionNonAllowlisted) * 1e5).toString()
+                  )}{" "}
+                  voice credits). To contribute up to{" "}
+                  {maxContributionAllowlisted} ETH (
+                  {parseInt(
+                    (Number(maxContributionAllowlisted) * 1e5).toString()
+                  )}{" "}
+                  voice credits),{" "}
+                  <Tooltip
+                    label="Click to join the allowlist"
+                    aria-label="Click to join the allowlist"
+                  >
+                    <a
+                      onClick={openModal}
+                      className="text-md pt-2 font-bold mb-5 mr-2 cursor-pointer underline"
+                      style={{ color: "black", fontStyle: "normal" }}
+                    >
+                      join the allowlist.
+                    </a>
+                  </Tooltip>
+                </p>
+                <p className="text-sm italic mr-2">
+                  For each vote, the number of voice credits decreases by the
+                  square of the number of votes cast.
+                </p>
+              </>
+            )}
           </div>
         ) : !isZupasReused ? (
           <div className="flex flex-col">
-            <p className="text-sm pt-2 italic ">
-              You successfuly proved your Zuzalu commitment, you can now
+            <p className="text-sm pt-2 italic">
+              You successfully proved your Zuzalu commitment, you can now
               contribute up to {maxContributionAllowlisted} ETH (
               {parseInt((Number(maxContributionAllowlisted) * 1e5).toString())}{" "}
               voice credits).
@@ -448,9 +458,16 @@ const RoundAllowlist = ({
               of the number of votes cast.
             </p>
           </div>
+        ) : Number(maxContributionNonAllowlisted) <= 0 ? (
+          <div className="flex flex-col">
+            <p className="text-sm pt-2 italic">
+              You have already used your Zupass for this round. You cannot
+              contribute twice.
+            </p>
+          </div>
         ) : (
           <div className="flex flex-col">
-            <p className="text-sm pt-2 italic ">
+            <p className="text-sm pt-2 italic">
               You have already used your Zupass for this round. You can
               contribute up to {maxContributionNonAllowlisted} ETH (
               {parseInt(
