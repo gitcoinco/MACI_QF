@@ -323,9 +323,8 @@ export function SummaryContainer(props: {
         data-testid="handle-confirmation"
         type="button"
         disabled={
-          totalDonations > tokenBalance ||
-          !alreadyDonated ||
-          props.hasExceededContributionLimit
+          props.hasExceededContributionLimit ||
+          (totalDonations > tokenBalance && !alreadyDonated)
         }
         onClick={() => {
           if (!isConnected) {
