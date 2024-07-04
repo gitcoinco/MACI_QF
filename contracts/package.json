@@ -10,6 +10,7 @@
         "distributeFunds:scroll": "hardhat distributeFunds --network scroll",
         "e2e:sepolia": "hardhat finalizeRound --network sepolia",
         "e2e:scroll": "hardhat finalizeRound --network scroll",
+        "test:all": "hardhat test --network localhost",
         "test:live": "hardhat test ./test/e2e.test_maciqf.ts --network localhost",
         "test:3.1.1": "hardhat test ./test/3_1_1.test.ts --network localhost",
         "test:3.3.5": "hardhat test ./test/3_3_5.test.ts --network localhost",

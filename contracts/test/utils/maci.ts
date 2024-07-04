@@ -9,7 +9,7 @@ import {
   hash2,
 } from "maci-crypto";
 
-import { Keypair, PCommand, PrivKey, PubKey } from "maci-domainobjs";
+import { Keypair, PCommand, PubKey } from "maci-domainobjs";
 
 import * as os from "os";
 import {

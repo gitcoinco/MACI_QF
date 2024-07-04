@@ -85,4 +85,8 @@ Alternatively, you can perform all these actions to finalize and distribute in a
 yarn e2e:<network>
 ```
 
+**Currently only scroll and sepolia are supported**
+
+- Replace `<network>` with scroll or sepolia depending on where your round is created
+
 By following these steps and using the provided commands, you can efficiently finalize a round and distribute the funds to the recipients. Ensure all the environment variables are correctly set up to avoid any issues during the process.

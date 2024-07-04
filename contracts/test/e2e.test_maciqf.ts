@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
-import { AddressLike, BigNumberish, Signer } from "ethers";
+import { Signer } from "ethers";
 import { existsSync, mkdirSync } from "fs";
 
 import { Keypair } from "maci-domainobjs";

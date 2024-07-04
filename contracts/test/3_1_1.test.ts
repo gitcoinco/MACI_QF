@@ -24,7 +24,6 @@ import { deployTestContracts, timeTravel } from "./utils_maciqf";
 import path from "path";
 
 import dotenv from "dotenv";
-import { time } from "console";
 import { EthereumProvider } from "hardhat/types";
 
 dotenv.config();
@@ -50,11 +49,7 @@ describe("e2e", function test() {
   // create a new user keypair
   const keypair = new Keypair();
   const keypair2 = new Keypair();
-  let coordinatorKeypair: Keypair;
-  let maciTransactionHash: string;
   let maciContract: ClonableMACI;
-  let pollContract: ClonablePoll;
-  let tallyContract: ClonableTally;
   let AlloContract: Allo;
 
   const UNIT = 10n ** 18n;
@@ -67,30 +62,20 @@ describe("e2e", function test() {
 
   let recipientAddress1: string;
   let outputDir: string;
-  let maciAddress: string;
 
   before(async () => {
-    const signer = new ethers.Wallet(process.env.PRIVATE_KEY!, ethers.provider);
-
-    Coordinator = signer.connect(ethers.provider);
-
     const contracts = await deployTestContracts();
-
+    
+    const signer = new ethers.Wallet(process.env.PRIVATE_KEY!, ethers.provider);
+    Coordinator = signer.connect(ethers.provider);
     AlloContract = contracts.Allo;
     MACIQFStrategy = contracts.MACIQF_STRATEGY;
-    pollContract = contracts.pollContract;
-    tallyContract = contracts.tallyContract;
     mpContract = contracts.messageProcessorContract;
     maciContract = contracts.maciContract;
     allocator = contracts.user1;
     recipient1 = contracts.user2;
     recipient2 = contracts.user3;
-    maciTransactionHash = contracts.maciTransitionHash || "";
-    coordinatorKeypair = contracts.CoordinatorKeypair;
-
     recipientAddress1 = await recipient1.getAddress();
-    maciAddress = await maciContract.getAddress();
-
     outputDir = path.join(proofOutputDirectory, `${random}`);
 
     if (!existsSync(outputDir)) {
