@@ -85,8 +85,11 @@ export function RoundInCart(
   );
 
   const [isZupasReused, setIsZupasReused] = useState(false);
-
-  const { data: status } = useAlreadyContributed(
+  const [isAllowlisted, setIsAllowlisted] = useState(false);
+  const [hasExceededContributionLimit, setHasExceededContributionLimit] =
+    useState(false);
+  const [isZeroDonation, setIsZeroDonation] = useState(false);
+  const { isLoading, data: status } = useAlreadyContributed(
     dataLayer,
     address as string,
     chainId,
@@ -123,18 +126,47 @@ export function RoundInCart(
     handleValueChange(event.target.value);
   };
 
+  useEffect(() => {
+    if (pcdFetched && !isZupasReused) {
+      setIsAllowlisted(true);
+    } else {
+      setIsAllowlisted(false);
+    }
+  }, [pcdFetched, isZupasReused]);
+
+  useEffect(() => {
+    if (
+      isAllowlisted &&
+      Number(donationInput) > Number(maxContributionAllowlisted)
+    ) {
+      setHasExceededContributionLimit(true);
+    } else if (
+      !isAllowlisted &&
+      Number(donationInput) > Number(maxContributionNonAllowlisted)
+    ) {
+      setHasExceededContributionLimit(true);
+    } else {
+      setHasExceededContributionLimit(false);
+    }
+  }, [
+    donationInput,
+    isAllowlisted,
+    maxContributionAllowlisted,
+    maxContributionNonAllowlisted,
+  ]);
+
+  useEffect(() => {
+    if (Number(donationInput) <= 0) {
+      setIsZeroDonation(true);
+    } else {
+      setIsZeroDonation(false);
+    }
+  }, [donationInput]);
+
   const handleValueChange = (_value: string) => {
     let value = _value;
-    value =
-      pcdFetched === true && Number(value) >= Number(maxContributionAllowlisted)
-        ? maxContributionAllowlisted
-        : pcdFetched === true
-          ? value
-          : Number(value) >= Number(maxContributionNonAllowlisted)
-            ? maxContributionNonAllowlisted
-            : value;
+
     value = value === "" ? "0.0" : value;
-    setHasExceededVoteLimit(false);
 
     if (/^\d*\.?\d*$/.test(value)) {
       setDonationInput(value);
@@ -216,7 +248,7 @@ export function RoundInCart(
 
   return (
     <div className="my-4 flex w-full">
-      <div className="flex flex-col flex-grow w-3/4 bg-grey-50 rounded-xl">
+      <div className="flex flex-col flex-grow w-[70%] bg-grey-50 rounded-xl">
         <div className="px-4 py-6 flex-grow mr-2">
           <div className="flex flex-row items-end justify-between">
             <div className="flex flex-col">
@@ -259,12 +291,6 @@ export function RoundInCart(
                 ${(Number(donationInput) * payoutTokenPrice).toFixed(2)}
               </span>
             </div>
-            {voiceCreditBalance > 0 && (
-              <div className="bg-blue-500 text-white p-2 rounded-lg">
-                Voice Credits:{" "}
-                {balanceVoiceCredits < 0 ? 0 : balanceVoiceCredits}
-              </div>
-            )}
           </div>
           <div>
             {roundCart.map((project, key) => {
@@ -282,8 +308,7 @@ export function RoundInCart(
                     payoutTokenPrice={payoutTokenPrice}
                     alreadyContributed={status?.hasDonated ?? false}
                     walletAddress={address as `0x${string}`}
-                    hasExceededVoteLimit={hasExceededVoteLimit}
-                    setHasExceededVoteLimit={setHasExceededVoteLimit}
+                    isZeroDonation={isZeroDonation}
                   />
                 </div>
               );
@@ -291,7 +316,7 @@ export function RoundInCart(
           </div>
         </div>
       </div>
-      <div className="w-1/4 ml-[4%]">
+      <div className="w-[30%] ml-[4%]">
         <SummaryContainer
           alreadyContributed={status?.hasContributed ?? false}
           alreadyDonated={status?.hasDonated ?? false}
@@ -303,6 +328,9 @@ export function RoundInCart(
           walletAddress={address as `0x${string}`}
           pcd={pcdFetched && !isZupasReused ? pcd : undefined}
           roundName={round?.roundMetadata?.name ?? ""}
+          balanceVoiceCredits={balanceVoiceCredits}
+          hasExceededContributionLimit={hasExceededContributionLimit}
+          isZeroDonation={isZeroDonation}
         />
       </div>
 
@@ -379,7 +407,7 @@ const RoundAllowlist = ({
 }) => {
   return (
     <div className="flex flex-col items-center">
-      <div className="flex flex-col">
+      <div className="flex flex-col text-gray-600">
         {!pcdFetched ? (
           <div className="mb-5">
             {Number(maxContributionNonAllowlisted) <= 0 ? (
@@ -414,7 +442,7 @@ const RoundAllowlist = ({
                   {parseInt(
                     (Number(maxContributionNonAllowlisted) * 1e5).toString()
                   )}{" "}
-                  voice credits). To contribute up to{" "}
+                  voice credits. To contribute up to{" "}
                   {maxContributionAllowlisted} ETH (
                   {parseInt(
                     (Number(maxContributionAllowlisted) * 1e5).toString()
