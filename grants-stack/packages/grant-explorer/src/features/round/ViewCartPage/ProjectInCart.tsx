@@ -24,8 +24,7 @@ export function ProjectInCart(
     ) => void;
     walletAddress: string;
     alreadyContributed: boolean;
-    hasExceededVoteLimit: boolean;
-    setHasExceededVoteLimit: (value: boolean) => void;
+    isZeroDonation: boolean;
   }
 ) {
   const {
@@ -42,31 +41,12 @@ export function ProjectInCart(
   const groupedProjects = groupProjectsInCart(projects);
   const roundProjects = groupedProjects[project.chainId][project.roundId];
 
-  const isExceeded = (votes: number) => {
-    const voiceCredits = votes ** 2;
-    const newAmount = voiceCredits;
-
-    // find the total amount of all projects in the round except the current project
-    const totalAmountOfOtherProjects = roundProjects.reduce(
-      (acc, project) => acc + Number(project.amount),
-      0
-    );
-
-    if (totalAmountOfOtherProjects + newAmount > totalAmount * 1e5) {
-      props.setHasExceededVoteLimit(true);
-      return true;
-    }
-
-    props.setHasExceededVoteLimit(false);
-    return false;
-  };
-
   const hanldeSetVotes = (amount: string) => {
-    isExceeded(Number(amount));
     return Number(!amount ? "0" : Math.sqrt(Number(amount))).toString();
   };
 
   const [votes, setVotes] = useState<string>(hanldeSetVotes(project.amount));
+  const [hasExceededVoteLimit, setHasExceededVoteLimit] = useState(false);
 
   const handleVotesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVotes = e.target.value === "" ? "0" : e.target.value;
@@ -76,6 +56,10 @@ export function ProjectInCart(
 
   const incrementVote = () => {
     const newVotes = votes === "" ? "0" : votes;
+
+    if (props.isZeroDonation) {
+      return;
+    }
 
     updateProjectAmount(index, parseInt(newVotes) + 1);
   };
@@ -87,23 +71,16 @@ export function ProjectInCart(
       return;
     }
 
+    if (props.isZeroDonation) {
+      return;
+    }
+
     updateProjectAmount(index, parseInt(newVotes) - 1);
   };
 
   const updateProjectAmount = (currentIndex: number, votes: number) => {
     const voiceCredits = votes ** 2;
     const newAmount = voiceCredits;
-
-    // find the total amount of all projects in the round except the current project
-    const totalAmountOfOtherProjects = roundProjects
-      .filter((_, i) => i !== currentIndex)
-      .reduce((acc, project) => acc + Number(project.amount), 0);
-
-    props.setHasExceededVoteLimit(false);
-
-    if (totalAmountOfOtherProjects + newAmount > totalAmount * 1e5) {
-      props.setHasExceededVoteLimit(true);
-    }
 
     store.updateUserDonationAmount(
       project.chainId,
@@ -115,9 +92,22 @@ export function ProjectInCart(
     setVotes(votes.toString());
   };
 
+  useEffect(() => {
+    const totalAmountOfOtherProjects = roundProjects.reduce((acc, project) => {
+      const amount = Number(project.amount);
+      return isNaN(amount) ? acc : acc + amount;
+    }, 0);
+    if (totalAmountOfOtherProjects > totalAmount * 1e5) {
+      setHasExceededVoteLimit(true);
+    } else {
+      setHasExceededVoteLimit(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roundProjects]);
+
   return (
     <div
-      className={`p-4 ${props.last ? "" : " mb-4 border-b border-gray-300"} rounded-md`}
+      className={`p-4 ${props.last ? "" : " mb-4 border-b border-gray-300"} ${props.isZeroDonation ? "text-gray-400" : ""} rounded-md`}
       data-testid="cart-project"
     >
       <div className="flex items-center">
@@ -150,7 +140,7 @@ export function ProjectInCart(
                 {project.projectMetadata?.title}
               </h2>
             </Link>
-            <p className="text-sm truncate max-w-[400px]">
+            <p className="text-sm truncate max-w-[200px]">
               {renderToPlainText(
                 project.projectMetadata?.description ?? ""
               ).substring(0, 130)}
@@ -171,9 +161,10 @@ export function ProjectInCart(
                 aria-label={`Donation votes for project ${project.projectMetadata?.title}`}
                 value={votes}
                 onChange={handleVotesChange}
-                className={`rounded-xl w-20 text-center ${props.hasExceededVoteLimit ? "text-red-400" : ""}`}
+                className={`rounded-xl w-20 text-center ${props.isZeroDonation ? "border-gray-200 text-gray-400" : hasExceededVoteLimit ? "text-red-400" : ""}`}
                 min={0}
                 type="number"
+                disabled={props.isZeroDonation}
               />
               <div
                 className="text-3xl p-2 pl-4"
@@ -184,23 +175,31 @@ export function ProjectInCart(
               </div>
             </div>
             <p
-              className={`${props.hasExceededVoteLimit ? "text-red-400" : "text-gray-400"}`}
+              className={`${props.isZeroDonation ? "text-gray-400" : hasExceededVoteLimit ? "text-red-400" : "text-gray-400"}`}
             >
-              {props.hasExceededVoteLimit
-                ? "Exceeded limit"
-                : "quadratic votes"}
+              {props.isZeroDonation
+                ? "votes"
+                : hasExceededVoteLimit
+                  ? "Exceeded limit"
+                  : "votes"}
             </p>
           </div>
           <div className="flex flex-col items-center">
             <p
-              className={`text-sm ${props.hasExceededVoteLimit ? "text-red-400" : "text-gray-400"}`}
+              className={`text-sm ${props.isZeroDonation ? "text-gray-400" : hasExceededVoteLimit ? "text-red-400" : "text-gray-600"} text-lg`}
             >
-              {Number(votes) ** 2}
+              {Number(votes) ** 2} credits
             </p>
             <p
-              className={`${props.hasExceededVoteLimit ? "text-red-400" : "text-gray-400"}`}
+              className={`${props.isZeroDonation ? "text-gray-400" : hasExceededVoteLimit ? "text-red-400" : "text-gray-400"} text-sm`}
             >
-              voice credits
+              $
+              {Number(votes) > 0 && totalAmount > 0
+                ? (
+                    ((Number(votes) ** 2 * totalAmount) / (totalAmount * 1e5)) *
+                    props.payoutTokenPrice
+                  ).toFixed(2)
+                : 0}
             </p>
           </div>
           <TrashIcon

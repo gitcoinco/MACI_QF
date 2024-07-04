@@ -31,6 +31,9 @@ export function SummaryContainer(props: {
   pcd: string | undefined;
   walletAddress: string;
   roundName: string;
+  balanceVoiceCredits: number;
+  hasExceededContributionLimit: boolean;
+  isZeroDonation: boolean;
 }) {
   const { data: walletClient } = useWalletClient();
   const { address, isConnected } = useAccount();
@@ -234,7 +237,14 @@ export function SummaryContainer(props: {
   return (
     <div className="block font-semibold sticky top-20">
       <div className="px-4 pt-6 pb-4 rounded-t-3xl bg-grey-50 border border-grey-50">
-        <h2 className="text-2xl border-b-2 pb-2 font-bold">Summary</h2>
+        <div className="flex flex-row justify-between border-b-2">
+          <h4 className="text-2xl pb-2 font-bold">Summary</h4>
+          <div
+            className={` ${props.isZeroDonation ? "bg-gray-200 text-gray-400" : props.balanceVoiceCredits < 0 ? "bg-red-500 text-white" : "bg-blue-500 text-white"} p-1 px-2 mb-4 text-md rounded-lg`}
+          >
+            Credits: {props.isZeroDonation ? 0 : props.balanceVoiceCredits}
+          </div>
+        </div>
         <div>
           <Summary
             chainId={parseChainId(chainId)}
@@ -246,13 +256,15 @@ export function SummaryContainer(props: {
           {totalDonations > 0 && (
             <div className="flex flex-row justify-between mt-4 border-t-2">
               <div className="flex flex-col mt-4">
-                <p className="mb-2">Your total contribution</p>
+                <p className="mb-2">Your final contribution</p>
               </div>
               <div className="flex justify-end mt-4">
                 <div className="flex flex-col">
                   <p className="text-right">
                     <span data-testid={"totalDonation"} className="mr-2">
-                      {Number(formatEther(donatedAmount)).toFixed(5)}
+                      {!props.isZeroDonation
+                        ? Number(formatEther(totalDonations)).toFixed(5)
+                        : 0.0}
                     </span>
                     <span data-testid={"summaryPayoutToken"}>
                       {votingToken.name}
@@ -262,11 +274,13 @@ export function SummaryContainer(props: {
                     <div className="flex justify-end mt-2">
                       <p className="text-[14px] text-[#979998] font-bold">
                         ${" "}
-                        {(
-                          Number(
-                            formatUnits(totalDonations, votingToken.decimal)
-                          ) * payoutTokenPrice
-                        ).toFixed(2)}
+                        {!props.isZeroDonation
+                          ? (
+                              Number(
+                                formatUnits(totalDonations, votingToken.decimal)
+                              ) * payoutTokenPrice
+                            ).toFixed(2)
+                          : 0}
                       </p>
                     </div>
                   )}
@@ -274,6 +288,17 @@ export function SummaryContainer(props: {
               </div>
             </div>
           )}
+
+          <div className="flex flex-col border-t-2 justify-end mt-4">
+            <p className="mt-4 ml-2 mb-2 text-sm text-gray-400">
+              1. Your final contribution is equivalent to the amount of voice
+              credits you have allocated.{" "}
+            </p>
+            <p className="ml-2 mb-2 text-sm text-gray-400">
+              2. You can only donate once to this round, so make sure you have
+              donated to all of the projects you want to donate to.{" "}
+            </p>
+          </div>
 
           {filteredProjects.some(
             (project) => !project.amount || Number(project.amount) === 0
@@ -284,13 +309,23 @@ export function SummaryContainer(props: {
                 <span>You must enter votes for all the projects</span>
               </p>
             )}
+
+          {props.hasExceededContributionLimit && (
+            <p className="rounded-md bg-red-50 py-2 text-pink-500 flex justify-center my-4 text-sm">
+              <InformationCircleIcon className="w-4 h-4 mr-1 mt-0.5" />
+              <span>Exceeded contribution limit</span>
+            </p>
+          )}
         </div>
       </div>
 
       <Button
         data-testid="handle-confirmation"
         type="button"
-        disabled={totalDonations > tokenBalance && !alreadyDonated}
+        disabled={
+          props.hasExceededContributionLimit ||
+          (totalDonations > tokenBalance && !alreadyDonated)
+        }
         onClick={() => {
           if (!isConnected) {
             openConnectModal?.();
@@ -305,7 +340,7 @@ export function SummaryContainer(props: {
         {isConnected
           ? totalDonations > tokenBalance && !alreadyDonated
             ? "Not enough funds to donate"
-            : donatedAmount < totalDonations
+            : !props.isZeroDonation && donatedAmount < totalDonations
               ? "Exceeds donation amount"
               : "Submit your donation!"
           : "Connect wallet to continue"}
