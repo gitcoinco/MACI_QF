@@ -41,7 +41,7 @@ export class MaciParameters {
 
   asContractParam(): [
     _stateTreeDepth: BigNumberish,
-    _treeDepths: Params.TreeDepthsStruct,
+    _treeDepths: Params.TreeDepthsStruct
   ] {
     return [
       this.stateTreeDepth,
@@ -56,15 +56,15 @@ export class MaciParameters {
 
   static async fromConfig(
     circuit: string,
-    directory: string,
+    directory: string
   ): Promise<MaciParameters> {
     const params = CIRCUITS[circuit];
     const { processZkFile, tallyZkFile } = getCircuitFiles(circuit, directory);
     const processVk: VerifyingKey = VerifyingKey.fromObj(
-      await extractVk(processZkFile),
+      await extractVk(processZkFile)
     );
     const tallyVk: VerifyingKey = VerifyingKey.fromObj(
-      await extractVk(tallyZkFile),
+      await extractVk(tallyZkFile)
     );
 
     return new MaciParameters({
@@ -97,22 +97,12 @@ export class MaciParameters {
     if (!existsSync(circuitDirectory)) {
       circuitDirectory = "./zkeys/zkeys";
     }
-    const deployParams = await MaciParameters.fromConfig(
-      "micro",
-      circuitDirectory,
-    );
-
-    return deployParams;
-  }
-
-  static async mock2(): Promise<MaciParameters> {
-    let circuitDirectory = "../../zkeys/zkeys";
     if (!existsSync(circuitDirectory)) {
-      circuitDirectory = "./zkeys/zkeys";
+      throw new Error("Circuit directory not found, please download the zkeys artifacts");
     }
     const deployParams = await MaciParameters.fromConfig(
       "micro",
-      circuitDirectory,
+      circuitDirectory
     );
 
     return deployParams;

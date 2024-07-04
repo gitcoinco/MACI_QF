@@ -2,8 +2,6 @@
 
 A QF implementation using MACI v1.2.3 integrated into the Allo protocol.
 
-> WIP - this is a Work in Progress project. Not yet Audited.
-
 ## Credits
 
 ### This project takes inspiration from:
@@ -49,7 +47,7 @@ The MACIQF (Quadratic Funding MACI) strategy is a component of a larger decentra
   - `alpha`: Alpha value used in the capital constrained quadratic funding formula.
   - `coordinator`: Address of the coordinator.
   - `tallyHash`: Hash of the tally.
-  - `_maci`: MACI contract address.
+  - `maci`: MACI contract address.
 
 - **Events**
 
@@ -183,7 +181,9 @@ sequenceDiagram
 8. **Finalize Round**: Finalizes the round after verifying all tallies.
 9. **Distribute Funds**: Distributes funds to the projects based on the vote tally.
 
-### Finalization guide
+### Finalization guide ( for the coordinator )
+
+This guide is about finalizing a round that has ended 
 
 - [FINALIZE_ROUND.md](https://github.com/gitcoinco/MACI_QF/blob/main/contracts/FINALIZE_ROUND.md)
 
@@ -191,16 +191,16 @@ sequenceDiagram
 
 1. **Download ZKeys**:
 
-```sh
-chmod +x downloadArtifacts.sh
-./downloadArtifacts.sh
-```
+   ```sh
+   chmod +x downloadArtifacts.sh
+   ./downloadArtifacts.sh
+   ```
 
 2. **Install Dependencies**:
 
-```sh
-yarn install
-```
+   ```sh
+   yarn install
+   ```
 
 3. **Start Local Node**:
    ```sh
@@ -211,6 +211,11 @@ yarn install
    **Open a new terminal**
    ```sh
    yarn test:live
+   ```
+5. **To run all the tests**:
+   **Open a new terminal**
+   ```sh
+   yarn test:all
    ```
 
 ### Testing Script
@@ -228,7 +233,7 @@ The provided script tests the end-to-end functionality of the MACIQF strategy. I
 
 This project is licensed under the AGPL-3.0-only License.
 
-### Improvements and Further Reading
+### Further Reading
 
 For more detailed information about quadratic funding and MACI, refer to the following resources:
 

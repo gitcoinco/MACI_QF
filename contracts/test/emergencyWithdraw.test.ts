@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
-import { AddressLike, BigNumberish, Signer } from "ethers";
+import { Signer } from "ethers";
 import { existsSync, mkdirSync } from "fs";
 
 import { Keypair } from "maci-domainobjs";
@@ -18,7 +18,6 @@ import {
   mergeMaciSubtrees,
   addTallyResultsBatch,
   finalize,
-  distribute,
 } from "./utils/index";
 
 import type { EthereumProvider } from "hardhat/types";
@@ -295,6 +294,9 @@ describe("e2e", function test() {
     const day = 24 * hour;
     const month = 30 * day;
     await timeTravel(Coordinator.provider as unknown as EthereumProvider, month + 1);
+    // Create a timeout of 4sec to allow the time travel to take effect
+    await new Promise((resolve) => setTimeout(resolve, 4000));
+
     const emergencyWithdrawTx = await MACIQFStrategy.connect(Coordinator).emergencyWithdraw(MACIQFStrategy.NATIVE());
     await emergencyWithdrawTx.wait();
     // Check if the pool amount is 0
