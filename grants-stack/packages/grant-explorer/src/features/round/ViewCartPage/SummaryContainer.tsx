@@ -262,7 +262,9 @@ export function SummaryContainer(props: {
                 <div className="flex flex-col">
                   <p className="text-right">
                     <span data-testid={"totalDonation"} className="mr-2">
-                      {Number(formatEther(totalDonations)).toFixed(5)}
+                      {!props.isZeroDonation
+                        ? Number(formatEther(totalDonations)).toFixed(5)
+                        : 0.0}
                     </span>
                     <span data-testid={"summaryPayoutToken"}>
                       {votingToken.name}
@@ -272,11 +274,13 @@ export function SummaryContainer(props: {
                     <div className="flex justify-end mt-2">
                       <p className="text-[14px] text-[#979998] font-bold">
                         ${" "}
-                        {(
-                          Number(
-                            formatUnits(totalDonations, votingToken.decimal)
-                          ) * payoutTokenPrice
-                        ).toFixed(2)}
+                        {!props.isZeroDonation
+                          ? (
+                              Number(
+                                formatUnits(totalDonations, votingToken.decimal)
+                              ) * payoutTokenPrice
+                            ).toFixed(2)
+                          : 0}
                       </p>
                     </div>
                   )}
@@ -319,8 +323,8 @@ export function SummaryContainer(props: {
         data-testid="handle-confirmation"
         type="button"
         disabled={
-          totalDonations > tokenBalance &&
-          !alreadyDonated &&
+          totalDonations > tokenBalance ||
+          !alreadyDonated ||
           props.hasExceededContributionLimit
         }
         onClick={() => {
