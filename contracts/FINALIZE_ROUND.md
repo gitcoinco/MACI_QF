@@ -24,7 +24,13 @@ This guide walks you through the process of finalizing a round using the MACI QF
    yarn install
    ```
 
-4. **Compile the Contracts**
+4. **Create .env**
+
+   ```sh
+   cp .env.example .env
+   ```
+
+5. **Compile the Contracts**
 
    ```sh
    yarn compile
