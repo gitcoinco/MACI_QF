@@ -24,7 +24,7 @@ task(
 
     const isCancelled = await MACIQFStrategy.isCancelled();
 
-    if (!isCancelled) {
+    if (isCancelled) {
       throw new Error("You cannot emergentWithdraw a canceled round");
     }
 

@@ -2,6 +2,7 @@
     "name": "allo_maci_qf",
     "scripts": {
         "compile": "hardhat compile",
+        "genPrivkey": "hardhat genKeypair",
         "prepareTally:sepolia": "hardhat prepareTally --network sepolia",
         "prepareTally:scroll": "hardhat prepareTally --network scroll",
         "finalize:sepolia": "hardhat finalize --network sepolia",
@@ -10,6 +11,10 @@
         "distributeFunds:scroll": "hardhat distributeFunds --network scroll",
         "e2e:sepolia": "hardhat finalizeRound --network sepolia",
         "e2e:scroll": "hardhat finalizeRound --network scroll",
+        "cancel:sepolia": "hardhat cancel --network sepolia",
+        "cancel:scroll": "hardhat cancel --network scroll",
+        "withdraw:sepolia": "hardhat withdraw --network sepolia",
+        "withdraw:scroll": "hardhat withdraw --network scroll",
         "test:all": "hardhat test --network localhost",
         "test:live": "hardhat test ./test/e2e.test_maciqf.ts --network localhost",
         "test:3.1.1": "hardhat test ./test/3_1_1.test.ts --network localhost",
