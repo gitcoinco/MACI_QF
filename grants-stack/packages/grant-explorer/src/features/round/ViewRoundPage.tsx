@@ -941,22 +941,6 @@ const RoundStatsTabContent = ({
             />
           </div>
         </div>
-
-        <div className="max-w-[53rem] m-auto w-full bg-green-50 rounded-2xl py-8 px-2 flex justify-center items-center gap-8 flex-wrap">
-          <p className="text-xl sm:text-2xl font-medium">
-            Want to check out more stats?
-          </p>
-          <a
-            href={`https://reportcards.gitcoin.co/${chainId}/${roundId}`}
-            target="_blank"
-            className="rounded-lg px-4 py-2.5 font-mono bg-green-200 hover:bg-green-300 text-white transition-all flex items-center justify-center gap-2"
-            data-testid="share-results-footer"
-          >
-            <PresentationChartBarIcon className="w-4 h-4" />
-            <span>Round report card</span>
-          </a>
-        </div>
-
         <ShareModal />
       </section>
     </>
