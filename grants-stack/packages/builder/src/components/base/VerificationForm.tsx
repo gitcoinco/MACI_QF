@@ -8,7 +8,7 @@ import { RootState } from "../../reducers";
 import { ChangeHandlers, ProjectFormStatus } from "../../types";
 import { TextInput } from "../grants/inputs";
 import Github from "../providers/Github";
-import Twitter from "../providers/Twitter";
+// import Twitter from "../providers/Twitter";
 import Button, { ButtonVariants } from "./Button";
 import { validateVerificationForm } from "./formValidation";
 import FormValidationErrorList from "./FormValidationErrorList";
@@ -114,11 +114,11 @@ export default function VerificationForm({
               }
               prefixBoxText="@"
             />
-            <Twitter
+            {/* <Twitter
               handle={props.formMetaData.projectTwitter ?? ""}
               verificationError={(providerError) => setFailed(providerError)}
               canVerify={!!props.formMetaData.projectTwitter}
-            />
+            /> */}
           </div>
         </div>
       </div>
