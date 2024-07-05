@@ -30,6 +30,8 @@ import "./styles/index.css";
 import initDatadog from "./utils/datadog";
 import wagmiClient, { chains } from "./utils/wagmi";
 import initTagmanager from "./tagmanager";
+import { PostHogProvider } from "posthog-js/react";
+import { initPosthog } from "./utils/posthog";
 
 const dataLayerConfig = new DataLayer({
   search: {
@@ -61,6 +63,9 @@ initDatadog();
 initTagmanager();
 
 datadogRum.addAction("Init");
+
+// Initialize posthog
+const posthog = initPosthog();
 
 const queryString = new URLSearchParams(window?.location?.search);
 
@@ -108,42 +113,44 @@ if (pathname && pathname !== window.location.pathname) {
 
 root.render(
   <ErrorBoundary>
-    <WagmiConfig client={wagmiClient}>
-      <RainbowKitProvider chains={chains} theme={gtcLightTheme} coolMode>
-        <ChakraProvider resetCSS={false}>
-          <Provider store={store}>
-            <AlloWrapper>
-              <DataLayerProvider client={dataLayerConfig}>
-                <ReduxRouter history={history} store={store}>
-                  <Layout>
-                    <Routes>
-                      <Route
-                        path={slugs.root}
-                        element={<Navigate to={slugs.grants} />}
-                      />
-                      <Route path={slugs.grants} element={<ProjectsList />} />
-                      <Route path={slugs.project} element={<Project />} />
-                      <Route path={slugs.newGrant} element={<NewProject />} />
-                      <Route path={slugs.edit} element={<EditProject />} />
-                      <Route path={slugs.round} element={<RoundShow />} />
-                      <Route
-                        path={slugs.roundApplication}
-                        element={<RoundApply />}
-                      />
-                      <Route
-                        path={slugs.roundApplicationView}
-                        element={<ViewApplication />}
-                      />
-                      <Route path="*" element={<PageNotFound />} />
-                    </Routes>
-                  </Layout>
-                </ReduxRouter>
-              </DataLayerProvider>
-            </AlloWrapper>
-          </Provider>
-        </ChakraProvider>
-      </RainbowKitProvider>
-    </WagmiConfig>
+    <PostHogProvider client={posthog}>
+      <WagmiConfig client={wagmiClient}>
+        <RainbowKitProvider chains={chains} theme={gtcLightTheme} coolMode>
+          <ChakraProvider resetCSS={false}>
+            <Provider store={store}>
+              <AlloWrapper>
+                <DataLayerProvider client={dataLayerConfig}>
+                  <ReduxRouter history={history} store={store}>
+                    <Layout>
+                      <Routes>
+                        <Route
+                          path={slugs.root}
+                          element={<Navigate to={slugs.grants} />}
+                        />
+                        <Route path={slugs.grants} element={<ProjectsList />} />
+                        <Route path={slugs.project} element={<Project />} />
+                        <Route path={slugs.newGrant} element={<NewProject />} />
+                        <Route path={slugs.edit} element={<EditProject />} />
+                        <Route path={slugs.round} element={<RoundShow />} />
+                        <Route
+                          path={slugs.roundApplication}
+                          element={<RoundApply />}
+                        />
+                        <Route
+                          path={slugs.roundApplicationView}
+                          element={<ViewApplication />}
+                        />
+                        <Route path="*" element={<PageNotFound />} />
+                      </Routes>
+                    </Layout>
+                  </ReduxRouter>
+                </DataLayerProvider>
+              </AlloWrapper>
+            </Provider>
+          </ChakraProvider>
+        </RainbowKitProvider>
+      </WagmiConfig>
+    </PostHogProvider>
   </ErrorBoundary>
 );
 
