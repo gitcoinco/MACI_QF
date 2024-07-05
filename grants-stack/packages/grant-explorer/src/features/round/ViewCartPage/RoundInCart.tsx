@@ -59,7 +59,6 @@ export function RoundInCart(
   const [pcd, setPcd] = useState<string | undefined>(undefined);
   const [pcdFetched, setPcdFetched] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [hasExceededVoteLimit, setHasExceededVoteLimit] = useState(false);
   const [generateProofClicked, setGenerateProofClicked] = useState(false);
   const [donationInput, setDonationInput] = useState<string>("0");
   const [donatedAmount, setDonatedAmount] = useState<bigint>(
@@ -129,12 +128,37 @@ export function RoundInCart(
   };
 
   useEffect(() => {
-    if (pcdFetched && !isZupasReused) {
-      setIsAllowlisted(true);
-    } else {
-      setIsAllowlisted(false);
+    const storedUserIsAllowlisted = store.getUserIsAllowlisted(
+      chainId,
+      roundId,
+      address?.toString() ?? ""
+    );
+
+    if (storedUserIsAllowlisted) {
+      setIsAllowlisted(storedUserIsAllowlisted);
     }
-  }, [pcdFetched, isZupasReused]);
+
+    if (!storedUserIsAllowlisted) {
+      if (pcdFetched && !isZupasReused) {
+        store.updateUserIsAllowlisted(
+          chainId,
+          roundId,
+          true,
+          address?.toString() ?? ""
+        );
+        setIsAllowlisted(true);
+      } else {
+        store.updateUserIsAllowlisted(
+          chainId,
+          roundId,
+          false,
+          address?.toString() ?? ""
+        );
+        setIsAllowlisted(false);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pcdFetched, isZupasReused, chainId, roundId, address]);
 
   useEffect(() => {
     if (
@@ -180,7 +204,12 @@ export function RoundInCart(
       );
 
       setVoiceCreditBalance(_voiceCreditBalance);
-      store.updateRoundContributionAmount(chainId, roundId, value);
+      store.updateUserContributionAmount(
+        chainId,
+        roundId,
+        value,
+        address?.toString() ?? ""
+      );
       setBalanceVoiceCredits(_voiceCreditBalance - usedVoiceCredits);
     }
   };
@@ -233,16 +262,17 @@ export function RoundInCart(
   }, [donatedAmount, donationInput, roundCart]);
 
   useEffect(() => {
-    const storedRoundContributionAmount = store.getContributionAmount(
+    const storedRoundContributionAmount = store.getUserContributionAmount(
       chainId,
-      roundId
+      roundId,
+      address?.toString() ?? ""
     );
 
     if (storedRoundContributionAmount) {
       handleValueChange(storedRoundContributionAmount);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chainId, roundId]);
+  }, [chainId, roundId, address]);
 
   useEffect(() => {
     setBalanceVoiceCredits(voiceCreditBalance - usedVoiceCredits);
@@ -268,10 +298,11 @@ export function RoundInCart(
                   ({roundCart.length})
                 </p>
                 <RoundAllowlist
-                  pcdFetched={pcdFetched}
+                  isAllowlisted={isAllowlisted}
                   maxContributionAllowlisted={maxContributionAllowlisted}
                   maxContributionNonAllowlisted={maxContributionNonAllowlisted}
                   openModal={openModal}
+                  pcdFetched={pcdFetched}
                   isZupasReused={isZupasReused}
                 />
               </div>
@@ -401,109 +432,124 @@ export function RoundInCart(
 }
 
 const RoundAllowlist = ({
-  pcdFetched,
+  isAllowlisted,
   maxContributionAllowlisted,
   maxContributionNonAllowlisted,
   openModal,
+  pcdFetched,
   isZupasReused,
 }: {
-  pcdFetched: boolean;
+  isAllowlisted: boolean;
   maxContributionAllowlisted: string;
   maxContributionNonAllowlisted: string;
   openModal: () => void;
+  pcdFetched: boolean;
   isZupasReused: boolean;
 }) => {
   return (
     <div className="flex flex-col items-center">
       <div className="flex flex-col text-gray-600">
-        {!pcdFetched ? (
-          <div className="mb-5">
-            {Number(maxContributionNonAllowlisted) <= 0 ? (
-              <>
-                <p className="text-sm pt-2 italic mr-2">
-                  You can only contribute by{" "}
-                  <Tooltip
-                    label="Click to join the allowlist"
-                    aria-label="Click to join the allowlist"
-                  >
-                    <a
-                      onClick={openModal}
-                      className="text-md pt-2 font-bold mb-5 ml-1 mr-1 cursor-pointer underline"
-                      style={{ color: "black", fontStyle: "normal" }}
-                    >
-                      joining the allowlist.
-                    </a>
-                  </Tooltip>{" "}
-                  Verified members can contribute up to{" "}
-                  {maxContributionAllowlisted} ETH (
-                  {parseInt(
-                    (Number(maxContributionAllowlisted) * 1e5).toString()
-                  )}{" "}
-                  voice credits).
-                </p>
-              </>
+        {!isAllowlisted ? (
+          <div>
+            {!pcdFetched ? (
+              <div className="mb-5">
+                {Number(maxContributionNonAllowlisted) <= 0 ? (
+                  <>
+                    <p className="text-sm pt-2 italic mr-2">
+                      You can only contribute by{" "}
+                      <Tooltip
+                        label="Click to join the allowlist"
+                        aria-label="Click to join the allowlist"
+                      >
+                        <a
+                          onClick={openModal}
+                          className="text-md pt-2 font-bold mb-5 ml-1 mr-1 cursor-pointer underline"
+                          style={{ color: "black", fontStyle: "normal" }}
+                        >
+                          joining the allowlist.
+                        </a>
+                      </Tooltip>{" "}
+                      Verified members can contribute up to{" "}
+                      {maxContributionAllowlisted} ETH (
+                      {parseInt(
+                        (Number(maxContributionAllowlisted) * 1e5).toString()
+                      )}{" "}
+                      voice credits).
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm pt-2 italic mr-2">
+                      Your max allowed contribution amount is{" "}
+                      {maxContributionNonAllowlisted} ETH which gives you{" "}
+                      {parseInt(
+                        (Number(maxContributionNonAllowlisted) * 1e5).toString()
+                      )}{" "}
+                      voice credits. To contribute up to{" "}
+                      {maxContributionAllowlisted} ETH (
+                      {parseInt(
+                        (Number(maxContributionAllowlisted) * 1e5).toString()
+                      )}{" "}
+                      voice credits),{" "}
+                      <Tooltip
+                        label="Click to join the allowlist"
+                        aria-label="Click to join the allowlist"
+                      >
+                        <a
+                          onClick={openModal}
+                          className="text-md pt-2 font-bold mb-5 mr-2 cursor-pointer underline"
+                          style={{ color: "black", fontStyle: "normal" }}
+                        >
+                          join the allowlist.
+                        </a>
+                      </Tooltip>
+                    </p>
+                    <p className="text-sm italic mr-2">
+                      For each vote, the number of voice credits decreases by
+                      the square of the number of votes cast.
+                    </p>
+                  </>
+                )}
+              </div>
             ) : (
-              <>
-                <p className="text-sm pt-2 italic mr-2">
-                  Your max allowed contribution amount is{" "}
-                  {maxContributionNonAllowlisted} ETH which gives you{" "}
-                  {parseInt(
-                    (Number(maxContributionNonAllowlisted) * 1e5).toString()
-                  )}{" "}
-                  voice credits. To contribute up to{" "}
-                  {maxContributionAllowlisted} ETH (
-                  {parseInt(
-                    (Number(maxContributionAllowlisted) * 1e5).toString()
-                  )}{" "}
-                  voice credits),{" "}
-                  <Tooltip
-                    label="Click to join the allowlist"
-                    aria-label="Click to join the allowlist"
-                  >
-                    <a
-                      onClick={openModal}
-                      className="text-md pt-2 font-bold mb-5 mr-2 cursor-pointer underline"
-                      style={{ color: "black", fontStyle: "normal" }}
-                    >
-                      join the allowlist.
-                    </a>
-                  </Tooltip>
-                </p>
-                <p className="text-sm italic mr-2">
-                  For each vote, the number of voice credits decreases by the
-                  square of the number of votes cast.
-                </p>
-              </>
+              isZupasReused && (
+                <>
+                  {Number(maxContributionNonAllowlisted) <= 0 ? (
+                    <div className="flex flex-col">
+                      <p className="text-sm pt-2 italic">
+                        You have already used your Zupass for this round. You
+                        cannot contribute twice.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col">
+                      <p className="text-sm pt-2 italic">
+                        You have already used your Zupass for this round. You
+                        can contribute up to {maxContributionNonAllowlisted} ETH
+                        (
+                        {parseInt(
+                          (
+                            Number(maxContributionNonAllowlisted) * 1e5
+                          ).toString()
+                        )}{" "}
+                        voice credits).
+                      </p>
+                      <p className="text-sm italic mb-5 mr-2">
+                        For each vote, the number of voice credits decreases by
+                        the square of the number of votes cast.
+                      </p>
+                    </div>
+                  )}
+                </>
+              )
             )}
           </div>
-        ) : !isZupasReused ? (
+        ) : (
           <div className="flex flex-col">
             <p className="text-sm pt-2 italic">
               You successfully proved your Zuzalu commitment, you can now
               contribute up to {maxContributionAllowlisted} ETH (
               {parseInt((Number(maxContributionAllowlisted) * 1e5).toString())}{" "}
-              voice credits).
-            </p>
-            <p className="text-sm italic mb-5 mr-2">
-              For each vote, the number of voice credits decreases by the square
-              of the number of votes cast.
-            </p>
-          </div>
-        ) : Number(maxContributionNonAllowlisted) <= 0 ? (
-          <div className="flex flex-col">
-            <p className="text-sm pt-2 italic">
-              You have already used your Zupass for this round. You cannot
-              contribute twice.
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col">
-            <p className="text-sm pt-2 italic">
-              You have already used your Zupass for this round. You can
-              contribute up to {maxContributionNonAllowlisted} ETH (
-              {parseInt(
-                (Number(maxContributionNonAllowlisted) * 1e5).toString()
-              )}{" "}
               voice credits).
             </p>
             <p className="text-sm italic mb-5 mr-2">
