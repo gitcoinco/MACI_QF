@@ -9,7 +9,7 @@ export const ZuzaluEvents = [
       "29ae64b615383a0ebb1bc37b3a642d82d37545f0f5b1444330300e4c4eedba3f",
     ],
     eventId: "5de90d09-22db-40ca-b3ae-d934573def8b",
-    eventName: "Zuzalu (Montenegro, 2023)",
+    eventName: "Zuzalu",
   },
   //ZuConnect 2023 Instabull
   {
@@ -19,7 +19,7 @@ export const ZuzaluEvents = [
       "29ae64b615383a0ebb1bc37b3a642d82d37545f0f5b1444330300e4c4eedba3f",
     ],
     eventId: "91312aa1-5f74-4264-bdeb-f4a3ddb8670c",
-    eventName: "ZuConnect-Resident (Instabull, 2023)",
+    eventName: "ZuConnect",
   },
   //Edge City Denver (Denver, 2024)
   {
@@ -29,7 +29,7 @@ export const ZuzaluEvents = [
       "10ec38f11baacad5535525bbe8e343074a483c051aa1616266f3b1df3fb7d204",
     ],
     eventId: "7eb74440-1891-4cd5-a351-b24a5b03e669",
-    eventName: "Edge City Denver (2024)",
+    eventName: "Edge City Denver",
   },
   // Vitalia (Próspera, 2023-24)
   {
@@ -39,7 +39,7 @@ export const ZuzaluEvents = [
       "0babbc67ab5da6c9245137ae75461f64a90789ae5abf3737510d5442bbfa3113",
     ],
     eventId: "9ccc53cb-3b0a-415b-ab0d-76cfa21c72ac",
-    eventName: "Vitalia (Próspera, 2023-24)",
+    eventName: "Vitalia",
   },
   //ETHBerlin (Berlin, 2024)
   {
@@ -70,7 +70,7 @@ export const ZuzaluEvents = [
       "10ec38f11baacad5535525bbe8e343074a483c051aa1616266f3b1df3fb7d204",
     ],
     eventId: "21c7db2e-08e3-4234-9a6e-386a592d63c8",
-    eventName: "Edge Esmeralda (Healdsburg, 2024)",
+    eventName: "Edge Esmeralda",
   },
 
   {
@@ -80,6 +80,6 @@ export const ZuzaluEvents = [
       "10ec38f11baacad5535525bbe8e343074a483c051aa1616266f3b1df3fb7d204",
     ],
     eventId: "223b4108-348d-5f65-afa3-464b103e7d90",
-    eventName: "GitcoinTest",
+    eventName: "Test",
   },
 ] as PipelineEdDSATicketZuAuthConfig[];
