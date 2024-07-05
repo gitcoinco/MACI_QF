@@ -461,7 +461,7 @@ export function RoundApplicationForm(props: {
         </Box>
       </div>
       <div className="md:grid md:grid-cols-3 md:gap-6 mt-7">
-        <div className="md:col-span-1"></div>
+        {/* <div className="md:col-span-1"></div>
         <div className="mt-5 md:mt-0 md:col-span-2">
           <Box
             title="Project Socials"
@@ -472,7 +472,7 @@ export function RoundApplicationForm(props: {
               requirements={projectRequirements}
             />
           </Box>
-        </div>
+        </div> */}
         <div className="md:col-span-1"></div>
         <div className="mt-5 md:mt-0 md:col-span-2">
           <Box
