@@ -11,6 +11,8 @@ import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
 import { Navigate, Route, Routes } from "react-router";
 import { WagmiConfig } from "wagmi";
+import { PostHogProvider } from "posthog-js/react";
+
 import AlloWrapper from "./utils/AlloWrapper";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Layout from "./components/Layout";
@@ -30,7 +32,6 @@ import "./styles/index.css";
 import initDatadog from "./utils/datadog";
 import wagmiClient, { chains } from "./utils/wagmi";
 import initTagmanager from "./tagmanager";
-import { PostHogProvider } from "posthog-js/react";
 import { initPosthog } from "./utils/posthog";
 
 const dataLayerConfig = new DataLayer({
