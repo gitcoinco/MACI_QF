@@ -58,7 +58,7 @@ Make sure to refer to `package.json` for the supported networks.
 To create a MACI private key, you can run the following command. If you do not pass a password, a random key will be generated for you. This can be useful for generating a deterministic key in case you lose them.
 
 ```sh
-yarn genPrivkey --password <optional-password>
+yarn genPrivkey --password yourpassword
 ```
 
 The generated keypair's private key should be used in the round creation on [MACI Manager](https://manager-maci.gitcoin.co/). Alternatively, you can create a Coordinator MACI-Keypair directly on the MACI Manager UI.
