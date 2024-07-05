@@ -25,6 +25,7 @@ import { isRoundZuProofReused } from "../../api/voting";
 import { useAlreadyContributed } from "../../projects/hooks/useRoundMaciMessages";
 import { useDataLayer } from "data-layer";
 import { useCartStorage } from "../../../store";
+import { Link } from "react-router-dom";
 
 export function RoundInCart(
   props: React.ComponentProps<"div"> & {
@@ -96,6 +97,7 @@ export function RoundInCart(
     roundId
   );
 
+  const roundPath = `/round/${chainId}/${roundId}`;
   const votingToken = selectedPayoutToken;
 
   const validObjEventIDs = round?.roundMetadata?.maciParameters?.validEventIDs;
@@ -209,6 +211,7 @@ export function RoundInCart(
       setPcdFetched(true);
       setIsZupasReused(isReused);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address, filteredEvents]);
 
   useEffect(() => {
@@ -238,13 +241,16 @@ export function RoundInCart(
     if (storedRoundContributionAmount) {
       handleValueChange(storedRoundContributionAmount);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chainId, roundId]);
 
   useEffect(() => {
     setBalanceVoiceCredits(voiceCreditBalance - usedVoiceCredits);
   }, [voiceCreditBalance, usedVoiceCredits]);
 
-  useEffect(() => {}, [generateProofClicked]);
+  useEffect(() => {
+    // do nothing
+  }, [generateProofClicked]);
 
   return (
     <div className="my-4 flex w-full">
@@ -253,9 +259,11 @@ export function RoundInCart(
           <div className="flex flex-row items-end justify-between">
             <div className="flex flex-col">
               <div>
-                <p className="text-xl font-semibold inline">
-                  {round?.roundMetadata?.name}
-                </p>
+                <Link to={roundPath}>
+                  <p className="text-xl font-semibold inline">
+                    {round?.roundMetadata?.name}
+                  </p>
+                </Link>
                 <p className="text-lg font-bold ml-2 inline">
                   ({roundCart.length})
                 </p>
@@ -303,7 +311,7 @@ export function RoundInCart(
                     totalAmount={parseFloat(donationInput)}
                     project={project}
                     index={key}
-                    roundRoutePath={`/round/${chainId}/${roundCart[0].roundId}`}
+                    roundRoutePath={roundPath}
                     last={key === roundCart.length - 1}
                     payoutTokenPrice={payoutTokenPrice}
                     alreadyContributed={status?.hasDonated ?? false}
