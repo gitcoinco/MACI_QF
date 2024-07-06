@@ -132,9 +132,9 @@ function TableHeader() {
     <table className="w-full text-left mx-4">
       <thead className="font-sans text-lg">
         <tr>
-          <th className="w-2/5">Round</th>
-          <th className="w-2/5">
-            <div className="flex flex-row items-center lg:pr-16">
+          <th className="w-1/4 text-left mx-5">Round</th>
+          <th className="w-1/4">
+            <div className="flex flex-row ">
               <div className="py-4">Total Donation</div>
               <div className="py-4">
                 <InformationCircleIcon
@@ -151,14 +151,39 @@ function TableHeader() {
                   effect="solid"
                 >
                   <p className="text-xs">
-                    The displayed amount in USD reflects <br />
-                    the value at the time of your donation.
+                    The total contribution amount, <br />
+                    in each round
                   </p>
                 </ReactTooltip>
               </div>
             </div>
           </th>
-          <th className="w-1/5 pl-8">Transaction Information</th>
+          <th className="w-1/4 ">
+            <div className="flex flex-row ">
+              <div className="py-4">Voice Credits</div>
+              <div className="py-4">
+                <InformationCircleIcon
+                  data-tip
+                  data-background-color="#0E0333"
+                  data-for="voice-credits-tooltip"
+                  className="inline h-4 w-4 ml-2 mr-3"
+                  data-testid={"voice-credits-tooltip"}
+                />
+                <ReactTooltip
+                  id="voice-credits-tooltip"
+                  place="bottom"
+                  type="dark"
+                  effect="solid"
+                >
+                  <p className="text-xs">
+                    The total voice credits earned, <br />
+                    from each contribution
+                  </p>
+                </ReactTooltip>
+              </div>
+            </div>
+          </th>
+          <th className="w-1/4 text-right pr-9">Transaction Information</th>
         </tr>
       </thead>
     </table>
@@ -179,8 +204,14 @@ function InnerTable(props: {
             <table className="w-full text-left">
               <thead className="font-sans text-lg">
                 <tr>
-                  <th>Project</th>
-                  <th>Donation</th>
+                  <th className="w-1/4 text-left mx-5">Project</th>
+                  <th className="w-1/4">
+                    <div className="py-4">Donation</div>
+                  </th>
+                  <th className="w-1/4 ">
+                    <div className="py-4">Voice Credits</div>
+                  </th>
+                  <th className="w-1/4"></th>
                 </tr>
               </thead>
               <tbody>
@@ -205,11 +236,8 @@ function InnerTable(props: {
 
                       if (token) {
                         formattedAmount = `${Number(
-                          formatUnits(
-                            BigInt(contribution.amount),
-                            token.decimal
-                          )
-                        ).toFixed(5)} ${token.name}`;
+                          Number(contribution.amount) / 1e13
+                        )}`;
                         amountInUsd =
                           Number(
                             formatUnits(
@@ -221,7 +249,7 @@ function InnerTable(props: {
 
                       return (
                         <tr key={contribution.id} className="">
-                          <td className="py-4 pr-2 w-2/5">
+                          <td className="py-4 pr-2 colSpan-4">
                             <div className="flex items-center">
                               <div className="flex flex-col sm:flex-row">
                                 {/* Link to the project */}
@@ -247,11 +275,21 @@ function InnerTable(props: {
                             </div>
                           </td>
                           {/* Display donations */}
-                          <td className="py-4 truncate lg:pr-16">
+                          <td className="py-4 truncate ">
+                            <div className="flex flex-col ">
+                              <span className="text-md">{`${Number(formattedAmount) / 1e5} ${token.name}`}</span>
+                              <span className="text-grey-400">
+                                ${amountInUsd.toFixed(2)}
+                              </span>
+                            </div>
+                          </td>
+                          {/* Display Voice Credits */}
+                          <td className="py-4 truncate ">
                             <span className="text-grey-400">
-                              ${amountInUsd.toFixed(2)}
+                              {formattedAmount}
                             </span>
                           </td>
+                          <td className="w-1/4"></td>
                         </tr>
                       );
                     })}
@@ -296,18 +334,15 @@ function Table(props: {
     const token = props.tokens[tokenId];
 
     if (token) {
-      formattedAmount = `${formatUnits(
-        BigInt(totalContributionInMatchingToken),
-        token.decimal
-      )} ${token.name}`;
+      formattedAmount = `${totalContributionInMatchingToken / 1e18} ${token.name}`;
     }
   });
 
   return (
-    <table className="w-full text-left font-sans">
+    <table className="w-full text-left">
       <tbody>
         <tr key={roundInfo.id}>
-          <td className="py-4 pr-2 w-2/5">
+          <td className="w-1/4 text-left mx-5">
             <div className="flex items-center">
               <div className="flex flex-col sm:flex-row">
                 <div className="flex items-center">
@@ -335,9 +370,18 @@ function Table(props: {
             </div>
           </td>
           {/* Display donations */}
-          <td className="py-4 truncate w-2/5 pl-8">
-            <span className="text-grey-400">
-              ${totalContributionAmountInUsd.toFixed(2)}
+          <td className=" truncate w-1/4 pl-5 text-left">
+            <div className="flex flex-col gap-2 ">
+              <span className="text-md">{formattedAmount}</span>
+              <span className="text-grey-400 text-sm">
+                ${totalContributionAmountInUsd.toFixed(2)}
+              </span>
+            </div>
+          </td>
+          {/* Voice Credits */}
+          <td className=" truncate w-1/4 pl-8 text-left">
+            <span className="text-md ">
+              {`${totalContributionInMatchingToken / 1e13}`}
             </span>
           </td>
           <td className="truncate w-1/5 pl-48">

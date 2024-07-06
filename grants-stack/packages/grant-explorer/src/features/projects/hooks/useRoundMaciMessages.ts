@@ -6,7 +6,6 @@ import { PCommand, PubKey } from "maci-domainobjs";
 import { getMACIKey, generatePubKeyWithSeed } from "../../api/keys";
 import { getContributorMessages } from "../../api/voting";
 import { GroupedMaciContributions, MACIContributions } from "../../api/types";
-import { boolean } from "zod";
 
 const abi = parseAbi([
   "function getPool(uint256) view returns ((bytes32 profileId, address strategy, address token, (uint256,string) metadata, bytes32 managerRole, bytes32 adminRole))",
