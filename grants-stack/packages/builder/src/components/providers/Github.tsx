@@ -78,7 +78,7 @@ export default function Github({
             version: "0.0.0",
             address: props.account || "",
             org,
-            requestedClient: ClientType.GrantHub,
+            requestedClient: ClientType.MACI,
             proofs: {
               code: result.code, // provided by GitHub as query params in the redirect
             },

@@ -34,10 +34,11 @@ export const fetchChallengeCredential = async (
 
 export enum ClientType {
   GrantHub,
+  MACI,
 }
 
 export type GHOrgRequestPayload = RequestPayload & {
-  requestedClient?: ClientType.GrantHub;
+  requestedClient?: ClientType.MACI;
   org?: string;
 };
 
