@@ -64,27 +64,6 @@ const LandingPage = () => {
           roundType="active"
         />
       </LandingSection>
-      <LandingSection
-        title="Rounds ending soon"
-        action={
-          <ViewAllLink
-            to={`/rounds?${toQueryString({
-              orderBy: ROUNDS_ENDING_SOON_FILTER.orderBy,
-              status: RoundStatus.active,
-            })}`}
-          >
-            View all
-          </ViewAllLink>
-        }
-      >
-        <RoundsGrid
-          isLoading={roundsEndingSoon.isLoading}
-          data={filteredRoundsEndingSoon}
-          loadingCount={ROUNDS_ENDING_SOON_FILTER.first}
-          maxCount={ROUNDS_ENDING_SOON_FILTER.first}
-          roundType="endingSoon"
-        />
-      </LandingSection>
     </GradientLayout>
   );
 };
