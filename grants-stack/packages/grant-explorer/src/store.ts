@@ -12,7 +12,7 @@ interface CartState {
   contributionAmount: Record<string, string>;
   isAllowlisted: Record<string, boolean>;
   add: (project: CartProject) => void; // add project to cart
-  addUserProject: (project: CartProject, walletAddress: string) => void; // need to update to per round & chain
+  addUserProject: (project: CartProject, walletAddress: string) => void;
   clear: () => void;
   clearUserProjects: (walletAddress: string) => void;
   remove: (project: CartProject) => void;
