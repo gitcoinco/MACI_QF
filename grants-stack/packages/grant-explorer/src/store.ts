@@ -8,8 +8,11 @@ import { zeroAddress } from "viem";
 interface CartState {
   projects: CartProject[];
   userProjects: Record<string, CartProject[]>;
+  chainToVotingToken: Record<ChainId, VotingToken>;
+  contributionAmount: Record<string, string>;
+  isAllowlisted: Record<string, boolean>;
   add: (project: CartProject) => void; // add project to cart
-  addUserProject: (project: CartProject, walletAddress: string) => void; // add project to userCart
+  addUserProject: (project: CartProject, walletAddress: string) => void;
   clear: () => void;
   clearUserProjects: (walletAddress: string) => void;
   remove: (project: CartProject) => void;
@@ -28,18 +31,32 @@ interface CartState {
     amount: string,
     walletAddress: string
   ) => void;
-  updateRoundContributionAmount: (
+  updateUserContributionAmount: (
     chainId: ChainId,
     roundId: string,
-    amount: string
+    amount: string,
+    walletAddress: string
+  ) => void;
+  updateUserIsAllowlisted: (
+    chainId: ChainId,
+    roundId: string,
+    allowListed: boolean,
+    walletAddress: string
   ) => void;
   setCart: (projects: CartProject[]) => void;
   setUserCart: (projects: CartProject[], walletAddress: string) => void;
-  chainToVotingToken: Record<ChainId, VotingToken>;
-  contributionAmount: Record<string, string>;
-  getContributionAmount: (chainId: ChainId, roundId: string) => string;
+  getUserContributionAmount: (
+    chainId: ChainId,
+    roundId: string,
+    walletAddress: string
+  ) => string;
   getVotingTokenForChain: (chainId: ChainId) => VotingToken;
   setVotingTokenForChain: (chainId: ChainId, votingToken: VotingToken) => void;
+  getUserIsAllowlisted: (
+    chainId: ChainId,
+    roundId: string,
+    walletAddress: string
+  ) => boolean;
 }
 
 /**
@@ -115,6 +132,7 @@ export const useCartStorage = create<CartState>()(
         // walletAddress: [projects]
       },
       contributionAmount: {},
+      isAllowlisted: {},
 
       setCart: (projects: CartProject[]) => {
         set({
@@ -193,16 +211,43 @@ export const useCartStorage = create<CartState>()(
         });
       },
 
-      updateRoundContributionAmount: (chainId, roundId, amount) => {
+      updateUserContributionAmount: (
+        chainId,
+        roundId,
+        amount,
+        walletAddress
+      ) => {
         set({
           contributionAmount: {
             ...get().contributionAmount,
-            [`${chainId}-${roundId}`]: amount,
+            [`${walletAddress}-${chainId}-${roundId}`]: amount,
           },
         });
       },
-      getContributionAmount(chainId, roundId) {
-        return get().contributionAmount[`${chainId}-${roundId}`] ?? "0";
+
+      updateUserIsAllowlisted: (
+        chainId,
+        roundId,
+        allowListed,
+        walletAddress
+      ) => {
+        set({
+          isAllowlisted: {
+            ...get().isAllowlisted,
+            [`${walletAddress}-${chainId}-${roundId}`]: allowListed,
+          },
+        });
+      },
+
+      getUserIsAllowlisted: (chainId, roundId, walletAddress) => {
+        return get().isAllowlisted[`${walletAddress}-${chainId}-${roundId}`];
+      },
+
+      getUserContributionAmount(chainId, roundId, walletAddress) {
+        return (
+          get().contributionAmount[`${walletAddress}-${chainId}-${roundId}`] ??
+          "0"
+        );
       },
       updateDonationsForChain: (chainId: ChainId, amount: string) => {
         const newState = get().projects.map((project) => ({
