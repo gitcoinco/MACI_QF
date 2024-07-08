@@ -31,10 +31,10 @@ export default function About({
 }) {
   const canShowApplications = applications.length !== 0 && showApplications;
 
-  // const { isValid: validTwitterCredential } = useValidateCredential(
-  //   project?.credentials?.twitter,
-  //   project?.projectTwitter
-  // );
+  const { isValid: validTwitterCredential } = useValidateCredential(
+    project?.credentials?.twitter,
+    project?.projectTwitter
+  );
 
   const { isValid: validGithubCredential } = useValidateCredential(
     project?.credentials?.github,
@@ -96,7 +96,7 @@ export default function About({
                 >
                   {project?.projectTwitter}
                 </a>
-                {/* {validTwitterCredential && <GreenVerifiedBadge />} */}
+                {validTwitterCredential && <GreenVerifiedBadge />}
               </div>
             )}
             {project?.projectGithub && (

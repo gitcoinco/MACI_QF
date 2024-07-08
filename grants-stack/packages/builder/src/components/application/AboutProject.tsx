@@ -25,10 +25,10 @@ export function AboutProject(props: {
   const { website, projectTwitter, projectGithub, userGithub, credentials } =
     projectToRender;
 
-  // const { isValid: validTwitterCredential } = useValidateCredential(
-  //   credentials?.twitter,
-  //   projectTwitter
-  // );
+  const { isValid: validTwitterCredential } = useValidateCredential(
+    credentials?.twitter,
+    projectTwitter
+  );
 
   const { isValid: validGithubCredential } = useValidateCredential(
     credentials?.github,
@@ -114,7 +114,7 @@ export function AboutProject(props: {
               violetcolor
             />
           </a>
-          {/* {validTwitterCredential && <GreenVerifiedBadge />} */}
+          {validTwitterCredential && <GreenVerifiedBadge />}
         </span>
       )}
       {userGithub && (
