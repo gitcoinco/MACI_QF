@@ -18,7 +18,7 @@ const testnetChains = () => {
 };
 
 const mainnetChains = () => {
-  return [scroll, sepolia];
+  return [scroll];
 };
 
 const allChains: Chain[] =
