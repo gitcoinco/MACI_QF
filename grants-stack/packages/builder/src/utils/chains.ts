@@ -12,7 +12,7 @@ const availableChains: { [key: string]: Chain } = {
 
 const stagingChains = [scroll, sepolia];
 
-const productionChains = [scroll, sepolia];
+const productionChains = [scroll];
 
 export function getEnabledChainsAndProviders() {
   const config = getConfig();
