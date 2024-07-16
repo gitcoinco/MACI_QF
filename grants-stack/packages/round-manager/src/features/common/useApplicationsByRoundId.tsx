@@ -31,7 +31,11 @@ export const useApplicationsByRoundId = (roundId: string) => {
               id: application.id,
               applicationIndex: Number(application.id),
               round: application.roundId,
-              status: application.status,
+              status:
+                application.status === "IN_REVIEW" // TODO: remove this, quick fix to treat inReview as pending
+                  ? "PENDING"
+                  : application.status,
+              // status: application.status,
               metadata: application.metadata,
               project: {
                 ...application.metadata.application.project,
@@ -39,7 +43,8 @@ export const useApplicationsByRoundId = (roundId: string) => {
                 id: application.projectId,
               },
               projectId: application.projectId,
-              inReview: application.status === "IN_REVIEW",
+              inReview: false, // TODO: remove this, quick fix to treat inReview as pending
+              // inReview: application.status === "IN_REVIEW",
               recipient: application.metadata.application.recipient,
               createdAt: "0",
               projectsMetaPtr: { protocol: 1, pointer: "" },
