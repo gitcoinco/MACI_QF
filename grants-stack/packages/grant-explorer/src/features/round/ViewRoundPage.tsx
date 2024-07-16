@@ -1152,6 +1152,12 @@ function PreRoundPage(props: {
 }) {
   const { round, chainId, roundId, element } = props;
 
+  // Temporary fix: _applicationEndDate = applicationEndDate - one day
+  // remove this post zuzalu maci rounds
+  const _applicationEndDate = new Date(
+    round.applicationsEndTime.getTime() - 86400000
+  );
+
   const applicationURL = `${builderURL}/#/chains/${chainId}/rounds/${roundId}`;
 
   const currentTime = new Date();
@@ -1162,13 +1168,13 @@ function PreRoundPage(props: {
     round &&
     round.applicationsStartTime <= currentTime &&
     (isInfiniteDate(round.applicationsEndTime) ||
-      round.applicationsEndTime >= currentTime);
+      _applicationEndDate >= currentTime);
 
   const isAfterApplicationEndDateAndBeforeRoundStartDate =
     round &&
     round.roundStartTime >= currentTime &&
     (isInfiniteDate(round.applicationsEndTime) ||
-      round.applicationsEndTime <= currentTime);
+      _applicationEndDate <= currentTime);
 
   const { data } = useToken({
     address: getAddress(props.round.token),
@@ -1211,10 +1217,10 @@ function PreRoundPage(props: {
               {!isInfiniteDate(round.applicationsEndTime) && (
                 <>
                   <span className="mr-1">
-                    {formatUTCDateAsISOString(round.applicationsEndTime)}
+                    {formatUTCDateAsISOString(_applicationEndDate)}
                   </span>
 
-                  <span>{getUTCTime(round.applicationsEndTime)}</span>
+                  <span>{getUTCTime(_applicationEndDate)}</span>
                 </>
               )}
               {isInfiniteDate(round.applicationsEndTime) && (
