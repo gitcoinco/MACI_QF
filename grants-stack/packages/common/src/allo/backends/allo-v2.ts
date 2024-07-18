@@ -820,7 +820,7 @@ export class AlloV2 implements Allo {
     applicationsToUpdate: {
       address: string;
       status: ApplicationStatus;
-      statusSnapshots?: {
+      statusSnapshots: {
         updatedAt: Date;
       }[];
     }[];
@@ -863,7 +863,6 @@ export class AlloV2 implements Allo {
           latestUpdateTimes: latestUpdateTimes,
         }
       );
-
       const txResult = await sendTransaction(this.transactionSender, {
         address: args.strategyAddress,
         abi: MACIQF as Abi,

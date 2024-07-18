@@ -151,6 +151,11 @@ export interface Allo {
     applicationsToUpdate: {
       address: string;
       status: ApplicationStatus;
+      statusSnapshots:
+        | {
+            updatedAt: Date | undefined;
+          }[]
+        | undefined;
     }[];
   }): AlloOperation<
     Result<void>,
