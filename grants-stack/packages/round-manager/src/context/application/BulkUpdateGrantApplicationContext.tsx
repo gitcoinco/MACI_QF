@@ -234,7 +234,6 @@ async function _bulkUpdateGrantApplication({
           .bulkMACIUpdateApplicationStatus({
             roundId,
             applicationsToUpdate: updatedSelectedApplications.map((a) => {
-              console.log("a.id", a);
               return {
                 address: a.id as string,
                 status: a.status,
