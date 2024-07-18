@@ -60,6 +60,7 @@ export function filterRoundsWithProjects(rounds: RoundGetRound[]) {
 const OVERRIDE_PRIVATE_ROUND_IDS = [
   /* Zuzalu Q1 Round */
   "0xf89aad3fad6c3e79ffa3ccc835620fcc7e55f919",
+  "19",
 ];
 
 export const filterOutPrivateRounds = (rounds: RoundGetRound[]) => {
