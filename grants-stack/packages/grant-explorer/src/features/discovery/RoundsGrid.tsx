@@ -27,12 +27,14 @@ export function RoundsGrid({
         ?.slice(0, maxCount)
         .map((round, i) => (
           <div key={round?.id} className={getItemClassName?.(round, i)}>
-            <RoundCard
-              round={round}
-              isLoading={isLoading}
-              index={i}
-              roundType={roundType}
-            />
+            {round?.id !== "19" && (
+              <RoundCard
+                round={round}
+                isLoading={isLoading}
+                index={i}
+                roundType={roundType}
+              />
+            )}
           </div>
         ))}
     </div>

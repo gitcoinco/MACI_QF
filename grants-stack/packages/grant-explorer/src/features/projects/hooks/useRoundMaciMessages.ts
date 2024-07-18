@@ -240,6 +240,7 @@ export const useAlreadyContributed = (
         stateIndex: Number(response.stateIndex) ?? 0,
         chainId: Number(response.chainId),
         roundId: response.roundId,
+        voiceCreditBalance: response.voiceCreditBalance,
       };
     }
   );
