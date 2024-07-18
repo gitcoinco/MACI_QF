@@ -142,12 +142,12 @@ const RoundCard = ({ round, index, roundType }: RoundCardProps) => {
             )}
           </CardDescription>
           <div className="flex gap-2 justfy-between items-center">
-            <RoundDaysDetails
+            {/* <RoundDaysDetails
               roundStartsIn={roundStartsIn}
               roundEndsIn={roundEndsIn}
               applicationsStartsIn={applicationsStartsIn}
               applicationsEndsIn={applicationsEndsIn}
-            />
+            /> */}
 
             <RoundStrategyBadge strategyName={strategyName} />
           </div>

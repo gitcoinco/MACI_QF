@@ -88,7 +88,7 @@ const useProjectDetailsParams = useParams<{
 }>;
 
 export default function ViewProjectDetails() {
-  const [selectedTab, setSelectedTab] = useState(0)
+  const [selectedTab, setSelectedTab] = useState(0);
 
   datadogLogs.logger.info(
     "====> Route: /round/:chainId/:roundId/:applicationId"
@@ -102,14 +102,12 @@ export default function ViewProjectDetails() {
   const dataLayer = useDataLayer();
   const { address: walletAddress } = useAccount();
 
-
   const { data: status } = useAlreadyContributed(
     dataLayer,
     walletAddress ?? "",
     Number(chainId),
     roundId
   );
-
 
   let applicationId: string;
 
@@ -539,17 +537,18 @@ function Sidebar(props: {
   addToCart: () => void;
 }) {
   return (
-    <div className="min-w-[320px] h-fit mb-6 rounded-3xl bg-gray-50">
-      <ProjectStats />
-      {props.isBeforeRoundEndDate &&
-       (
-        <CartButtonToggle
-          isAlreadyInCart={props.isAlreadyInCart}
-          addToCart={props.addToCart}
-          removeFromCart={props.removeFromCart}
-        />
-      )}
-    </div>
+    <></>
+    // <div className="min-w-[320px] h-fit mb-6 rounded-3xl bg-gray-50">
+    //   <ProjectStats />
+    //   {props.isBeforeRoundEndDate &&
+    //    (
+    //     <CartButtonToggle
+    //       isAlreadyInCart={props.isAlreadyInCart}
+    //       addToCart={props.addToCart}
+    //       removeFromCart={props.removeFromCart}
+    //     />
+    //   )}
+    // </div>
   );
 }
 
