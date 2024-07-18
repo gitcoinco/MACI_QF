@@ -60,7 +60,18 @@ export function RoundInCart(
   const [pcdFetched, setPcdFetched] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [generateProofClicked, setGenerateProofClicked] = useState(false);
-  const [donationInput, setDonationInput] = useState<string>("0");
+  const { isLoading, data: status } = useAlreadyContributed(
+    dataLayer,
+    address as string,
+    chainId,
+    roundId
+  );
+
+  const alreadyContributed = status?.hasContributed ?? false;
+  const amountDonated = (
+    Number(status?.voiceCreditBalance ?? "0") / 1e5
+  ).toString();
+  const [donationInput, setDonationInput] = useState<string>(amountDonated);
   const [donatedAmount, setDonatedAmount] = useState<bigint>(
     BigInt(parseInt(donationInput) * 1e18)
   );
@@ -89,12 +100,6 @@ export function RoundInCart(
   const [hasExceededContributionLimit, setHasExceededContributionLimit] =
     useState(false);
   const [isZeroDonation, setIsZeroDonation] = useState(false);
-  const { isLoading, data: status } = useAlreadyContributed(
-    dataLayer,
-    address as string,
-    chainId,
-    roundId
-  );
 
   const roundPath = `/round/${chainId}/${roundId}`;
   const votingToken = selectedPayoutToken;
@@ -163,11 +168,13 @@ export function RoundInCart(
   useEffect(() => {
     if (
       isAllowlisted &&
+      !alreadyContributed &&
       Number(donationInput) > Number(maxContributionAllowlisted)
     ) {
       setHasExceededContributionLimit(true);
     } else if (
       !isAllowlisted &&
+      !alreadyContributed &&
       Number(donationInput) > Number(maxContributionNonAllowlisted)
     ) {
       setHasExceededContributionLimit(true);
@@ -177,6 +184,7 @@ export function RoundInCart(
   }, [
     donationInput,
     isAllowlisted,
+    isLoading,
     maxContributionAllowlisted,
     maxContributionNonAllowlisted,
   ]);
@@ -298,7 +306,7 @@ export function RoundInCart(
                   ({roundCart.length})
                 </p>
                 <RoundAllowlist
-                  isAllowlisted={isAllowlisted}
+                  isAllowlisted={alreadyContributed ?? isAllowlisted}
                   maxContributionAllowlisted={maxContributionAllowlisted}
                   maxContributionNonAllowlisted={maxContributionNonAllowlisted}
                   openModal={openModal}
@@ -314,16 +322,19 @@ export function RoundInCart(
                 htmlFor="totalDonationETH"
                 className="text-md font-normal inline mr-2"
               >
-                Your Contribution (ETH): {"  "}
+                {alreadyContributed
+                  ? "You Contributed (ETH):  "
+                  : "Your Contribution (ETH):  "}
               </label>
               <input
                 type="text"
                 id="totalDonationETH"
-                value={donationInput}
+                value={alreadyContributed ? amountDonated : donationInput}
                 typeof="number"
                 onChange={handleInputChange}
                 className="px-5 py-2 w-[7rem] bg-white border shadow-sm border-slate-300 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-sky-500 block rounded-lg sm:text-sm focus:ring-1"
                 placeholder="Enter amount in ETH"
+                disabled={alreadyContributed ?? false}
               />
               <span className="text-md font-normal inline ml-2 text-gray-400">
                 {" "}

@@ -301,11 +301,14 @@ export const useCheckoutStore = create<CheckoutState>()(
           // Ensure that the vote option and anchor address are not null
           // Prevents the donation to be processed if the vote option is not found
           // Hence, the indexer for any case failed to serve the needed data
-          if (!voteOption || !app.anchorAddress) {
-            throw new Error("vote option not found");
+          if (voteOption === undefined) {
+            throw new Error("failed to fetch vote option data");
+          }
+          if (app.anchorAddress === undefined) {
+            throw new Error("failed to fetch application data");
           }
 
-          voteIdMap[app.anchorAddress] = voteOption;
+          voteIdMap[app.anchorAddress??""] = voteOption;
         }
 
         // Process each donation
