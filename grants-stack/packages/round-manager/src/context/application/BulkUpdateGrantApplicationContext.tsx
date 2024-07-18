@@ -233,10 +233,14 @@ async function _bulkUpdateGrantApplication({
         result = await allo
           .bulkMACIUpdateApplicationStatus({
             roundId,
-            applicationsToUpdate: updatedSelectedApplications.map((a) => ({
-              address: a.id as string,
-              status: a.status,
-            })),
+            applicationsToUpdate: updatedSelectedApplications.map((a) => {
+              console.log("a.id", a);
+              return {
+                address: a.id as string,
+                status: a.status,
+                statusSnapshots: a?.statusSnapshots,
+              };
+            }),
             // FIXME: use getAddress when tests stop failing because of it
             strategyAddress: roundStrategyAddress as Address,
           })

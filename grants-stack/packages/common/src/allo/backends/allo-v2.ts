@@ -820,7 +820,7 @@ export class AlloV2 implements Allo {
     applicationsToUpdate: {
       address: string;
       status: ApplicationStatus;
-      statusSnapshots?: {
+      statusSnapshots: {
         updatedAt: Date;
       }[];
     }[];
@@ -844,6 +844,7 @@ export class AlloV2 implements Allo {
       // Process the applicationsToUpdate array
       args.applicationsToUpdate.reduce(
         (acc, app) => {
+          console.log("statusSnapshots", app.statusSnapshots);
           acc.recipients.push(app.address);
           acc.statuses.push(applicationStatusToNumber(app.status));
           acc.latestUpdateTimes.push(
@@ -863,6 +864,8 @@ export class AlloV2 implements Allo {
           latestUpdateTimes: latestUpdateTimes,
         }
       );
+
+      console.log("latestUpdateTimes", latestUpdateTimes);
 
       const txResult = await sendTransaction(this.transactionSender, {
         address: args.strategyAddress,
