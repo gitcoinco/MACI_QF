@@ -148,12 +148,11 @@ function ShowRound() {
 
     // Temporary fix: applicationEndDate = applicationEndDate - one day
     // remove this post zuzalu maci rounds
-
-    // let applicationEndDate = 0;
-    // if (roundState?.round?.applicationsEndTime) {
-    //   applicationEndDate =
-    //     new Date(roundState?.round.applicationsEndTime).getTime() - 86400;
-    // }
+    let applicationEndDate = 0;
+    if (roundState?.round?.applicationsEndTime) {
+      applicationEndDate =
+        new Date(roundState?.round.applicationsEndTime).getTime() - 86400;
+    }
 
     // covers QF and DF application and voting periods condition evaluation
     if (
@@ -169,7 +168,7 @@ function ShowRound() {
       roundState?.round?.applicationsEndTime !== undefined &&
       roundState?.round?.roundEndTime !== undefined
     ) {
-      applicationsHaveEnded = roundState.round?.applicationsEndTime <= now;
+      applicationsHaveEnded = applicationEndDate <= now;
       votingHasEnded = roundState.round?.roundEndTime <= now;
     }
 
@@ -196,12 +195,11 @@ function ShowRound() {
         {isInfinite(roundData.applicationsEndTime) ||
         !roundData.applicationsEndTime
           ? "No End Date"
-          : // : formatTimeUTC(
-            //     // Temporary fix: applicationEndDate = applicationEndDate - one day
-            //     // remove this post zuzalu maci rounds
-            //     new Date(roundData.applicationsEndTime).getTime() - 86400
-            //   )}
-            formatTimeUTC(roundData.applicationsEndTime)}
+          : formatTimeUTC(
+              // Temporary fix: applicationEndDate = applicationEndDate - one day
+              // remove this post zuzalu maci rounds
+              new Date(roundData.applicationsEndTime).getTime() - 86400
+            )}
       </>
     );
 
