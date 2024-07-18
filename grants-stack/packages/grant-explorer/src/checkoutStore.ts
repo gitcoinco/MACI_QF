@@ -278,6 +278,8 @@ export const useCheckoutStore = create<CheckoutState>()(
 
         const voteIdMap: { [key: string]: bigint } = {};
 
+        const voteOptionCounter: { [key: number]: number } = {};
+
         for (const app of groupedDonations[roundId]) {
           const ID = (await dataLayer.getVoteOptionIndexByChainIdAndRoundId({
             chainId: chainId,
@@ -289,7 +291,21 @@ export const useCheckoutStore = create<CheckoutState>()(
 
           const voteOption = ID?.votingIndexOptions[0].optionIndex;
 
-          voteIdMap[app.anchorAddress ?? ""] = voteOption;
+          // Ensure that the vote option is unique
+          if (voteOptionCounter[Number(voteOption ?? 0)] > 0) {
+            throw new Error("vote option already exists");
+          }
+
+          voteOptionCounter[Number(voteOption)] = 1;
+
+          // Ensure that the vote option and anchor address are not null
+          // Prevents the donation to be processed if the vote option is not found
+          // Hence, the indexer for any case failed to serve the needed data
+          if (!voteOption || !app.anchorAddress) {
+            throw new Error("vote option not found");
+          }
+
+          voteIdMap[app.anchorAddress] = voteOption;
         }
 
         // Process each donation
