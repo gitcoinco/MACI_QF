@@ -234,6 +234,16 @@ export const SEPOLIA_TOKENS: VotingToken[] = [
 
 export const OPTIMISM_MAINNET_TOKENS: VotingToken[] = [
   {
+    name: "ETH",
+    chainId: ChainId.OPTIMISM_MAINNET_CHAIN_ID,
+    address: zeroAddress,
+    decimal: 18,
+    logo: TokenNamesAndLogos["ETH"],
+    redstoneTokenId: RedstoneTokenIds["ETH"],
+    defaultForVoting: true,
+    canVote: true,
+  },
+  {
     name: "DAI",
     chainId: ChainId.OPTIMISM_MAINNET_CHAIN_ID,
     address: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
@@ -242,16 +252,6 @@ export const OPTIMISM_MAINNET_TOKENS: VotingToken[] = [
     redstoneTokenId: RedstoneTokenIds["DAI"],
     permitVersion: "2",
     defaultForVoting: false,
-    canVote: true,
-  },
-  {
-    name: "ETH",
-    chainId: ChainId.OPTIMISM_MAINNET_CHAIN_ID,
-    address: zeroAddress,
-    decimal: 18,
-    logo: TokenNamesAndLogos["ETH"],
-    redstoneTokenId: RedstoneTokenIds["ETH"],
-    defaultForVoting: true,
     canVote: true,
   },
   {
