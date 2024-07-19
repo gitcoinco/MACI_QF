@@ -8,17 +8,17 @@ import {
   metaMaskWallet,
 } from "@rainbow-me/rainbowkit/wallets";
 import { createClient, configureChains, Chain } from "wagmi";
-import { scroll, sepolia } from "common/src/chains";
+import { scroll, sepolia, customOptimism as optimism } from "common/src/chains";
 import { publicProvider } from "wagmi/providers/public";
 import { infuraProvider } from "wagmi/providers/infura";
 import { alchemyProvider } from "wagmi/providers/alchemy";
 
 const testnetChains = () => {
-  return [scroll, sepolia];
+  return [optimism, scroll, sepolia];
 };
 
 const mainnetChains = () => {
-  return [scroll];
+  return [optimism, scroll];
 };
 
 const allChains: Chain[] =

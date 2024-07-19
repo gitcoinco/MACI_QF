@@ -2,17 +2,18 @@ import { Chain } from "@rainbow-me/rainbowkit";
 import { alchemyProvider } from "wagmi/providers/alchemy";
 import { infuraProvider } from "wagmi/providers/infura";
 import { publicProvider } from "wagmi/providers/public";
-import { sepolia, scroll } from "common/src/chains";
+import { sepolia, scroll, customOptimism as optimism } from "common/src/chains";
 import { getConfig } from "common/src/config";
 
 const availableChains: { [key: string]: Chain } = {
   scroll,
   sepolia,
+  optimism,
 };
 
-const stagingChains = [scroll, sepolia];
+const stagingChains = [optimism, scroll, sepolia];
 
-const productionChains = [scroll];
+const productionChains = [optimism, scroll];
 
 export function getEnabledChainsAndProviders() {
   const config = getConfig();

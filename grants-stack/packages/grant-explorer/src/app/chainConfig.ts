@@ -1,5 +1,5 @@
 import { Chain } from "wagmi/chains";
-import { scroll, sepolia } from "common/src/chains";
+import { scroll, sepolia, customOptimism as optimism } from "common/src/chains";
 import { ChainId } from "common/src/chain-ids";
 
 const ensureValidChainId = (chain: Chain) => {
@@ -10,9 +10,9 @@ const ensureValidChainId = (chain: Chain) => {
   }
 };
 
-const TESTNET_CHAINS = [scroll, sepolia].map(ensureValidChainId);
+const TESTNET_CHAINS = [optimism, scroll, sepolia].map(ensureValidChainId);
 
-const MAINNET_CHAINS = [scroll].map(ensureValidChainId);
+const MAINNET_CHAINS = [optimism, scroll].map(ensureValidChainId);
 
 export const getEnabledChains = (): Chain[] => {
   switch (process.env.REACT_APP_ENV) {
