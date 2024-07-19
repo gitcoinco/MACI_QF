@@ -46,7 +46,7 @@ import { PubKey } from "maci-domainobjs";
 function getStrategyAddress(strategy: RoundCategory, chainId: ChainId): string {
   let strategyAddresses;
   switch (chainId) {
-    case ChainId.SEPOLIA:
+    case ChainId.SEPOLIA: {
       strategyAddresses = {
         [RoundCategory.QuadraticFunding]:
           "0x000000000000000000000000000000000000000",
@@ -54,6 +54,7 @@ function getStrategyAddress(strategy: RoundCategory, chainId: ChainId): string {
         [RoundCategory.Maci]: "0xB84be727Ff04B64D5f85e0a669Af0ef8e14f530B",
       };
       break;
+    }
 
     case ChainId.SCROLL: {
       strategyAddresses = {
@@ -61,6 +62,16 @@ function getStrategyAddress(strategy: RoundCategory, chainId: ChainId): string {
           "0x000000000000000000000000000000000000000",
         [RoundCategory.Direct]: "0x000000000000000000000000000000000000000",
         [RoundCategory.Maci]: "0x0A6fFd2e74FC582C17b3bD10b8102E61D07Cf298",
+      };
+      break;
+    }
+
+    case ChainId.OPTIMISM_MAINNET_CHAIN_ID: {
+      strategyAddresses = {
+        [RoundCategory.QuadraticFunding]:
+          "0x000000000000000000000000000000000000000",
+        [RoundCategory.Direct]: "0x000000000000000000000000000000000000000",
+        [RoundCategory.Maci]: "0xe398E980D7e3D4700c31DC3280F229Edc63d093B",
       };
       break;
     }
@@ -77,6 +88,8 @@ export const getClonableMACIFactoryAddress = (chainId: ChainId): Hex => {
       return getAddress("0x272DfA1B365E4e72690F834c6e0a2823Fa5120e5");
     case ChainId.SCROLL:
       return getAddress("0x474C223EBBCbBba7E2F932c52fbd80514E9382dB");
+    case ChainId.OPTIMISM_MAINNET_CHAIN_ID:
+      return getAddress("0x0");
     default:
       throw new Error(`Unsupported chain ID ${chainId}`);
   }
@@ -88,6 +101,8 @@ export const getZuPassRegistryAddress = (chainId: ChainId): Hex => {
       return getAddress("0x455cC27badb067cb9b7cdE52F153DfebC83B1A99");
     case ChainId.SCROLL:
       return getAddress("0x70FafcC2b1746f017018BE92D3f5856d68246037");
+    case ChainId.OPTIMISM_MAINNET_CHAIN_ID:
+      return getAddress("0x0");
     default:
       throw new Error(`Unsupported chain ID ${chainId}`);
   }
