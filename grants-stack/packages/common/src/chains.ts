@@ -219,11 +219,11 @@ export const customOptimism = {
   },
   rpcUrls: {
     alchemy: {
-      http: ["https://opt-mainnet.g.alchemy.com/v2/"],
+      http: ["https://opt-mainnet.g.alchemy.com/v2"],
       webSocket: ["wss://opt-mainnet.g.alchemy.com/v2/"],
     },
     infura: {
-      http: ["https://optimism-mainnet.infura.io/v3/"],
+      http: ["https://optimism-mainnet.infura.io/v3"],
       webSocket: ["wss://optimism-mainnet.infura.io/ws/v3"],
     },
     default: {
