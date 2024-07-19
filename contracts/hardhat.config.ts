@@ -92,6 +92,11 @@ const config: HardhatUserConfig = {
       url: process.env.SCROLL_RPC_URL!,
       accounts: [process.env.COORDINATOR_WALLET_PRIVATE_KEY!],
     },
+    "optimism-mainnet": {
+      chainId: 10,
+      url: `https://opt-mainnet.g.alchemy.com/v2/${alchemyIdKey}`,
+      accounts: [process.env.COORDINATOR_WALLET_PRIVATE_KEY!],
+    },
     sepolia: {
       chainId: 11155111,
       url: process.env.SEPOLIA_RPC_URL!,
@@ -106,6 +111,7 @@ const config: HardhatUserConfig = {
     apiKey: {
       scroll: process.env.SCROLL_SCAN_API_KEY!,
       sepolia: process.env.ETHERSCAN_API_KEY!,
+      optimisticEthereum: process.env.OPTIMISTIC_ETHERSCAN_API_KEY!,
     },
     customChains: [
       {

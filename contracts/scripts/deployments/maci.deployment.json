@@ -1,4 +1,24 @@
 {
+  "10":{
+    "PosseidonAddresses": [
+      {
+        "name": "PoseidonT3",
+        "address": "0x6bA6A4084c86e8E571F6a3Cf995fcCAd19a2Bc64"
+      },
+      {
+        "name": "PoseidonT4",
+        "address": "0x7b9d3B1392D4199e48A0EaC2AdF9214578394F85"
+      },
+      {
+        "name": "PoseidonT5",
+        "address": "0x7Ab0edb54486C106e5fBa340a055EC5715Cb789b"
+      },
+      {
+        "name": "PoseidonT6",
+        "address": "0xcF3FE5803d7cE8b73A0E2Ab7cD366B39e892b0b7"
+      }
+    ]
+  },
   "534352": {
     "VkRegistry": {
       "name": "VkRegistry",
