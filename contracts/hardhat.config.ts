@@ -53,16 +53,16 @@ subtask("copy-maci-artifacts", async (_, { config }) => {
 });
 
 // Override the existing compile task
-task("compile", async (args, hre, runSuper) => {
-  // Before compilation move over artifacts
-  await hre.run("copy-maci-artifacts");
+// task("compile", async (args, hre, runSuper) => {
+//   // Before compilation move over artifacts
+//   await hre.run("copy-maci-artifacts");
 
-  // Run the original compile task
-  await runSuper(args);
+//   // Run the original compile task
+//   await runSuper(args);
 
-  // After compilation, run the subtask to copy MACI artifacts
-  await hre.run("copy-maci-artifacts");
-});
+//   // After compilation, run the subtask to copy MACI artifacts
+//   await hre.run("copy-maci-artifacts");
+// });
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -85,11 +85,16 @@ const config: HardhatUserConfig = {
   sourcify: {
     enabled: true,
   },
-  defaultNetwork: "scroll",
+  // defaultNetwork: "optimism",
   networks: {
     scroll: {
       chainId: 534352,
       url: process.env.SCROLL_RPC_URL!,
+      accounts: [process.env.COORDINATOR_WALLET_PRIVATE_KEY!],
+    },
+    optimism: {
+      chainId: 10,
+      url: process.env.OPTIMISM_RPC_URL,
       accounts: [process.env.COORDINATOR_WALLET_PRIVATE_KEY!],
     },
     sepolia: {
@@ -100,12 +105,14 @@ const config: HardhatUserConfig = {
     localhost: {
       url: "http://127.0.0.1:8545",
       accounts: [process.env.PRIVATE_KEY!],
+      chainId: 31337,
     },
   },
   etherscan: {
     apiKey: {
       scroll: process.env.SCROLL_SCAN_API_KEY!,
       sepolia: process.env.ETHERSCAN_API_KEY!,
+      optimisticEthereum: process.env.OPTIMISTIC_ETHERSCAN_API_KEY!,
     },
     customChains: [
       {

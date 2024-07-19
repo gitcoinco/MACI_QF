@@ -1,4 +1,132 @@
 {
+  "10": {
+    "PosseidonAddresses": [
+      {
+        "name": "PoseidonT3",
+        "address": "0x6bA6A4084c86e8E571F6a3Cf995fcCAd19a2Bc64"
+      },
+      {
+        "name": "PoseidonT4",
+        "address": "0x7b9d3B1392D4199e48A0EaC2AdF9214578394F85"
+      },
+      {
+        "name": "PoseidonT5",
+        "address": "0x7Ab0edb54486C106e5fBa340a055EC5715Cb789b"
+      },
+      {
+        "name": "PoseidonT6",
+        "address": "0xcF3FE5803d7cE8b73A0E2Ab7cD366B39e892b0b7"
+      }
+    ],
+    "VkRegistry": {
+      "name": "VkRegistry",
+      "vkRegistryContractAddress": "0x94746ff7c549c2c141DA4eFa78182fDbFa1FC8Ea"
+    },
+    "Verifier": {
+      "name": "Verifier",
+      "verifierContractAddress": "0x77d0A7cBa96AA6d739BEc63Ac53602c0f30a7947"
+    },
+    "Groth16Verifier": {
+      "name": "Groth16Verifier",
+      "Groth16VerifierAddress": "0x2360106c492612aCdA8DBed3003A24eC7FdEddCC"
+    },
+    "ZuPassRegistry": {
+      "name": "ZuPassRegistry",
+      "ZuPassRegistryAddress": "0x23d30F882bfD42eDD566e5b5a556d09504ce8a32"
+    },
+    "PollFactory": {
+      "name": "PollFactory",
+      "pollAddress": "0xc116e507A58e8C23bd99e8a9B16193FbE175c90c"
+    },
+    "MessageProcessorFactory": {
+      "name": "MessageProcessorFactory",
+      "mpAddr": "0x66109583a115Ee765f245C7c80E0ed503761388D"
+    },
+    "TallyFactory": {
+      "name": "TallyFactory",
+      "tallyAddr": "0xc84aBa67875f52223ce140B7CC776F9580C417ce"
+    },
+    "ClonableMACI": {
+      "name": "ClonableMACI",
+      "ClonableMACIAddress": "0x102E678E512D663b900195D3706483B1d0f369c3"
+    },
+    "ClonableMACIFactory": {
+      "name": "ClonableMACIFactory",
+      "ClonableMACIFactoryAddress": "0xF96c6cDBDd44a67057FE9Ee0B4eeC3285D0152bE"
+    },
+    "MACIQFStrategy": {
+      "name": "MACIQFStrategyv1.0",
+      "MACIQFStrategyAddress": "0xe398E980D7e3D4700c31DC3280F229Edc63d093B"
+    }
+  },
+  "31337": {
+    "VkRegistry": {
+      "name": "VkRegistry",
+      "vkRegistryContractAddress": "0xC469e7aE4aD962c30c7111dc580B4adbc7E914DD"
+    },
+    "Verifier": {
+      "name": "Verifier",
+      "verifierContractAddress": "0xb09da8a5B236fE0295A345035287e80bb0008290"
+    },
+    "PosseidonAddresses": [
+      {
+        "name": "PoseidonT3",
+        "address": "0x5095d3313C76E8d29163e40a0223A5816a8037D8"
+      },
+      {
+        "name": "PoseidonT4",
+        "address": "0x391342f5acAcaaC9DE1dC4eC3E03f2678f7c78F1"
+      },
+      {
+        "name": "PoseidonT5",
+        "address": "0x6d925938Edb8A16B3035A4cF34FAA090f490202a"
+      },
+      {
+        "name": "PoseidonT6",
+        "address": "0xED8CAB8a931A4C0489ad3E3FB5BdEA84f74fD23E"
+      }
+    ],
+    "Groth16Verifier": {
+      "name": "Groth16Verifier",
+      "Groth16VerifierAddress": "0x40bde52e6B80Ae11F34C58c14E1E7fE1f9c834C4"
+    },
+    "ZuPassRegistry": {
+      "name": "ZuPassRegistry",
+      "ZuPassRegistryAddress": "0xE9061F92bA9A3D9ef3f4eb8456ac9E552B3Ff5C8"
+    },
+    "PollFactory": {
+      "name": "PollFactory",
+      "pollAddress": "0xC92B72ecf468D2642992b195bea99F9B9BB4A838"
+    },
+    "MessageProcessorFactory": {
+      "name": "MessageProcessorFactory",
+      "mpAddr": "0xAbB12158488d9C9Bd52C14B9AE4C835eCE4A6e13"
+    },
+    "TallyFactory": {
+      "name": "TallyFactory",
+      "tallyAddr": "0x446C29FBFEF829F81E236a2376191F648dbEF995"
+    },
+    "ClonableMACI": {
+      "name": "ClonableMACI",
+      "ClonableMACIAddress": "0x37dD26d18abeC2d311e82177f9fa58E9DC14b579"
+    },
+    "ClonableMACIFactory": {
+      "name": "ClonableMACIFactory",
+      "ClonableMACIFactoryAddress": "0xb11f9b33ee93B1f990a805fa68817A74e82A6891"
+    },
+    "Allo": {
+      "name": "Allo",
+      "AlloAddress": "0x322619fcCcc741880ee7071cBE4e877Fb919eCf8"
+    },
+    "Registry": {
+      "name": "Registry",
+      "RegistryAddress": "0xb2AA9bf762878462382A34eB4EC1f041E0071081"
+    },
+    "MACIQFStrategy": {
+      "name": "MACIQFStrategyv1.0",
+      "MACIQFStrategyAddress": "0x8F3acfD2738a732AA1e0367480559f13e8DEF69C"
+    }
+  },
   "534352": {
     "VkRegistry": {
       "name": "VkRegistry",
