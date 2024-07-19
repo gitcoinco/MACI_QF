@@ -89,7 +89,7 @@ export const getClonableMACIFactoryAddress = (chainId: ChainId): Hex => {
     case ChainId.SCROLL:
       return getAddress("0x474C223EBBCbBba7E2F932c52fbd80514E9382dB");
     case ChainId.OPTIMISM_MAINNET_CHAIN_ID:
-      return getAddress("0x0");
+      return getAddress("0xF96c6cDBDd44a67057FE9Ee0B4eeC3285D0152bE");
     default:
       throw new Error(`Unsupported chain ID ${chainId}`);
   }
@@ -102,7 +102,7 @@ export const getZuPassRegistryAddress = (chainId: ChainId): Hex => {
     case ChainId.SCROLL:
       return getAddress("0x70FafcC2b1746f017018BE92D3f5856d68246037");
     case ChainId.OPTIMISM_MAINNET_CHAIN_ID:
-      return getAddress("0x0");
+      return getAddress("0x23d30F882bfD42eDD566e5b5a556d09504ce8a32");
     default:
       throw new Error(`Unsupported chain ID ${chainId}`);
   }
