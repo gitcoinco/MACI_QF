@@ -466,11 +466,10 @@ function AfterRoundStart(props: {
 
               <div className="flex text-grey-500 mb-4">
                 <p className="mr-4 flex items-center">
-                  {/* <span className="mr-2">Donate</span> */}
-                  <span className="mr-2">Donations will be available soon</span>
+                  <span className="mr-2">Donate</span>
 
                   <CalendarIcon className="w-4 h-4 !text-grey-400 inline-block mr-2" />
-                  {/* <span>
+                  <span>
                     <span className="px-2 rounded bg-grey-50">
                       <span className="mr-1">
                         {formatUTCDateAsISOString(round.roundStartTime)}
@@ -491,7 +490,7 @@ function AfterRoundStart(props: {
                         <span>No End Date</span>
                       )}
                     </span>
-                  </span> */}
+                  </span>
                 </p>
               </div>
             </div>
@@ -762,7 +761,7 @@ function ProjectCard(props: {
           </CardDescription>
         </CardContent>
       </Link>
-      {/* {!isDirectRound(round) && (
+      {!isDirectRound(round) && (
         <CardFooter className="bg-white">
           <CardContent className="px-2 text-xs">
             <div className="border-t pt-1 flex items-center justify-end mt-3">
@@ -788,7 +787,7 @@ function ProjectCard(props: {
             </div>
           </CardContent>
         </CardFooter>
-      )} */}
+      )}
     </BasicCard>
   );
 }

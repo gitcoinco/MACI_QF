@@ -537,18 +537,16 @@ function Sidebar(props: {
   addToCart: () => void;
 }) {
   return (
-    <></>
-    // <div className="min-w-[320px] h-fit mb-6 rounded-3xl bg-gray-50">
-    //   <ProjectStats />
-    //   {props.isBeforeRoundEndDate &&
-    //    (
-    //     <CartButtonToggle
-    //       isAlreadyInCart={props.isAlreadyInCart}
-    //       addToCart={props.addToCart}
-    //       removeFromCart={props.removeFromCart}
-    //     />
-    //   )}
-    // </div>
+    <div className="min-w-[320px] h-fit mb-6 rounded-3xl bg-gray-50">
+      <ProjectStats />
+      {props.isBeforeRoundEndDate && (
+        <CartButtonToggle
+          isAlreadyInCart={props.isAlreadyInCart}
+          addToCart={props.addToCart}
+          removeFromCart={props.removeFromCart}
+        />
+      )}
+    </div>
   );
 }
 
