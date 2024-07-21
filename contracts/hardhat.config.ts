@@ -53,16 +53,16 @@ subtask("copy-maci-artifacts", async (_, { config }) => {
 });
 
 // Override the existing compile task
-// task("compile", async (args, hre, runSuper) => {
-//   // Before compilation move over artifacts
-//   await hre.run("copy-maci-artifacts");
+task("compile", async (args, hre, runSuper) => {
+  // Before compilation move over artifacts
+  await hre.run("copy-maci-artifacts");
 
-//   // Run the original compile task
-//   await runSuper(args);
+  // Run the original compile task
+  await runSuper(args);
 
-//   // After compilation, run the subtask to copy MACI artifacts
-//   await hre.run("copy-maci-artifacts");
-// });
+  // After compilation, run the subtask to copy MACI artifacts
+  await hre.run("copy-maci-artifacts");
+});
 
 const config: HardhatUserConfig = {
   solidity: {

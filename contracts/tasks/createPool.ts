@@ -1,3 +1,4 @@
+import { randomInt } from "crypto";
 import { Deployments } from "../scripts/utils/scriptTask";
 import { ZeroAddress } from "ethers";
 import { task } from "hardhat/config";
@@ -38,7 +39,7 @@ task("createPool", "create a new MACI Pool").setAction(async (_, hre) => {
     const AlloContract = await ethers.getContractAt("Allo", Allo);
     const RegistryContract = await ethers.getContractAt("Registry", Registry);
     const createProfile = await RegistryContract.createProfile(
-      21352,
+      randomInt(1000000),
       "Test",
       {
         protocol: 1,
@@ -160,11 +161,9 @@ task("createPool", "create a new MACI Pool").setAction(async (_, hre) => {
       );
 
       const createPoolReceipt = await createPool.wait();
-
-      console.log(
-        "Pool created with transaction hash:",
-        createPoolReceipt?.hash
-      );
+      const hexPoolId = createPoolReceipt?.logs[21].topics[1];
+      const poolId = ethers.toBigInt(hexPoolId ?? "0x0");
+      console.log(poolId);
     }
   }
 });
