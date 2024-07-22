@@ -86,6 +86,9 @@ function getApplicationStatusTitle(status: ProjectStatus) {
   }
 }
 
+// Avoiding review for ZUZALU rounds
+const isAvoidReview = true;
+
 export default function ViewApplicationPage() {
   datadogLogs.logger.info("====> Route: /round/:roundId/application/:id");
   datadogLogs.logger.info(`====> URL: ${window.location.href}`);
@@ -371,10 +374,10 @@ export default function ViewApplicationPage() {
           status === "done" || status === "approved"
             ? "bg-teal-500 border-teal-500"
             : status === "current"
-            ? "border-violet-500"
-            : status === "rejected"
-            ? "bg-red-500 border-red-500"
-            : ""
+              ? "border-violet-500"
+              : status === "rejected"
+                ? "bg-red-500 border-red-500"
+                : ""
         }
         `}
         >
@@ -409,8 +412,8 @@ export default function ViewApplicationPage() {
               status === "done"
                 ? "bg-teal-500"
                 : status === "rejected"
-                ? "bg-red-500"
-                : "bg-grey-200"
+                  ? "bg-red-500"
+                  : "bg-grey-200"
             }`}
             style={{
               transform: "rotate(180deg)",
@@ -463,17 +466,19 @@ export default function ViewApplicationPage() {
     ? getRoundStrategyType(application.payoutStrategy.strategyName)
     : undefined;
 
-  const showReviewButton = (): boolean => {
-    return moment().isBetween(
-      round?.applicationsStartTime,
-      round?.applicationsEndTime
-    ) &&
-    strategyType === "DirectGrants" &&
-    application?.status === "PENDING" &&
-    application?.inReview === false;
-  }
+  const showReviewButton = (): boolean =>
+    isAvoidReview
+      ? false
+      : moment().isBetween(
+          round?.applicationsStartTime,
+          round?.applicationsEndTime
+        ) &&
+        strategyType === "DirectGrants" &&
+        application?.status === "PENDING" &&
+        application?.inReview === false;
 
   const showApproveReject = () => {
+    if (isAvoidReview) return false;
     const canReviewApplication = moment().isBetween(
       round?.applicationsStartTime,
       round?.applicationsEndTime
