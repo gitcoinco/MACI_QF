@@ -9,3 +9,4 @@ import "./withdraw";
 import "./deployMACI";
 import "./createPool";
 import "./migrate";
+import "./createMultisigList";
