@@ -26,6 +26,8 @@ import { useAlreadyContributed } from "../../projects/hooks/useRoundMaciMessages
 import { useDataLayer } from "data-layer";
 import { useCartStorage } from "../../../store";
 import { Link } from "react-router-dom";
+import { json } from "stream/consumers";
+import { add } from "lodash";
 
 export function RoundInCart(
   props: React.ComponentProps<"div"> & {
@@ -133,14 +135,22 @@ export function RoundInCart(
   };
 
   useEffect(() => {
+    if (!address) return;
     const storedUserIsAllowlisted = store.getUserIsAllowlisted(
       chainId,
       roundId,
-      address?.toString() ?? ""
+      address.toString()
     );
+
+    const pcd = store.getUserAllowListProof(address.toString());
 
     if (storedUserIsAllowlisted) {
       setIsAllowlisted(storedUserIsAllowlisted);
+    }
+
+    if (pcd) {
+      setPcd(pcd);
+      setPcdFetched(true);
     }
 
     if (!storedUserIsAllowlisted) {
@@ -149,7 +159,7 @@ export function RoundInCart(
           chainId,
           roundId,
           true,
-          address?.toString() ?? ""
+          address.toString()
         );
         setIsAllowlisted(true);
       } else {
@@ -157,7 +167,7 @@ export function RoundInCart(
           chainId,
           roundId,
           false,
-          address?.toString() ?? ""
+          address.toString()
         );
         setIsAllowlisted(false);
       }
@@ -238,13 +248,21 @@ export function RoundInCart(
       setGenerateProofClicked(false);
       return;
     }
+
     const isReused = await isRoundZuProofReused(
       JSON.parse(result.pcdStr).pcd,
       chainId,
       roundId
     );
     if (result.type === "pcd") {
-      setPcd(JSON.parse(result.pcdStr).pcd);
+      const pcd = JSON.parse(result.pcdStr).pcd;
+      const verifiedEventId = JSON.parse(pcd).claim.partialTicket.eventId;
+      store.updateUserAllowListProof(address?.toString() ?? "", pcd);
+      store.updateUserEventAllowListProof(
+        address?.toString() ?? "",
+        verifiedEventId,
+        pcd
+      );
       setPcdFetched(true);
       setIsZupasReused(isReused);
     }
@@ -306,7 +324,7 @@ export function RoundInCart(
                   ({roundCart.length})
                 </p>
                 <RoundAllowlist
-                  isAllowlisted={alreadyContributed ?? isAllowlisted}
+                  isAllowlisted={alreadyContributed ? false : isAllowlisted}
                   maxContributionAllowlisted={maxContributionAllowlisted}
                   maxContributionNonAllowlisted={maxContributionNonAllowlisted}
                   openModal={openModal}
