@@ -18,7 +18,7 @@ const testnetChains = () => {
 };
 
 const mainnetChains = () => {
-  return [optimism, scroll];
+  return [optimism, scroll, sepolia];
 };
 
 const allChains: Chain[] =
