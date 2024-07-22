@@ -40,6 +40,11 @@ task("migrate", "migrate profiles to a new network").setAction(
       Registry = alloDeployments.getRegistry();
     }
 
+    console.log("Deploying contracts with the account:", signer.address);
+    console.log("Allo", Allo);
+    console.log("Registry", Registry);
+    const rounds = await hre.run("deployRounds", {});
+
     const RegistryContract = await ethers.getContractAt(
       "Registry",
       Registry,
@@ -48,10 +53,12 @@ task("migrate", "migrate profiles to a new network").setAction(
     console.log("MIGRATE");
 
     const scrollProjectData = readScrollProjects("scrollProjects.json");
+
     const profileDatas = transformToProfileData(
       scrollProjectData,
       signer.address
     );
+
     const migratedProjectsData = profileDatas;
 
     const resApproved = scrollProjectData.map((data) =>
@@ -121,16 +128,15 @@ task("migrate", "migrate profiles to a new network").setAction(
         .anchor;
 
       migratedProjectsData[i].newAnchor = anchorAddress;
+      migratedProjectsData[i].profileCreated = true;
+
+      fs.writeFileSync(
+        "migratedProjects.json",
+        JSON.stringify(migratedProjectsData, null, 2)
+      );
     }
-    // fs.writeFileSync(
-    //   "migratedProjects.json",
-    //   JSON.stringify(migratedProjectsData, null, 2)
-    // );
 
-    const rounds = await hre.run("deployRounds", {});
-    await hre.run("createPool", {});
-
-    const batchSize = 35;
+    const batchSize = 20;
     const batchMap: Record<
       number,
       {
@@ -147,10 +153,12 @@ task("migrate", "migrate profiles to a new network").setAction(
     for (let i = 0; i < registreesLength; i++) {
       const profile = migratedProjectsData[i];
 
+      migratedProjectsData[i].registered = true;
+
       const initStruct = [
         profile.newAnchor,
         profile.recipient,
-        [profile.metadata.protocol, profile.metadata.pointer],
+        [1, profile.applicationMetadataCID],
       ];
 
       const types = ["address", "address", "(uint256, string)"];
@@ -186,6 +194,11 @@ task("migrate", "migrate profiles to a new network").setAction(
       }
 
       migratedProjectsData[i].roundId = roundId;
+
+      fs.writeFileSync(
+        "migratedProjects.json",
+        JSON.stringify(migratedProjectsData, null, 2)
+      );
     }
 
     // Process any remaining entries that didn't fill the last batch
@@ -222,8 +235,14 @@ task("migrate", "migrate profiles to a new network").setAction(
       reviewDataByRound[roundId].anchors.push(profile.newAnchor);
       reviewDataByRound[roundId].lastUpdatedTimes.push(0);
       const status = profile.status === "APPROVED" ? 2 : 3;
+      migratedProjectsData[i].status = status === 2 ? "APPROVED" : "REJECTED";
       reviewDataByRound[roundId].statuses.push(status);
     }
+
+    fs.writeFileSync(
+      "migratedProjects.json",
+      JSON.stringify(migratedProjectsData, null, 2)
+    );
 
     for (const roundId in reviewDataByRound) {
       const roundData = reviewDataByRound[roundId];
@@ -261,11 +280,23 @@ task("migrate", "migrate profiles to a new network").setAction(
         await MACIQFStrategy.getRecipient(profile.newAnchor)
       ).status;
 
-      const expectedRecipientStatus = profile.status === "APPROVED" ? 2 : 3;
+      const expectedRecipientStatus =
+        profile.status === "APPROVED"
+          ? 2
+          : profile.status === "REJECTED"
+          ? 3
+          : 5;
       if (Number(recipientStatus) !== expectedRecipientStatus) {
         numberOfErrorStates++;
+        migratedProjectsData[i].reviewed = false;
+      } else {
+        migratedProjectsData[i].reviewed = true;
       }
     }
+    fs.writeFileSync(
+      "migratedProjects.json",
+      JSON.stringify(migratedProjectsData, null, 2)
+    );
     console.log("Number of error states", numberOfErrorStates);
   }
 );
@@ -300,12 +331,13 @@ subtask("deployRounds", async (_, hre) => {
 
     const AlloContract = await ethers.getContractAt("Allo", Allo);
     const RegistryContract = await ethers.getContractAt("Registry", Registry);
+    const rand = randomInt(100000000);
     const createProfile = await RegistryContract.createProfile(
       randomInt(100000000),
-      "Test",
+      `Script Migration Profile ${rand}`,
       {
         protocol: 1,
-        pointer: "test",
+        pointer: "bafkreif5dm6t23dmsleppvuq2c24bjwdsvbs6hhy4phjk3u2memmdk4pni",
       },
       deployer.address,
       [deployer.address]
@@ -324,6 +356,9 @@ subtask("deployRounds", async (_, hre) => {
       (await ethers.provider.getBlock(await ethers.provider.getBlockNumber()))!
         .timestamp
     );
+    const date = new Date(Date.UTC(2024, 7, 6, 23, 59, 0));
+    const epochTime = date.getTime();
+    const endTime = BigInt(epochTime / 1000);
 
     let initializeParams = [
       // RegistryGatting
@@ -331,14 +366,15 @@ subtask("deployRounds", async (_, hre) => {
       // MetadataRequired
       true,
       // RegistrationStartTime
-      BigInt(time - 1n),
+      BigInt(time),
       // RegistrationEndTime
-      BigInt(time + BigInt(199)),
+      BigInt(time + BigInt(3600)),
       // AllocationStartTime
-      BigInt(time + BigInt(200)),
+      BigInt(time + BigInt(3601)),
       // AllocationEndTime
-      BigInt(time + BigInt(500)),
+      endTime,
     ];
+    // Aug 6th, 23:59 UTC
 
     const pubk = PubKey.deserialize(
       "macipk.106b0fefdab3dccf449a720a8d00e066ebe65907e49a5146dc788d231f2856eb"
@@ -392,11 +428,11 @@ subtask("deployRounds", async (_, hre) => {
 
     let bytes = AbiCoder.encode(types, [initStruct]);
 
-    const addStrategy = await AlloContract.addToCloneableStrategies(
-      MACIQFStrategyAddress
-    );
+    // const addStrategy = await AlloContract.addToCloneableStrategies(
+    //   MACIQFStrategyAddress
+    // );
 
-    await addStrategy.wait();
+    // await addStrategy.wait();
 
     // get the values from the strategiesToDeployMetadata object in array format
     const strategiesToDeployMetadataValues = Object.values(

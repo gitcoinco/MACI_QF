@@ -90,6 +90,9 @@ export type ProfileData = {
   oldAnchor: string;
   newAnchor: string;
   recipient: string;
+  registered: boolean;
+  reviewed: boolean;
+  profileCreated: boolean;
 };
 
 export function transformToProfileData(
@@ -109,6 +112,9 @@ export function transformToProfileData(
       oldAnchor: app.project.anchorAddress,
       newAnchor: app.project.anchorAddress,
       recipient: app.application.fundingRecipient,
+      registered: false,
+      reviewed: false,
+      profileCreated: false,
     }))
   );
 }
