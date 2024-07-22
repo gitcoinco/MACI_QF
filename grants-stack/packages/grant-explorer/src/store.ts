@@ -11,6 +11,7 @@ interface CartState {
   chainToVotingToken: Record<ChainId, VotingToken>;
   contributionAmount: Record<string, string>;
   isAllowlisted: Record<string, boolean>;
+  eventAllowListedProofs: Record<string, string>;
   add: (project: CartProject) => void; // add project to cart
   addUserProject: (project: CartProject, walletAddress: string) => void;
   clear: () => void;
@@ -43,6 +44,7 @@ interface CartState {
     allowListed: boolean,
     walletAddress: string
   ) => void;
+  updateUserEventAllowListedProof: (eventId: string, proof: string) => void;
   setCart: (projects: CartProject[]) => void;
   setUserCart: (projects: CartProject[], walletAddress: string) => void;
   getUserContributionAmount: (
@@ -57,6 +59,7 @@ interface CartState {
     roundId: string,
     walletAddress: string
   ) => boolean;
+  getUserEventAllowListedProof: (eventId: string) => string;
 }
 
 /**
@@ -133,6 +136,7 @@ export const useCartStorage = create<CartState>()(
       },
       contributionAmount: {},
       isAllowlisted: {},
+      eventAllowListedProofs: {},
 
       setCart: (projects: CartProject[]) => {
         set({
@@ -239,8 +243,21 @@ export const useCartStorage = create<CartState>()(
         });
       },
 
+      updateUserEventAllowListedProof: (eventId, proof) => {
+        set({
+          eventAllowListedProofs: {
+            ...get().eventAllowListedProofs,
+            [eventId]: proof,
+          },
+        });
+      },
+
       getUserIsAllowlisted: (chainId, roundId, walletAddress) => {
         return get().isAllowlisted[`${walletAddress}-${chainId}-${roundId}`];
+      },
+
+      getUserEventAllowListedProof: (eventId) => {
+        return get().eventAllowListedProofs[eventId];
       },
 
       getUserContributionAmount(chainId, roundId, walletAddress) {
