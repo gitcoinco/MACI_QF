@@ -645,7 +645,7 @@ export default function ViewApplicationPage() {
                     <div className="mt-16 sm:flex-1 sm:min-w-0 sm:flex sm:items-center sm:justify-end sm:space-x-6 sm:pb-1">
                       <div className="mt-6 flex flex-col justify-stretch space-y-3 sm:flex-row sm:space-y-0 sm:space-x-4">
                         {/* IN REVIEW */}
-                        {showReviewButton() && (
+                        {/* {showReviewButton() && (
                           <Button
                             type="button"
                             $variant={
@@ -663,9 +663,9 @@ export default function ViewApplicationPage() {
                             />
                             {application?.inReview ? "Reviewing" : "In Review"}
                           </Button>
-                        )}
+                        )} */}
                         {/* APPROVE */}
-                        {showApproveReject() && (
+                        {/* {showApproveReject() && (
                           <Button
                             type="button"
                             $variant={
@@ -687,10 +687,10 @@ export default function ViewApplicationPage() {
                               ? "Approved"
                               : "Approve"}
                           </Button>
-                        )}
+                        )} */}
 
                         {/* REJECT */}
-                        {showApproveReject() && (
+                        {/* {showApproveReject() && (
                           <Button
                             type="button"
                             $variant={
@@ -717,7 +717,7 @@ export default function ViewApplicationPage() {
                               ? "Rejected"
                               : "Reject"}
                           </Button>
-                        )}
+                        )} */}
                       </div>
                     </div>
                   </div>
