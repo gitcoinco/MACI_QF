@@ -12,7 +12,7 @@ const ensureValidChainId = (chain: Chain) => {
 
 const TESTNET_CHAINS = [optimism, scroll, sepolia].map(ensureValidChainId);
 
-const MAINNET_CHAINS = [optimism].map(ensureValidChainId);
+const MAINNET_CHAINS = [optimism, sepolia].map(ensureValidChainId);
 
 export const getEnabledChains = (): Chain[] => {
   switch (process.env.REACT_APP_ENV) {
