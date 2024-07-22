@@ -13,7 +13,7 @@ const availableChains: { [key: string]: Chain } = {
 
 const stagingChains = [optimism, scroll, sepolia];
 
-const productionChains = [optimism, scroll];
+const productionChains = [optimism];
 
 export function getEnabledChainsAndProviders() {
   const config = getConfig();
