@@ -257,9 +257,9 @@ export function RoundInCart(
     if (result.type === "pcd") {
       const pcd = JSON.parse(result.pcdStr).pcd;
       const verifiedEventId = JSON.parse(pcd).claim.partialTicket.eventId;
-      store.updateUserAllowListProof(address?.toString() ?? "", pcd);
+      store.updateUserAllowListProof(address.toString(), pcd);
       store.updateUserEventAllowListProof(
-        address?.toString() ?? "",
+        address.toString(),
         verifiedEventId,
         pcd
       );
