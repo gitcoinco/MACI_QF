@@ -83,3 +83,53 @@ export const ZuzaluEvents = [
     eventName: "GitcoinTest",
   },
 ] as PipelineEdDSATicketZuAuthConfig[];
+
+export const examplePCDJSON = {
+  id: "71e92239-b2d0-4a17-a099-c3125fb60628",
+  claim: {
+    partialTicket: {
+      eventId: "223b4108-348d-5f65-afa3-464b103e7d90",
+      productId: "574ff149-1d3f-5fd9-ba1c-f4618a590d10",
+      attendeeEmail: "test@gitcoin.co",
+    },
+    watermark: "110928891020828188064893",
+    signer: [
+      "1ebfb986fbac5113f8e2c72286fe93623",
+      "10ec38f11baacad5535525bbe8e3430",
+    ],
+    validEventIds: [
+      "5de90d09-22db-40ca-b3ae-d934573def8b",
+      "9ccc53cb-3b0a-415b-ab0d-76cfa21c72ac",
+      "508313ea-f16b-4729-bdf0-281c64493ca9",
+      "223b4108-348d-5f65-afa3-464b103e7d90",
+    ],
+    nullifierHash: "10434580389611786529093645836054526042",
+    externalNullifier: "11092889102082818806",
+  },
+  proof: {
+    pi_a: [
+      "15481095596915410650404309698193209004738",
+      "941988517654115664687022853814486354242",
+      "1",
+    ],
+    pi_b: [
+      [
+        "44874936882314834730313377560497372",
+        "16785060234572617435054317629151606862905",
+      ],
+      [
+        "1476594128334081848289692838834955957048",
+        "14346933705750203187205997998508714975",
+      ],
+      ["1", "0"],
+    ],
+    pi_c: [
+      "1267865861812626819132677167625261970332559824",
+      "181338591912404197581859758117862368",
+      "1",
+    ],
+    protocol: "groth16",
+    curve: "bn128",
+  },
+  type: "zk-eddsa-event-ticket-pcd",
+};

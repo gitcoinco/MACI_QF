@@ -11,6 +11,8 @@ interface CartState {
   chainToVotingToken: Record<ChainId, VotingToken>;
   contributionAmount: Record<string, string>;
   isAllowlisted: Record<string, boolean>;
+  allowListProofs: Record<string, string>;
+  eventAllowListProofs: Record<string, string>;
   add: (project: CartProject) => void; // add project to cart
   addUserProject: (project: CartProject, walletAddress: string) => void;
   clear: () => void;
@@ -43,6 +45,12 @@ interface CartState {
     allowListed: boolean,
     walletAddress: string
   ) => void;
+  updateUserAllowListProof: (walletAddress: string, proof: string) => void;
+  updateUserEventAllowListProof: (
+    walletAddress: string,
+    eventId: string,
+    proof: string
+  ) => void;
   setCart: (projects: CartProject[]) => void;
   setUserCart: (projects: CartProject[], walletAddress: string) => void;
   getUserContributionAmount: (
@@ -57,6 +65,11 @@ interface CartState {
     roundId: string,
     walletAddress: string
   ) => boolean;
+  getUserAllowListProof: (walletAddress: string) => string;
+  getUserEventAllowListProof: (
+    walletAddress: string,
+    eventId: string
+  ) => string;
 }
 
 /**
@@ -133,6 +146,8 @@ export const useCartStorage = create<CartState>()(
       },
       contributionAmount: {},
       isAllowlisted: {},
+      allowListProofs: {},
+      eventAllowListProofs: {},
 
       setCart: (projects: CartProject[]) => {
         set({
@@ -239,8 +254,34 @@ export const useCartStorage = create<CartState>()(
         });
       },
 
+      updateUserAllowListProof: (walletAddress, proof) => {
+        set({
+          allowListProofs: {
+            ...get().allowListProofs,
+            [walletAddress]: proof,
+          },
+        });
+      },
+
+      updateUserEventAllowListProof: (walletAddress, eventId, proof) => {
+        set({
+          eventAllowListProofs: {
+            ...get().eventAllowListProofs,
+            [`${walletAddress}-${eventId}`]: proof,
+          },
+        });
+      },
+
+      getUserAllowListProof: (walletAddress) => {
+        return get().allowListProofs[walletAddress] ?? "";
+      },
+
       getUserIsAllowlisted: (chainId, roundId, walletAddress) => {
         return get().isAllowlisted[`${walletAddress}-${chainId}-${roundId}`];
+      },
+
+      getUserEventAllowListProof: (walletAddress, eventId) => {
+        return get().eventAllowListProofs[`${walletAddress}-${eventId}`] ?? "";
       },
 
       getUserContributionAmount(chainId, roundId, walletAddress) {
