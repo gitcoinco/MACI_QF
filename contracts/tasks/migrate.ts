@@ -6,6 +6,7 @@ import {
   strategiesToDeployMetadata,
   getRoundID,
   transformToProfileData,
+  readMigrationData,
 } from "./constants/scrollMigration";
 import { subtask, task } from "hardhat/config";
 import { Deployments } from "../scripts/utils/scriptTask";
@@ -43,8 +44,9 @@ task("migrate", "migrate profiles to a new network").setAction(
     console.log("Deploying contracts with the account:", signer.address);
     console.log("Allo", Allo);
     console.log("Registry", Registry);
-    const rounds = await hre.run("deployRounds", {});
-
+    // const rounds = await hre.run("deployRounds", {});
+    const rounds = [51, 52, 53];
+    
     const RegistryContract = await ethers.getContractAt(
       "Registry",
       Registry,
@@ -54,10 +56,11 @@ task("migrate", "migrate profiles to a new network").setAction(
 
     const scrollProjectData = readScrollProjects("scrollProjects.json");
 
-    const profileDatas = transformToProfileData(
-      scrollProjectData,
-      signer.address
-    );
+    // const profileDatas = transformToProfileData(
+    //   scrollProjectData,
+    //   signer.address
+    // );
+    const profileDatas = readMigrationData();
 
     const migratedProjectsData = profileDatas;
 
@@ -114,13 +117,18 @@ task("migrate", "migrate profiles to a new network").setAction(
       }
       trackDuplicates[profile.name] = duplicateIndex;
 
+      if (profile.profileCreated) {
+        continue;
+      }
+
       const createTx = await RegistryContract.createProfile(
-        profile.nonce + randomInt(100000000),
+        profile.nonce,
         profile.name,
         { protocol: 1, pointer: profile.metadata.pointer },
         signer.address,
         [profile.owner]
       );
+      console.log("Creating profile for", profile.name, "with i = ", i);
       const createProfileReceipt = await createTx.wait();
       const profileId = createProfileReceipt?.logs[0].topics[1] || "";
 
@@ -153,8 +161,6 @@ task("migrate", "migrate profiles to a new network").setAction(
     for (let i = 0; i < registreesLength; i++) {
       const profile = migratedProjectsData[i];
 
-      migratedProjectsData[i].registered = true;
-
       const initStruct = [
         profile.newAnchor,
         profile.recipient,
@@ -186,6 +192,13 @@ task("migrate", "migrate profiles to a new network").setAction(
         );
         await batchRegisterTx.wait();
 
+        console.log("Batch registered", batch.bytes.length, "projects");
+
+        // Mark the projects as registered
+        for (let j = 0; j < batch.bytes.length; j++) {
+          migratedProjectsData[i - j].registered = true;
+        }
+
         registrationCount++;
         batchMap[registrationCount] = {
           rounds: [],
@@ -210,6 +223,13 @@ task("migrate", "migrate profiles to a new network").setAction(
         batch.bytes
       );
       await batchRegisterTx.wait();
+
+      console.log("Batch registered", batch.bytes.length, " projects");
+
+      // Mark the remainder projects as registered after the last batch
+      for (let j = 0; j < batch.bytes.length; j++) {
+        migratedProjectsData[registreesLength - j - 1].registered = true;
+      }
     }
 
     const reviewDataByRound: Record<
@@ -261,6 +281,8 @@ task("migrate", "migrate profiles to a new network").setAction(
         roundData.statuses
       );
       await reviewRecipientsTx.wait();
+
+      console.log("Reviewed round", roundId);
     }
     let numberOfErrorStates = 0;
     for (let i = 0; i < migratedProjectsData.length; i++) {
@@ -332,33 +354,39 @@ subtask("deployRounds", async (_, hre) => {
     const AlloContract = await ethers.getContractAt("Allo", Allo);
     const RegistryContract = await ethers.getContractAt("Registry", Registry);
     const rand = randomInt(100000000);
-    const createProfile = await RegistryContract.createProfile(
-      randomInt(100000000),
-      `Script Migration Profile ${rand}`,
-      {
-        protocol: 1,
-        pointer: "bafkreif5dm6t23dmsleppvuq2c24bjwdsvbs6hhy4phjk3u2memmdk4pni",
-      },
-      deployer.address,
-      [deployer.address]
-    );
+    // const createProfile = await RegistryContract.createProfile(
+    //   randomInt(100000000),
+    //   `Script Migration Profile ${rand}`,
+    //   {
+    //     protocol: 1,
+    //     pointer: "bafkreif5dm6t23dmsleppvuq2c24bjwdsvbs6hhy4phjk3u2memmdk4pni",
+    //   },
+    //   deployer.address,
+    //   [deployer.address]
+    // );
 
-    const createProfileReceipt = await createProfile.wait();
+    // const createProfileReceipt = await createProfile.wait();
 
-    const profileId = createProfileReceipt?.logs[0].topics[1] || "";
+    // const profileId = createProfileReceipt?.logs[0].topics[1] || "";
 
-    const optimismZuzaluProgramId =
+    // const optimismZuzaluProgramId =
+    //   "0xd790e184c952f7227cb87063f858aaa486aa9722f34998282cfecd6d52e2ee9c";
+    const profileId =
       "0xd790e184c952f7227cb87063f858aaa486aa9722f34998282cfecd6d52e2ee9c";
-
     // --------------------------------------------------  Create Strategy  --------------------------------------------------
 
     const time = BigInt(
       (await ethers.provider.getBlock(await ethers.provider.getBlockNumber()))!
         .timestamp
     );
-    const date = new Date(Date.UTC(2024, 7, 6, 23, 59, 0));
-    const epochTime = date.getTime();
-    const endTime = BigInt(epochTime / 1000);
+    // July 23th, 23:59 UTC
+    const startdate = new Date(Date.UTC(2024, 6, 23, 23, 59, 0));
+    const startepochTime = startdate.getTime();
+    const startTime = BigInt(startepochTime / 1000);
+
+    const enddate = new Date(Date.UTC(2024, 7, 6, 23, 59, 0));
+    const endepochTime = enddate.getTime();
+    const endTime = BigInt(endepochTime / 1000);
 
     let initializeParams = [
       // RegistryGatting
@@ -368,9 +396,9 @@ subtask("deployRounds", async (_, hre) => {
       // RegistrationStartTime
       BigInt(time),
       // RegistrationEndTime
-      BigInt(time + BigInt(3600)),
+      BigInt(time + BigInt(5500)),
       // AllocationStartTime
-      BigInt(time + BigInt(3601)),
+      startTime,
       // AllocationEndTime
       endTime,
     ];

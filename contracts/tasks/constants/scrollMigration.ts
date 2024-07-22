@@ -164,6 +164,11 @@ export function readScrollProjects(
   return JSON.parse(data);
 }
 
+export function readMigrationData(): ProfileData[] {
+  const data = fs.readFileSync("migratedProjects.json", "utf-8");
+  return JSON.parse(data);
+}
+
 export function getRoundID(roundId: number, rounds: number[]) {
   switch (roundId) {
     case 16:
