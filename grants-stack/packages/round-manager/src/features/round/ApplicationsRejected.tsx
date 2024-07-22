@@ -177,7 +177,7 @@ export default function ApplicationsRejected() {
     <>
       {rejectedApplications && rejectedApplications.length > 0 && (
         <div className="flex items-center justify-end mb-4">
-          <span className="text-grey-400 text-sm mr-6">
+          {/* <span className="text-grey-400 text-sm mr-6">
             Save in gas fees by approving/rejecting multiple applications at
             once.
           </span>
@@ -185,7 +185,7 @@ export default function ApplicationsRejected() {
             <Cancel onClick={() => setBulkSelectRejected(false)} />
           ) : (
             <Select onClick={() => setBulkSelectRejected(true)} />
-          )}
+          )} */}
         </div>
       )}
       <CardsContainer>
