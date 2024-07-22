@@ -75,13 +75,15 @@ export async function exportAndDownloadCSV(
 type Props = {
   isDirectRound?: boolean;
   round: Round;
+  isAvoidReview?: boolean;
 };
 
 // Approve or reject applications received in bulk, both in QF & direct grants
 
 export default function ApplicationsToApproveReject({
   round,
-  isDirectRound = false
+  isDirectRound = false,
+  isAvoidReview = false,
 }: Props) {
   const { id } = useParams();
   const { chain } = useWallet();
@@ -282,19 +284,24 @@ export default function ApplicationsToApproveReject({
             )}
           </Button>
         )}
-        {filteredApplications && filteredApplications.length > 0 && (
-          <div className="flex items-center justify-end ml-auto">
-            <span className="text-grey-400 text-sm mr-6">
-              Save in gas fees by approving/rejecting multiple applications at
-              once.
-            </span>
-            {bulkSelect ? (
-              <Cancel onClick={() => setBulkSelect(false)} />
-            ) : (
-              <Select hidden={!canReviewApplication} onClick={() => setBulkSelect(true)} />
-            )}
-          </div>
-        )}
+        {!isAvoidReview &&
+          filteredApplications &&
+          filteredApplications.length > 0 && (
+            <div className="flex items-center justify-end ml-auto">
+              <span className="text-grey-400 text-sm mr-6">
+                Save in gas fees by approving/rejecting multiple applications at
+                once.
+              </span>
+              {bulkSelect ? (
+                <Cancel onClick={() => setBulkSelect(false)} />
+              ) : (
+                <Select
+                  hidden={!canReviewApplication}
+                  onClick={() => setBulkSelect(true)}
+                />
+              )}
+            </div>
+          )}
       </div>
       <CardsContainer>
         {!isLoading &&

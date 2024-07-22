@@ -33,7 +33,11 @@ import { errorModalDelayMs } from "../../constants";
 import ErrorModal from "../common/ErrorModal";
 import { getRoundStrategyType, useAllo } from "common";
 
-export default function ApplicationsApproved() {
+export default function ApplicationsApproved({
+  isAvoidReview = false,
+}: {
+  isAvoidReview?: boolean;
+}) {
   const { id } = useParams();
   const allo = useAllo();
 
@@ -177,19 +181,21 @@ export default function ApplicationsApproved() {
 
   return (
     <>
-      {approvedApplications && approvedApplications.length > 0 && (
-        <div className="flex items-center justify-end mb-4">
-          <span className="text-grey-400 text-sm mr-6">
-            Save in gas fees by approving/rejecting multiple applications at
-            once.
-          </span>
-          {bulkSelectApproved ? (
-            <Cancel onClick={() => setBulkSelectApproved(false)} />
-          ) : (
-            <Select onClick={() => setBulkSelectApproved(true)} />
-          )}
-        </div>
-      )}
+      {!isAvoidReview &&
+        approvedApplications &&
+        approvedApplications.length > 0 && (
+          <div className="flex items-center justify-end mb-4">
+            <span className="text-grey-400 text-sm mr-6">
+              Save in gas fees by approving/rejecting multiple applications at
+              once.
+            </span>
+            {bulkSelectApproved ? (
+              <Cancel onClick={() => setBulkSelectApproved(false)} />
+            ) : (
+              <Select onClick={() => setBulkSelectApproved(true)} />
+            )}
+          </div>
+        )}
       <CardsContainer>
         {!isLoading &&
           approvedApplications?.map((application, index) => (

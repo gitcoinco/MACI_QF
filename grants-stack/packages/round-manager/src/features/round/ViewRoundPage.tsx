@@ -514,11 +514,12 @@ function GrantApplications(props: {
               <Tab.Panels>
                 <Tab.Panel>
                   {props.isDirectRound ? (
-                    <ApplicationsToReview />
+                    <ApplicationsToReview isAvoidReview={true} />
                   ) : (
                     <ApplicationsToApproveReject
                       round={props.round!}
                       isDirectRound={Boolean(props.isDirectRound)}
+                      isAvoidReview={true}
                     />
                   )}
                 </Tab.Panel>
@@ -527,14 +528,15 @@ function GrantApplications(props: {
                     <ApplicationsToApproveReject
                       round={props.round!}
                       isDirectRound={Boolean(props.isDirectRound)}
+                      isAvoidReview={true}
                     />
                   </Tab.Panel>
                 )}
                 <Tab.Panel>
-                  <ApplicationsApproved />
+                  <ApplicationsApproved isAvoidReview={true} />
                 </Tab.Panel>
                 <Tab.Panel>
-                  <ApplicationsRejected />
+                  <ApplicationsRejected isAvoidReview={true} />
                 </Tab.Panel>
               </Tab.Panels>
             </Tab.Group>

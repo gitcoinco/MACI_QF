@@ -41,7 +41,11 @@ import { exportAndDownloadCSV } from "./ApplicationsToApproveReject";
 
 // Move applications received in direct grants to In Review
 
-export default function ApplicationsToReview() {
+export default function ApplicationsToReview({
+  isAvoidReview = false,
+}: {
+  isAvoidReview?: boolean;
+}) {
   const { id } = useParams();
   const { chain } = useWallet();
 
@@ -234,19 +238,21 @@ export default function ApplicationsToReview() {
             )}
           </Button>
         )}
-        {filteredApplications && filteredApplications.length > 0 && (
-          <div className="flex items-center justify-end ml-auto">
-            <span className="text-grey-400 text-sm mr-6">
-              Save in gas fees by moving multiple applications to "In Review"
-              state at once.
-            </span>
-            {bulkSelect ? (
-              <Cancel onClick={() => setBulkSelect(false)} />
-            ) : (
-              <Select onClick={() => setBulkSelect(true)} />
-            )}
-          </div>
-        )}
+        {!isAvoidReview &&
+          filteredApplications &&
+          filteredApplications.length > 0 && (
+            <div className="flex items-center justify-end ml-auto">
+              <span className="text-grey-400 text-sm mr-6">
+                Save in gas fees by moving multiple applications to "In Review"
+                state at once.
+              </span>
+              {bulkSelect ? (
+                <Cancel onClick={() => setBulkSelect(false)} />
+              ) : (
+                <Select onClick={() => setBulkSelect(true)} />
+              )}
+            </div>
+          )}
       </div>
       <CardsContainer>
         {!isLoading &&
