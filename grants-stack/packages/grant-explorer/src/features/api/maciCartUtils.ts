@@ -26,8 +26,8 @@ function translateApplicationToContribution(
     chainId: parseInt(application.chainId, 10),
     projectId: application.projectId,
     roundId: application.roundId,
-    recipientAddress: application.metadata.application.recipient,
-    applicationId: application.id,
+    recipientAddress: application?.metadata?.application?.recipient,
+    applicationId: application?.id,
     tokenAddress: application.round.matchTokenAddress,
     donorAddress: walletAddress, // This should be replaced with the actual donor address if available
     amount: (Number(amount) * 10 ** 18).toString(), // This should be replaced with the actual donation amount if available
@@ -41,7 +41,7 @@ function translateApplicationToContribution(
     },
     application: {
       project: {
-        name: application.project.metadata.title,
+        name: application.project?.metadata?.title,
       },
     },
     timestamp: dateToEthereumTimestamp(
