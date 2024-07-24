@@ -207,7 +207,7 @@ function ViewContributionHistoryFetcher(props: {
       path: "/",
     },
     {
-      name: "Donations",
+      name: "Contributor",
       path: `/contributor`,
     },
   ] as BreadcrumbItem[];
@@ -459,11 +459,11 @@ export function ViewContributionHistoryWithoutDonations(props: {
             {props.address === walletAddress ? (
               <>
                 <p className="text-md">
-                  This is your donation history page, where you can keep track
+                  This is your contribution history page, where you can keep track
                   of all the public goods you've funded.
                 </p>
                 <p className="text-md">
-                  As you make donations, your transaction history will appear
+                  As you contribute, your transaction history will appear
                   here.
                 </p>
               </>
@@ -473,11 +473,11 @@ export function ViewContributionHistoryWithoutDonations(props: {
                   This is{" "}
                   {props.ensName ||
                     props.address.slice(0, 6) + "..." + props.address.slice(-6)}
-                  ’s donation history page, showcasing their contributions
+                  ’s contribution history page, showcasing their contributions
                   towards public goods.
                 </p>
                 <p className="text-md">
-                  As they make donations, their transaction history will appear
+                  As they make contributions, their transaction history will appear
                   here.
                 </p>
               </>

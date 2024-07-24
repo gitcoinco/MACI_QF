@@ -135,7 +135,7 @@ function TableHeader() {
           <th className="w-1/4 text-left mx-5">Round</th>
           <th className="w-1/4">
             <div className="flex flex-row ">
-              <div className="py-4">Total Donation</div>
+              <div className="py-4">Total Contribution</div>
               <div className="py-4">
                 <InformationCircleIcon
                   data-tip
