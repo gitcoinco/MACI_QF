@@ -54,8 +54,11 @@ export function ViewContributionHistoryPage() {
     dataLayer
   );
 
-  const DecryptedContributions = undefined;
-  const refetch = () => {};
+  const { data: DecryptedContributions, refetch } = useDecryptMessages(
+    maciContributions?.groupedMaciContributions,
+    walletAddress?.toLowerCase() as string,
+    signaturesReady
+  );
 
   const getNeededPairs = useCallback(
     (
@@ -163,7 +166,7 @@ export function ViewContributionHistoryPage() {
       fetchDonationHistory();
     }
   }, [DecryptedContributions, signaturesReady, fetchDonationHistory]);
-      
+
   return (
     <>
       <Navbar showWalletInteraction={true} />
@@ -326,7 +329,7 @@ export function ViewContributionHistory(props: {
 
     return filteredRoundDonations;
   }, [props.contributions]);
-const show = false;
+
   return (
     <div className="relative top-16 lg:mx-20 xl:mx-20 px-4 py-7 h-screen">
       <div className="flex flex-col pb-4" data-testid="bread-crumbs">
@@ -378,9 +381,8 @@ const show = false;
         </div>
         <div className="text-2xl my-6">Donation History</div>
 
-        {/* {props.initialLoading ||
-        (props.contributions.data.length === 0 && props.hasDonations) ? ( */}
-        {show ? (
+        {props.initialLoading ||
+        (props.contributions.data.length === 0 && props.hasDonations) ? (
           <div className="flex flex-col items-center justify-center mt-[4%]">
             <Spinner />
             <p>{props.loadingMessage}</p>
@@ -391,8 +393,7 @@ const show = false;
               Active Rounds
             </div>
             <DonationsTable
-              // contributions={activeRoundDonations}
-              contributions={[]}
+              contributions={activeRoundDonations}
               tokens={props.tokens}
               activeRound={true}
               price={price ?? 0}
@@ -401,8 +402,7 @@ const show = false;
               Past Rounds
             </div>
             <DonationsTable
-              // contributions={pastRoundDonations}
-              contributions={[]}
+              contributions={pastRoundDonations}
               tokens={props.tokens}
               activeRound={false}
               price={price ?? 0}
