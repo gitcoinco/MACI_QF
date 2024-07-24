@@ -34,8 +34,8 @@ export function DonationsTable(props: {
       {props.contributions.length === 0 && (
         <div className="text-md mt-2 mb-12">
           {props.activeRound
-            ? "Donations made during active rounds will appear here."
-            : "Donations made during past rounds will appear here."}
+            ? "Contributions made during active rounds will appear here."
+            : "Contributions made during past rounds will appear here."}
         </div>
       )}
     </>
@@ -106,17 +106,17 @@ function RoundsTableWithAccordian(props: {
                         tokens={props.tokens}
                         price={props.price}
                       />
-                      <AccordionIcon />
+                      {/* <AccordionIcon /> */}
                     </AccordionButton>
                   </h2>
-                  <AccordionPanel pb={4}>
+                  {/* <AccordionPanel pb={4}>
                     <InnerTable
                       activeRound={props.activeRound}
                       contributions={sortedContributions}
                       tokens={props.tokens}
                       price={props.price}
                     />
-                  </AccordionPanel>
+                  </AccordionPanel> */}
                 </AccordionItem>
               </Accordion>
             );
@@ -135,7 +135,7 @@ function TableHeader() {
           <th className="w-1/4 text-left mx-5">Round</th>
           <th className="w-1/4">
             <div className="flex flex-row ">
-              <div className="py-4">Total Donation</div>
+              <div className="py-4">Total Contribution</div>
               <div className="py-4">
                 <InformationCircleIcon
                   data-tip
@@ -196,110 +196,7 @@ function InnerTable(props: {
   activeRound: boolean;
   price: number;
 }) {
-  return (
-    <div className="bg-grey-75 rounded-lg p-2 py-1">
-      <div className="mt-4 overflow-hidden">
-        <div className="mx-auto">
-          <div>
-            <table className="w-full text-left">
-              <thead className="font-sans text-lg">
-                <tr>
-                  <th className="w-1/4 text-left mx-5">Project</th>
-                  <th className="w-1/4">
-                    <div className="py-4">Donation</div>
-                  </th>
-                  <th className="w-1/4 ">
-                    <div className="py-4">Voice Credits</div>
-                  </th>
-                  <th className="w-1/4"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {props.contributions.length > 0 &&
-                  props.contributions
-                    .flat()
-                    .sort(
-                      (a, b) =>
-                        (Number(b.timestamp) || Number.MAX_SAFE_INTEGER) -
-                        (Number(a.timestamp) || Number.MAX_SAFE_INTEGER)
-                    )
-
-                    .map((contribution) => {
-                      const tokenId =
-                        contribution.tokenAddress.toLowerCase() +
-                        "-" +
-                        contribution.chainId;
-                      const token = props.tokens[tokenId];
-
-                      let formattedAmount = "N/A";
-                      let amountInUsd = 0;
-
-                      if (token) {
-                        formattedAmount = `${Number(
-                          Number(contribution.amount) / 1e13
-                        )}`;
-                        amountInUsd =
-                          Number(
-                            formatUnits(
-                              BigInt(contribution.amount),
-                              token.decimal
-                            )
-                          ) * (props.price ?? 0);
-                      }
-
-                      return (
-                        <tr key={contribution.id} className="">
-                          <td className="py-4 pr-2 colSpan-4">
-                            <div className="flex items-center">
-                              <div className="flex flex-col sm:flex-row">
-                                {/* Link to the project */}
-                                <Link
-                                  className={`underline inline-block lg:pr-2 lg:max-w-[300px] max-w-[75px] 2xl:max-w-fit truncate`}
-                                  title={contribution.application.project.name}
-                                  to={`/round/${
-                                    contribution.chainId
-                                  }/${contribution.roundId
-                                    .toString()
-                                    .toLowerCase()}/${
-                                    contribution.applicationId
-                                  }`}
-                                  target="_blank"
-                                >
-                                  {contribution.application.project.name}
-                                </Link>
-                              </div>
-                            </div>
-                            {/* Display contribution timestamp */}
-                            <div className="text-sm text-gray-500">
-                              {timeAgo(Number(contribution.timestamp))}
-                            </div>
-                          </td>
-                          {/* Display donations */}
-                          <td className="py-4 truncate ">
-                            <div className="flex flex-col ">
-                              <span className="text-md">{`${Number(formattedAmount) / 1e5} ${token.name}`}</span>
-                              <span className="text-grey-400">
-                                ${amountInUsd.toFixed(2)}
-                              </span>
-                            </div>
-                          </td>
-                          {/* Display Voice Credits */}
-                          <td className="py-4 truncate ">
-                            <span className="text-grey-400">
-                              {formattedAmount}
-                            </span>
-                          </td>
-                          <td className="w-1/4"></td>
-                        </tr>
-                      );
-                    })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return null
 }
 
 function Table(props: {
