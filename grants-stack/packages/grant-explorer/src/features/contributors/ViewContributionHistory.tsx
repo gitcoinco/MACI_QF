@@ -54,13 +54,11 @@ export function ViewContributionHistoryPage() {
     dataLayer
   );
 
-  // const { data: DecryptedContributions, refetch } = useDecryptMessages(
-  //   maciContributions?.groupedMaciContributions,
-  //   walletAddress?.toLowerCase() as string,
-  //   signaturesReady
-  // );
-  const DecryptedContributions = undefined;
-  const refetch = () => {};
+  const { data: DecryptedContributions, refetch } = useDecryptMessages(
+    maciContributions?.groupedMaciContributions,
+    walletAddress?.toLowerCase() as string,
+    signaturesReady
+  );
 
   const getNeededPairs = useCallback(
     (
@@ -109,52 +107,52 @@ export function ViewContributionHistoryPage() {
     setSignaturesReady(true);
   }, [maciContributions, walletAddress, getNeededPairs]);
 
-  // const fetchDonationHistory = useCallback(async () => {
-  //   const donations = await getDonationHistory(
-  //     dataLayer,
-  //     walletAddress as string,
-  //     applications,
-  //     maciContributions?.groupedMaciContributions,
-  //     DecryptedContributions?.decryptedMessagesByRound
-  //   );
-  //   setContributions(donations);
-  //   setInitialLoading(false);
-  // }, [
-  //   dataLayer,
-  //   applications,
-  //   maciContributions,
-  //   DecryptedContributions,
-  //   walletAddress,
-  // ]);
+  const fetchDonationHistory = useCallback(async () => {
+    const donations = await getDonationHistory(
+      dataLayer,
+      walletAddress as string,
+      applications,
+      maciContributions?.groupedMaciContributions,
+      DecryptedContributions?.decryptedMessagesByRound
+    );
+    setContributions(donations);
+    setInitialLoading(false);
+  }, [
+    dataLayer,
+    applications,
+    maciContributions,
+    DecryptedContributions,
+    walletAddress,
+  ]);
 
-  // useEffect(() => {
-  //   const lastWalletAddress = localStorage.getItem(LOCAL_STORAGE_KEY);
-  //   if (
-  //     isConnected &&
-  //     walletAddress &&
-  //     walletAddress.toLowerCase() !== lastWalletAddress?.toLowerCase()
-  //   ) {
-  //     localStorage.setItem(LOCAL_STORAGE_KEY, walletAddress.toLowerCase());
-  //     setSignaturesReady(false);
-  //     setInitialLoading(true);
-  //     setLoadingMessage("Fetching your contributions...");
-  //   }
+  useEffect(() => {
+    const lastWalletAddress = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (
+      isConnected &&
+      walletAddress &&
+      walletAddress.toLowerCase() !== lastWalletAddress?.toLowerCase()
+    ) {
+      localStorage.setItem(LOCAL_STORAGE_KEY, walletAddress.toLowerCase());
+      setSignaturesReady(false);
+      setInitialLoading(true);
+      setLoadingMessage("Fetching your contributions...");
+    }
 
-  //   if (maciContributions && walletAddress) {
-  //     const signaturesExist = areSignaturesPresent(
-  //       maciContributions.groupedMaciContributions,
-  //       walletAddress
-  //     );
-  //     if (signaturesExist) {
-  //       setSignaturesReady(true);
-  //     } else {
-  //       setLoadingMessage(
-  //         "Sign the messages to decrypt and view your contributions history."
-  //       );
-  //       getNeededSignatures();
-  //     }
-  //   }
-  // }, [isConnected, walletAddress, maciContributions, getNeededSignatures]);
+    if (maciContributions && walletAddress) {
+      const signaturesExist = areSignaturesPresent(
+        maciContributions.groupedMaciContributions,
+        walletAddress
+      );
+      if (signaturesExist) {
+        setSignaturesReady(true);
+      } else {
+        setLoadingMessage(
+          "Sign the messages to view your contributions history."
+        );
+        getNeededSignatures();
+      }
+    }
+  }, [isConnected, walletAddress, maciContributions, getNeededSignatures]);
 
   useEffect(() => {
     if (signaturesReady) {
@@ -162,12 +160,12 @@ export function ViewContributionHistoryPage() {
     }
   }, [signaturesReady, refetch]);
 
-  // useEffect(() => {
-  //   // if (DecryptedContributions && signaturesReady) {
-  //   //   setLoadingMessage("Decrypting your donation history...");
-  //   //   fetchDonationHistory();
-  //   // }
-  // }, [DecryptedContributions, signaturesReady, fetchDonationHistory]);
+  useEffect(() => {
+    if (DecryptedContributions && signaturesReady) {
+      setLoadingMessage("Fetching your contributions...");
+      fetchDonationHistory();
+    }
+  }, [DecryptedContributions, signaturesReady, fetchDonationHistory]);
 
   return (
     <>
@@ -331,7 +329,7 @@ export function ViewContributionHistory(props: {
 
     return filteredRoundDonations;
   }, [props.contributions]);
-const show = false;
+
   return (
     <div className="relative top-16 lg:mx-20 xl:mx-20 px-4 py-7 h-screen">
       <div className="flex flex-col pb-4" data-testid="bread-crumbs">
@@ -383,9 +381,8 @@ const show = false;
         </div>
         <div className="text-2xl my-6">Donation History</div>
 
-        {/* {props.initialLoading ||
-        (props.contributions.data.length === 0 && props.hasDonations) ? ( */}
-        {show ? (
+        {props.initialLoading ||
+        (props.contributions.data.length === 0 && props.hasDonations) ? (
           <div className="flex flex-col items-center justify-center mt-[4%]">
             <Spinner />
             <p>{props.loadingMessage}</p>
@@ -396,8 +393,7 @@ const show = false;
               Active Rounds
             </div>
             <DonationsTable
-              // contributions={activeRoundDonations}
-              contributions={[]}
+              contributions={activeRoundDonations}
               tokens={props.tokens}
               activeRound={true}
               price={price ?? 0}
@@ -406,8 +402,7 @@ const show = false;
               Past Rounds
             </div>
             <DonationsTable
-              // contributions={pastRoundDonations}
-              contributions={[]}
+              contributions={pastRoundDonations}
               tokens={props.tokens}
               activeRound={false}
               price={price ?? 0}
