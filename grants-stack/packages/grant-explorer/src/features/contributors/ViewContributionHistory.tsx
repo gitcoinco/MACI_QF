@@ -54,11 +54,8 @@ export function ViewContributionHistoryPage() {
     dataLayer
   );
 
-  const { data: DecryptedContributions, refetch } = useDecryptMessages(
-    maciContributions?.groupedMaciContributions,
-    walletAddress?.toLowerCase() as string,
-    signaturesReady
-  );
+  const DecryptedContributions = undefined;
+  const refetch = () => {};
 
   const getNeededPairs = useCallback(
     (
@@ -166,7 +163,7 @@ export function ViewContributionHistoryPage() {
       fetchDonationHistory();
     }
   }, [DecryptedContributions, signaturesReady, fetchDonationHistory]);
-
+      
   return (
     <>
       <Navbar showWalletInteraction={true} />
@@ -329,7 +326,7 @@ export function ViewContributionHistory(props: {
 
     return filteredRoundDonations;
   }, [props.contributions]);
-
+const show = false;
   return (
     <div className="relative top-16 lg:mx-20 xl:mx-20 px-4 py-7 h-screen">
       <div className="flex flex-col pb-4" data-testid="bread-crumbs">
@@ -381,8 +378,9 @@ export function ViewContributionHistory(props: {
         </div>
         <div className="text-2xl my-6">Donation History</div>
 
-        {props.initialLoading ||
-        (props.contributions.data.length === 0 && props.hasDonations) ? (
+        {/* {props.initialLoading ||
+        (props.contributions.data.length === 0 && props.hasDonations) ? ( */}
+        {show ? (
           <div className="flex flex-col items-center justify-center mt-[4%]">
             <Spinner />
             <p>{props.loadingMessage}</p>
@@ -393,7 +391,8 @@ export function ViewContributionHistory(props: {
               Active Rounds
             </div>
             <DonationsTable
-              contributions={activeRoundDonations}
+              // contributions={activeRoundDonations}
+              contributions={[]}
               tokens={props.tokens}
               activeRound={true}
               price={price ?? 0}
@@ -402,7 +401,8 @@ export function ViewContributionHistory(props: {
               Past Rounds
             </div>
             <DonationsTable
-              contributions={pastRoundDonations}
+              // contributions={pastRoundDonations}
+              contributions={[]}
               tokens={props.tokens}
               activeRound={false}
               price={price ?? 0}
