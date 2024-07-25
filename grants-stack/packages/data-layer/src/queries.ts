@@ -406,7 +406,7 @@ export const getProjectsAndRolesByAddress = gql`
     projects(
       first: 1000
       filter: {
-        roles: { every: { address: { equalTo: $address } } }
+        roles: { some: { address: { equalTo: $address } } }
         tags: { contains: $version }
         not: { tags: { contains: "program" } }
         chainId: { in: $chainIds }
