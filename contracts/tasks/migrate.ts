@@ -1,11 +1,9 @@
 import {
   readScrollProjects,
   scrollProjects,
-  ScrollProjectDataAfterEdit,
   transformScrollProjectData,
   strategiesToDeployMetadata,
   getRoundID,
-  transformToProfileData,
   readMigrationData,
 } from "./constants/scrollMigration";
 import { subtask, task } from "hardhat/config";
@@ -44,9 +42,10 @@ task("migrate", "migrate profiles to a new network").setAction(
     console.log("Deploying contracts with the account:", signer.address);
     console.log("Allo", Allo);
     console.log("Registry", Registry);
-    // const rounds = await hre.run("deployRounds", {});
-    const rounds = [51, 52, 53];
-    
+    const rounds = await hre.run("deployRounds", {});
+    console.log("Rounds", rounds);
+    // const rounds = [51, 52, 53];
+
     const RegistryContract = await ethers.getContractAt(
       "Registry",
       Registry,
@@ -64,47 +63,6 @@ task("migrate", "migrate profiles to a new network").setAction(
 
     const migratedProjectsData = profileDatas;
 
-    const resApproved = scrollProjectData.map((data) =>
-      data.applications
-        .map((app) => ({
-          projectName: app.project.name,
-          status: app.application.status,
-        }))
-        .filter((app) => app.status === "APPROVED")
-    );
-
-    console.table(resApproved[0].map((app) => ({ ...app, roundType: "Tech" })));
-
-    console.table(
-      resApproved[1].map((app) => ({ ...app, roundType: "Short Events" }))
-    );
-
-    console.table(
-      resApproved[2].map((app) => ({ ...app, roundType: "Long Events" }))
-    );
-
-    const resRejected = scrollProjectData.map((data) =>
-      data.applications
-        .map((app) => ({
-          projectName: app.project.name,
-          status: app.application.status,
-        }))
-        .filter((app) => app.status !== "APPROVED")
-        .map((app) => {
-          return { name: app.projectName, status: "REJECTED" };
-        })
-    );
-
-    console.table(resRejected[0].map((app) => ({ ...app, roundType: "Tech" })));
-
-    console.table(
-      resRejected[1].map((app) => ({ ...app, roundType: "Short Events" }))
-    );
-
-    console.table(
-      resRejected[2].map((app) => ({ ...app, roundType: "Long Events" }))
-    );
-
     const trackDuplicates: Record<string, number> = {};
     for (let i = 0; i < profileDatas.length; i++) {
       const profile = profileDatas[i];
@@ -121,27 +79,28 @@ task("migrate", "migrate profiles to a new network").setAction(
         continue;
       }
 
-      const createTx = await RegistryContract.createProfile(
-        profile.nonce,
-        profile.name,
-        { protocol: 1, pointer: profile.metadata.pointer },
-        signer.address,
-        [profile.owner]
-      );
-      console.log("Creating profile for", profile.name, "with i = ", i);
-      const createProfileReceipt = await createTx.wait();
-      const profileId = createProfileReceipt?.logs[0].topics[1] || "";
+      // const createTx = await RegistryContract.createProfile(
+      //   profile.nonce,
+      //   profile.name,
+      //   { protocol: 1, pointer: profile.metadata.pointer },
+      //   signer.address,
+      //   [profile.owner]
+      // );
+      // console.log("Creating profile for", profile.name, "with i = ", i);
+      // const createProfileReceipt = await createTx.wait();
+      // const profileId = createProfileReceipt?.logs[0].topics[1] || "";
 
-      const anchorAddress = (await RegistryContract.getProfileById(profileId))
-        .anchor;
+      // const anchorAddress = (await RegistryContract.getProfileById(profileId))
+      //   .anchor;
 
-      migratedProjectsData[i].newAnchor = anchorAddress;
-      migratedProjectsData[i].profileCreated = true;
+      // migratedProjectsData[i].newAnchor = anchorAddress;
+      // migratedProjectsData[i].profileCreated = true;
 
-      fs.writeFileSync(
-        "migratedProjects.json",
-        JSON.stringify(migratedProjectsData, null, 2)
-      );
+      // fs.writeFileSync(
+      //   "migratedProjects.json",
+      //   JSON.stringify(migratedProjectsData, null, 2)
+      // );
+      console.log("Creating profile for" + profile.name + " with i = " + i);
     }
 
     const batchSize = 20;
@@ -160,6 +119,7 @@ task("migrate", "migrate profiles to a new network").setAction(
 
     for (let i = 0; i < registreesLength; i++) {
       const profile = migratedProjectsData[i];
+      migratedProjectsData[i].registered = false;
 
       const initStruct = [
         profile.newAnchor,
@@ -482,7 +442,23 @@ subtask("deployRounds", async (_, hre) => {
           protocol: 1,
           pointer: strategiesToDeployMetadataValues[i],
         },
-        [deployer.address],
+        [
+          deployer.address,
+          "0x58338E95caEf17861916Ef10daD5fAFE20421005",
+          "0x5f834c8f70baaeafad00662cd214245c9a1a9ef5",
+          "0x1490bc4a47871629b3bfE9eC1c0c0C3e55df6067",
+          "0x1421d52714B01298E2e9AA969e14c9317B3E1CFA",
+          "0x5645bF145C3f1E974D0D7FB91bf3c68592ab5012",
+          "0x0D1781F0b693b35939A49831A6C799B938Bd2F80",
+          "0xc24e3C2e72f960fa1d54170Fa03492DDa4cE8256",
+          "0xB8cEF765721A6da910f14Be93e7684e9a3714123",
+          "0x6a4b92F053990A2069CE88D8177F19b80E1969b5",
+          "0x9FC3B33884e1D056a8CA979833d686abD267f9f8",
+          "0x8df49481a368a3E0F3518198eE8E7e7BdfE142EA",
+          "0x438F0E55244765d0b00247282Ab287d6251E3aBa",
+          "0x5d36a202687fD6Bd0f670545334bF0B4827Cc1E2",
+          "0x50475837daaAC70507A04e6f964C3166073E62a0",
+        ],
         { value: 0n }
       );
 

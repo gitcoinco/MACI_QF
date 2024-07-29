@@ -10,3 +10,5 @@ import "./deployMACI";
 import "./createPool";
 import "./migrate";
 import "./createMultisigList";
+import "./transferOwnership";
+import "./testTransferOwnership";

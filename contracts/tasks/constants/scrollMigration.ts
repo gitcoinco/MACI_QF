@@ -171,11 +171,11 @@ export function readMigrationData(): ProfileData[] {
 
 export function getRoundID(roundId: number, rounds: number[]) {
   switch (roundId) {
-    case 16:
+    case 51:
       return rounds[0];
-    case 17:
+    case 52:
       return rounds[1];
-    case 18:
+    case 53:
       return rounds[2];
     default:
       return 0;

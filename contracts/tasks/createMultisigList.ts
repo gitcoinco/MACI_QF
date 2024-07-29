@@ -7,23 +7,25 @@ task(
   const { ethers } = hre;
   const migratedData = readMigrationData();
   const projectList = [];
-  for (const project of migratedData) {
-    const codeBytes = await ethers.provider.getCode(project.recipient);
-    //   Check if the bytes are not empty
-    const isMultisig = codeBytes !== "0x";
+    for (const project of migratedData) {
+      const codeBytes = await ethers.provider.getCode(project.recipient);
+      //   Check if the bytes are not empty
+      const isMultisig = codeBytes !== "0x";
 
-    if (isMultisig && project.status === "APPROVED") {
-      projectList.push(project);
+      if (isMultisig && project.status === "APPROVED") {
+        projectList.push(project);
+      }
     }
-  }
+  
   console.table(
     projectList.map((project) => {
       return {
         name: project.name,
         recipient: project.recipient,
-        APPROVED: "YES",
-        requiresMultisigOnOptimism: "YES",
+        anchor: project.newAnchor,
+        oldAnchor: project.oldAnchor,
       };
     })
   );
 });
+
