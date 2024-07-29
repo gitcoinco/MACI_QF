@@ -11,6 +11,7 @@ import {
   PROJECT_APPLICATIONS_LOADING,
   PROJECT_APPLICATION_UPDATED,
   PROJECT_OWNERS_LOADED,
+  PROJECT_MEMBERS_LOADED,
   PROJECT_STATS_LOADED,
   PROJECT_STATS_LOADING,
   ProjectsActions,
@@ -24,6 +25,7 @@ export enum Status {
 }
 
 export type ProjectOwners = { [projectID: string]: string[] };
+export type ProjectMembers = { [projectID: string]: string[] };
 export interface ProjectsState {
   status: Status;
   loadingChains: number[];
@@ -31,6 +33,7 @@ export interface ProjectsState {
   ids: string[];
   events: ProjectEventsMap;
   owners: ProjectOwners;
+  members: ProjectMembers;
   anchor?: { [anchor: string]: string };
   applications?: {
     [projectID: string]: ProjectApplicationWithRound[];
@@ -46,6 +49,7 @@ export const initialState: ProjectsState = {
   error: undefined,
   ids: [],
   owners: {},
+  members: {},
   events: {},
   anchor: {},
   applications: {},
@@ -80,6 +84,16 @@ export const projectsReducer = (
         owners: {
           ...state.owners,
           [action.payload.projectID]: action.payload.owners,
+        },
+      };
+    }
+
+    case PROJECT_MEMBERS_LOADED: {
+      return {
+        ...state,
+        members: {
+          ...state.members,
+          [action.payload.projectID]: action.payload.members,
         },
       };
     }

@@ -17,6 +17,7 @@ export default function Details({
   updatedAt,
   bannerImg,
   logoImg,
+  showTransferOwnership,
   showApplications,
   showTabs,
 }: {
@@ -25,6 +26,7 @@ export default function Details({
   createdAt: number;
   bannerImg: string | Blob;
   logoImg: string | Blob;
+  showTransferOwnership: boolean;
   showApplications: boolean;
   showTabs: boolean;
 }) {
@@ -55,6 +57,8 @@ export default function Details({
         title={project?.title ?? ""}
         bannerImg={bannerImg}
         logoImg={logoImg}
+        profileId={props.projectID}
+        showBtn={showTransferOwnership}
       />
       {showTabs ? (
         <Tabs className="mt-8" defaultIndex={0}>

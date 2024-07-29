@@ -106,6 +106,7 @@ export default function Preview({
         project={project}
         logoImg={props.metadata?.logoImgData ?? DefaultProjectLogo}
         bannerImg={props.metadata?.bannerImgData ?? DefaultProjectBanner}
+        showTransferOwnership={false}
         showApplications={false}
         showTabs={false}
       />

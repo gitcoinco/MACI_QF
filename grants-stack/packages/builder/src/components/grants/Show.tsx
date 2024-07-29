@@ -2,6 +2,7 @@ import { useDataLayer } from "data-layer";
 import { useEffect } from "react";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
+import { useAccount } from "wagmi";
 import { fetchGrantData } from "../../actions/grantsMetadata";
 import { RootState } from "../../reducers";
 import { Status } from "../../reducers/grantsMetadata";
@@ -17,6 +18,8 @@ import Details from "./Details";
 function Project() {
   const dataLayer = useDataLayer();
 
+  const { address } = useAccount();
+
   const dispatch = useDispatch();
   // FIXME: params.id doesn't change if the location hash is changed manually.
   const params = useParams();
@@ -25,6 +28,7 @@ function Project() {
     const grantMetadata = state.grantsMetadata[params.id!];
     const chainId = grantMetadata?.metadata?.chainId;
     const owners = state.projects.owners[params.id!];
+    const members = state.projects.members[params.id!];
     const loading = grantMetadata
       ? grantMetadata.status === Status.Loading
       : false;
@@ -40,6 +44,11 @@ function Project() {
       ImgTypes.logoImg,
       grantMetadata?.metadata
     );
+    const migrationOwner = "0xC72492618dfF005eF57688281B5c78FBc5912287";
+    const showTransferOwnership =
+      !owners?.includes(address!) &&
+      members?.includes(address!) &&
+      owners?.includes(migrationOwner);
 
     return {
       id: params.id,
@@ -49,6 +58,8 @@ function Project() {
       bannerImg,
       logoImg,
       owners,
+      members,
+      showTransferOwnership,
       currentProject: grantMetadata?.metadata,
       signerAddress: state.web3.account,
     };
@@ -67,7 +78,7 @@ function Project() {
     const registryAddress = "0x"; // TODO: fix (technically, we dont need the regsitry address anymore)
     return editPath(props.chainId!.toString(), registryAddress, props.id!);
   }
-
+  // console.log(props.);
   if (props.loadingFailed) {
     return (
       <div>
@@ -114,6 +125,7 @@ function Project() {
             updatedAt={props.currentProject.updatedAt!}
             logoImg={props.logoImg}
             bannerImg={props.bannerImg}
+            showTransferOwnership={props.showTransferOwnership}
             showApplications
             showTabs
           />

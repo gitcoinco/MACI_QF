@@ -76,11 +76,21 @@ interface ProjectApplicationsErrorAction {
 
 export const PROJECT_OWNERS_LOADED = "PROJECT_OWNERS_LOADED";
 
+export const PROJECT_MEMBERS_LOADED = "PROJECT_MEMBERS_LOADED";
+
 interface ProjectOwnersLoadedAction {
   type: typeof PROJECT_OWNERS_LOADED;
   payload: {
     projectID: string;
     owners: string[];
+  };
+}
+
+interface ProjectMembersLoadedAction {
+  type: typeof PROJECT_MEMBERS_LOADED;
+  payload: {
+    projectID: string;
+    members: string[];
   };
 }
 
@@ -122,6 +132,7 @@ export type ProjectsActions =
   | ProjectApplicationsErrorAction
   | ProjectApplicationUpdatedAction
   | ProjectOwnersLoadedAction
+  | ProjectMembersLoadedAction
   | ProjectStatsLoadingAction
   | ProjectStatsLoadedAction
   | ProjectAnchorsLoadedAction;
@@ -150,6 +161,14 @@ export const projectOwnersLoaded = (projectID: string, owners: string[]) => ({
   payload: {
     projectID,
     owners,
+  },
+});
+
+export const projectMembersLoaded = (projectID: string, members: string[]) => ({
+  type: PROJECT_MEMBERS_LOADED,
+  payload: {
+    projectID,
+    members,
   },
 });
 

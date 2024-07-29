@@ -7,7 +7,12 @@ import history from "../history";
 import { Web3State, web3Reducer } from "./web3";
 import { ProjectsState, projectsReducer } from "./projects";
 import { NewGrantState, newGrantReducer } from "./newGrant";
+import {
+  AcceptProfileOwnershipState,
+  AcceptProfileOwnershipReducer,
+} from "./acceptOwnership";
 import { GrantsMetadataState, grantsMetadataReducer } from "./grantsMetadata";
+
 import { RoundsState, roundsReducer } from "./rounds";
 import {
   RoundApplicationState,
@@ -21,6 +26,7 @@ export interface RootState {
   web3: Web3State;
   projects: ProjectsState;
   newGrant: NewGrantState;
+  acceptProfileOwnership: AcceptProfileOwnershipState;
   grantsMetadata: GrantsMetadataState;
   rounds: RoundsState;
   roundApplication: RoundApplicationState;
@@ -34,6 +40,7 @@ export const createRootReducer = () =>
     web3: web3Reducer,
     projects: projectsReducer,
     newGrant: newGrantReducer,
+    acceptProfileOwnership: AcceptProfileOwnershipReducer,
     grantsMetadata: grantsMetadataReducer,
     rounds: roundsReducer,
     roundApplication: roundApplicationReducer,

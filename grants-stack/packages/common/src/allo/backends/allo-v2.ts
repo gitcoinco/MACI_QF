@@ -441,6 +441,60 @@ export class AlloV2 implements Allo {
     });
   }
 
+  acceptProjectOwnership(args: { projectId: Hex }): AlloOperation<
+    Result<{ projectId: Hex }>,
+    {
+      ipfs: Result<string>;
+      transaction: Result<Hex>;
+      transactionStatus: Result<TransactionReceipt>;
+      indexingStatus: Result<void>;
+    }
+  > {
+    return new AlloOperation(async ({ emit }) => {
+      const projectId = args.projectId;
+
+      const txUpdateProfile: TransactionData =
+        this.registry.acceptProfileOwnership(projectId);
+
+      /** send transaction to create project */
+      const txResult = await sendRawTransaction(this.transactionSender, {
+        to: txUpdateProfile.to,
+        data: txUpdateProfile.data,
+        value: BigInt(0),
+      });
+
+      emit("transaction", txResult);
+
+      if (txResult.type === "error") {
+        return txResult;
+      }
+
+      /** wait for transaction to be mined */
+      let receipt: TransactionReceipt;
+
+      try {
+        receipt = await this.transactionSender.wait(txResult.value);
+
+        emit("transactionStatus", success(receipt));
+      } catch (err) {
+        const result = new AlloError("Failed to update project metadata");
+        emit("transactionStatus", error(result));
+        return error(result);
+      }
+
+      await this.waitUntilIndexerSynced({
+        chainId: this.chainId,
+        blockNumber: receipt.blockNumber,
+      });
+
+      emit("indexingStatus", success(void 0));
+
+      return success({
+        projectId: projectId,
+      });
+    });
+  }
+
   createRound(args: CreateRoundArguments): AlloOperation<
     Result<{ roundId: Hex }>,
     {

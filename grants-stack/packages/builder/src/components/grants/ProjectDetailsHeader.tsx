@@ -1,11 +1,17 @@
+import AcceptOwnershipButton from "../base/acceptOwnershipButton";
+
 export default function ProjectDetailsHeader({
   title,
   bannerImg,
   logoImg,
+  profileId,
+  showBtn,
 }: {
   title: string | undefined;
   bannerImg: string | Blob | undefined;
   logoImg: string | Blob | undefined;
+  profileId: string;
+  showBtn?: boolean;
 }) {
   return (
     <>
@@ -38,6 +44,7 @@ export default function ProjectDetailsHeader({
         </div>
       </div>
       <h4 className="mb-4 ml-1 mt-14">{title}</h4>
+      {showBtn && <AcceptOwnershipButton currentProjectId={profileId ?? ""} />}
     </>
   );
 }
