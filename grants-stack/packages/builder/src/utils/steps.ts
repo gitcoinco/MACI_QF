@@ -1,7 +1,11 @@
 import { Status as RoundApplicationStatus } from "../reducers/roundApplication";
 import { Status as GrantStatus } from "../reducers/newGrant";
+import { Status as AcceptOwnershipStatus } from "../reducers/acceptOwnership";
 
-export type Status = RoundApplicationStatus | GrantStatus;
+export type Status =
+  | RoundApplicationStatus
+  | GrantStatus
+  | AcceptOwnershipStatus;
 
 export type Step = {
   name: string;
@@ -86,5 +90,18 @@ export const grantSteps: Step[] = [
     name: "Redirecting",
     description: "Just another moment while we finish things up.",
     status: GrantStatus.Completed,
+  },
+];
+
+export const TransferOwnershipSteps: Step[] = [
+  {
+    name: "Signing",
+    description: "Waiting for wallet interaction.",
+    status: AcceptOwnershipStatus.WaitingForSignature,
+  },
+  {
+    name: "Transferring Ownership",
+    description: "Wait until the project ownership get's back to you.",
+    status: GrantStatus.TransactionInitiated,
   },
 ];

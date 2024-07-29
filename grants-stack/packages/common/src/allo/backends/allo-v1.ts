@@ -489,8 +489,8 @@ export class AlloV1 implements Allo {
             args.roundData.applicationsEndTime
               ? dateToEthereumTimestamp(args.roundData.applicationsEndTime)
               : args.roundData.roundEndTime
-              ? dateToEthereumTimestamp(args.roundData.roundEndTime)
-              : maxUint256,
+                ? dateToEthereumTimestamp(args.roundData.roundEndTime)
+                : maxUint256,
             dateToEthereumTimestamp(args.roundData.roundStartTime),
             args.roundData.roundEndTime
               ? dateToEthereumTimestamp(args.roundData.roundEndTime)
@@ -582,6 +582,56 @@ export class AlloV1 implements Allo {
         alert(e);
         return error(e as Error);
       }
+    });
+  }
+
+  // Dummy interface implementation
+  acceptProjectOwnership(args: { projectId: Hex }): AlloOperation<
+    Result<{ projectId: Hex }>,
+    {
+      ipfs: Result<string>;
+      transaction: Result<Hex>;
+      transactionStatus: Result<TransactionReceipt>;
+      indexingStatus: Result<void>;
+    }
+  > {
+    return new AlloOperation(async ({ emit }) => {
+      if (typeof args.projectId == "number") {
+        return error(new AlloError("roundId must be Hex"));
+      }
+
+      const txResult = await sendTransaction(this.transactionSender, {
+        address: args.projectId,
+        abi: RoundImplementationABI,
+        functionName: "applyToRound",
+        args: [args.projectId, { protocol: 1n, pointer: "ipfsResult.value" }],
+      });
+
+      emit("transaction", txResult);
+
+      if (txResult.type === "error") {
+        return txResult;
+      }
+
+      let receipt: TransactionReceipt;
+      try {
+        receipt = await this.transactionSender.wait(txResult.value);
+
+        emit("transactionStatus", success(receipt));
+      } catch (err) {
+        const result = new AlloError("Failed to apply to round");
+        emit("transactionStatus", error(result));
+        return error(result);
+      }
+
+      await this.waitUntilIndexerSynced({
+        chainId: this.chainId,
+        blockNumber: receipt.blockNumber,
+      });
+
+      return success({
+        projectId: args.projectId,
+      });
     });
   }
 

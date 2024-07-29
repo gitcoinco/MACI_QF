@@ -3,13 +3,14 @@ import { BaseModal } from "./BaseModal";
 import { Status, Step } from "../../utils/steps";
 import { RoundApplicationError } from "../../reducers/roundApplication";
 import { NewGrantError } from "../../reducers/newGrant";
+import { AcceptOwnershipError } from "../../actions/acceptOwnership";
 
 type StatusModalProps = {
   open: boolean;
   onClose: (open: boolean) => void;
   currentStatus: Status;
   steps: Step[];
-  error?: RoundApplicationError | NewGrantError;
+  error?: RoundApplicationError | NewGrantError | AcceptOwnershipError;
   title: string;
 };
 
@@ -17,7 +18,7 @@ type StepComponentProps = {
   ownStep: Step;
   currentStatus: Status;
   steps: Step[];
-  error?: RoundApplicationError | NewGrantError;
+  error?: RoundApplicationError | NewGrantError | AcceptOwnershipError;
 };
 
 const completedIcon = (

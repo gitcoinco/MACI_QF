@@ -78,6 +78,16 @@ export interface Allo {
     }
   >;
 
+  acceptProjectOwnership(args: { projectId: Hex }): AlloOperation<
+    Result<{ projectId: Hex }>,
+    {
+      ipfs: Result<string>;
+      transaction: Result<Hex>;
+      transactionStatus: Result<TransactionReceipt>;
+      indexingStatus: Result<void>;
+    }
+  >;
+
   createRound: (args: CreateRoundArguments) => AlloOperation<
     Result<{ roundId: Hex }>,
     {

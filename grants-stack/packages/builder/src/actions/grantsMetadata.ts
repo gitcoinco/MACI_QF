@@ -4,7 +4,11 @@ import { AddressAndRole, DataLayer, v2Project } from "data-layer";
 import { ethers } from "ethers";
 import { Dispatch } from "redux";
 import { Metadata } from "../types";
-import { projectAnchorsLoaded, projectOwnersLoaded } from "./projects";
+import {
+  projectAnchorsLoaded,
+  projectMembersLoaded,
+  projectOwnersLoaded,
+} from "./projects";
 
 export const GRANT_METADATA_LOADING_URI = "GRANT_METADATA_LOADING_URI";
 export interface GrantMetadataLoadingURI {
@@ -94,13 +98,18 @@ export const transformAndDispatchProject =
       registryAddress: project.registryAddress,
       projectNumber: project.projectNumber,
     };
-
     // todo: should we lowercase the owner addresses?
     const ownerAddresses: `0x${string}`[] = project.roles
       .filter((role: AddressAndRole) => role.role === "OWNER")
       .map((role) => ethers.utils.getAddress(role.address));
 
+    const membersAddresses: `0x${string}`[] = project.roles
+      .filter((role: AddressAndRole) => role.role === "MEMBER")
+      .map((role) => ethers.utils.getAddress(role.address));
+
     dispatch(projectOwnersLoaded(id, ownerAddresses));
+
+    dispatch(projectMembersLoaded(id, membersAddresses));
 
     const anchorAddress = project.anchorAddress!;
     dispatch(projectAnchorsLoaded(id, anchorAddress));
