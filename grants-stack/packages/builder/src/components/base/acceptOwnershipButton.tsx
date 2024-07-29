@@ -66,7 +66,7 @@ export default function AcceptOwnershipButton({
     if (props.status === Status.Error) {
       setTimeout(() => {
         resetSubmit();
-
+        setSubmitted(false);
         dispatch(addAlert("error", "Transfer Ownerdhip failed!", undefined));
       }, 1500);
     }
@@ -75,14 +75,16 @@ export default function AcceptOwnershipButton({
   return (
     <div>
       <div className="flex justify-start">
-        <Button
-          disabled={submitted}
-          variant={ButtonVariants.primary}
-          onClick={publishProject}
-          dataTrackEvent="transfer-project-ownership-next"
-        >
-          Accept Ownership
-        </Button>
+        {!submitted && (
+          <Button
+            disabled={submitted}
+            variant={ButtonVariants.primary}
+            onClick={publishProject}
+            dataTrackEvent="transfer-project-ownership-next"
+          >
+            Accept Ownership
+          </Button>
+        )}
       </div>
       <StatusModal
         open={show && !props.openErrorModal}
