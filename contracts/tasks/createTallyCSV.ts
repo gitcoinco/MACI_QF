@@ -7,6 +7,7 @@ import { TallyData } from "maci-cli";
 import axios from "axios";
 import fs from "fs";
 import { MACIQF } from "../typechain-types";
+import { randomInt } from "crypto";
 dotenv.config();
 
 task("createTallyCSV", "createTallyCSV")
@@ -56,9 +57,15 @@ task("createTallyCSV", "createTallyCSV")
         for (const event of events) {
           const recipient = await MACIQFStrategy.recipients(event.args[0]);
           const recipientMetadataCID = recipient.metadata[1];
-
-          const recipientMetadata = await Ipfs.fetchJson(recipientMetadataCID);
-          const title = recipientMetadata.application.project.title;
+          let title = "error fetching title :" + randomInt(1000000000);
+          try {
+            const recipientMetadata = await Ipfs.fetchJson(
+              recipientMetadataCID
+            );
+            title = recipientMetadata.application.project.title;
+          } catch (error) {
+            console.error("Error fetching recipient cid metadata");
+          }
           const payoutAddress = recipient.recipientAddress;
           const recipientId = event.args[0];
           const voteOptionIndex = Number(event.args[1]);
@@ -115,7 +122,8 @@ task("createTallyCSV", "createTallyCSV")
       // Save to a CSV file
       fs.writeFileSync(outputDir + "/donations.csv", csvContent);
 
-      const csvHeaders = "Recipient ID,Allocated Amount,Title,Payout Address";
+      const csvHeaders =
+        "Recipient ID,Project Title,Allocated Amount,Payout Address";
       const csvData = voteOptionIndexToRecipientIdMap
         .map((voteOption) => {
           const allocatedAmount = getAllocatedAmount(
@@ -127,8 +135,8 @@ task("createTallyCSV", "createTallyCSV")
             BigInt(voiceCreditFactor),
             BigInt(ALPHA_PRECISION)
           );
-          return `${voteOption.recipientId},${Number(allocatedAmount) / 1e18},${
-            voteOption.title
+          return `${voteOption.recipientId},${voteOption.title},${
+            Number(allocatedAmount) / 1e18
           },${voteOption.payoutAddress}`;
         })
         .join("\n");
