@@ -1,5 +1,4 @@
 import {
-  readScrollProjects,
   scrollProjects,
   transformScrollProjectData,
   strategiesToDeployMetadata,
@@ -11,7 +10,6 @@ import { Deployments } from "../scripts/utils/scriptTask";
 import fs from "fs";
 import { ZeroAddress } from "ethers";
 import { PubKey } from "maci-domainobjs";
-import { randomInt } from "crypto";
 
 task("migrate", "migrate profiles to a new network").setAction(
   async (_, hre) => {
@@ -42,23 +40,15 @@ task("migrate", "migrate profiles to a new network").setAction(
     console.log("Deploying contracts with the account:", signer.address);
     console.log("Allo", Allo);
     console.log("Registry", Registry);
-    const rounds = await hre.run("deployRounds", {});
-    console.log("Rounds", rounds);
-    // const rounds = [51, 52, 53];
+    // const rounds = await hre.run("deployRounds", {});
+    const rounds = [510, 520, 530];
 
     const RegistryContract = await ethers.getContractAt(
       "Registry",
       Registry,
       signer
     );
-    console.log("MIGRATE");
-
-    const scrollProjectData = readScrollProjects("scrollProjects.json");
-
-    // const profileDatas = transformToProfileData(
-    //   scrollProjectData,
-    //   signer.address
-    // );
+    
     const profileDatas = readMigrationData();
 
     const migratedProjectsData = profileDatas;
@@ -79,27 +69,6 @@ task("migrate", "migrate profiles to a new network").setAction(
         continue;
       }
 
-      // const createTx = await RegistryContract.createProfile(
-      //   profile.nonce,
-      //   profile.name,
-      //   { protocol: 1, pointer: profile.metadata.pointer },
-      //   signer.address,
-      //   [profile.owner]
-      // );
-      // console.log("Creating profile for", profile.name, "with i = ", i);
-      // const createProfileReceipt = await createTx.wait();
-      // const profileId = createProfileReceipt?.logs[0].topics[1] || "";
-
-      // const anchorAddress = (await RegistryContract.getProfileById(profileId))
-      //   .anchor;
-
-      // migratedProjectsData[i].newAnchor = anchorAddress;
-      // migratedProjectsData[i].profileCreated = true;
-
-      // fs.writeFileSync(
-      //   "migratedProjects.json",
-      //   JSON.stringify(migratedProjectsData, null, 2)
-      // );
       console.log("Creating profile for" + profile.name + " with i = " + i);
     }
 
@@ -312,25 +281,7 @@ subtask("deployRounds", async (_, hre) => {
       MACIDeployments.MACIQFStrategy.MACIQFStrategyAddress;
 
     const AlloContract = await ethers.getContractAt("Allo", Allo);
-    const RegistryContract = await ethers.getContractAt("Registry", Registry);
-    const rand = randomInt(100000000);
-    // const createProfile = await RegistryContract.createProfile(
-    //   randomInt(100000000),
-    //   `Script Migration Profile ${rand}`,
-    //   {
-    //     protocol: 1,
-    //     pointer: "bafkreif5dm6t23dmsleppvuq2c24bjwdsvbs6hhy4phjk3u2memmdk4pni",
-    //   },
-    //   deployer.address,
-    //   [deployer.address]
-    // );
 
-    // const createProfileReceipt = await createProfile.wait();
-
-    // const profileId = createProfileReceipt?.logs[0].topics[1] || "";
-
-    // const optimismZuzaluProgramId =
-    //   "0xd790e184c952f7227cb87063f858aaa486aa9722f34998282cfecd6d52e2ee9c";
     const profileId =
       "0xd790e184c952f7227cb87063f858aaa486aa9722f34998282cfecd6d52e2ee9c";
     // --------------------------------------------------  Create Strategy  --------------------------------------------------

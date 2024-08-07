@@ -36,7 +36,6 @@
     "@nomicfoundation/ignition-core": "^0.15.4",
     "@openzeppelin/contracts": "^5.0.2",
     "@openzeppelin/contracts-upgradeable": "^5.0.2",
-    "@openzeppelin/hardhat-upgrades": "^3.1.1",
     "@typechain/ethers-v6": "^0.5.1",
     "@typechain/hardhat": "^9.1.0",
     "@types/chai": "^4.3.16",
@@ -58,8 +57,10 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
+    "@openzeppelin/hardhat-upgrades": "^3.2.1",
     "@pcd/util": "^0.5.2",
     "@pinata/sdk": "^2.1.0",
+    "axios": "^1.7.3",
     "viem": "^2.17.0"
   }
 }

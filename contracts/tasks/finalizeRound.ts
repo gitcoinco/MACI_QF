@@ -24,9 +24,6 @@ const distributeBatchSize = Number(process.env.DISTRIBUTE_BATCH_SIZE || 1);
 const startBlock = Number(process.env.STARTING_BLOCK as string);
 const circuitDirectory = getCircuitsDir();
 
-const apiKey = process.env.IPFS_API_KEY as string;
-const secretApiKey = process.env.IPFS_SECRET_API_KEY as string;
-
 const Debug = Boolean(process.env.DEBUG || false);
 
 task("finalizeRound", "Finalizes the round and distributes funds").setAction(
@@ -76,7 +73,7 @@ task("finalizeRound", "Finalizes the round and distributes funds").setAction(
         quiet: !Debug,
       });
 
-      const tallyHash = await uploadToIpfs(outputDir, apiKey, secretApiKey);
+      const tallyHash = await uploadToIpfs(outputDir);
 
       console.log("Tally hash url", `https://ipfs.io/ipfs/${tallyHash}`);
 

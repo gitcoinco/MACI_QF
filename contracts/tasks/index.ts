@@ -8,7 +8,4 @@ import "./emergentWithdraw";
 import "./withdraw";
 import "./deployMACI";
 import "./createPool";
-import "./migrate";
-import "./createMultisigList";
-import "./transferOwnership";
-import "./testTransferOwnership";
+import "./createTallyCSV";
