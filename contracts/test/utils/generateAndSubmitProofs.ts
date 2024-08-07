@@ -18,6 +18,7 @@ export const genAndSubmitProofs = async ({
   tallyContractAddress,
   mpContractAddress,
   startBlock,
+  blockPerRequest,
   quiet,
 }: {
   coordinatorKeypair: Keypair;
@@ -29,9 +30,12 @@ export const genAndSubmitProofs = async ({
   tallyContractAddress: string;
   mpContractAddress: string;
   startBlock?: number;
+  blockPerRequest?: number;
   quiet?: boolean;
 }) => {
   const tallyFile = getTalyFilePath(outputDir);
+
+  const blocksPerBatch = blockPerRequest || 100000;
 
   const MaciState = (
     await genMaciStateFromContract(
@@ -40,7 +44,7 @@ export const genAndSubmitProofs = async ({
       coordinatorKeypair,
       0n,
       startBlock,
-      50,
+      blocksPerBatch,
       undefined,
       undefined
     )
@@ -48,11 +52,9 @@ export const genAndSubmitProofs = async ({
 
   // Create file and write the state
   const stateFilePath = path.join(outputDir, "state.json");
-  await JSONFile.write(stateFilePath, MaciState);
+  JSONFile.write(stateFilePath, MaciState);
 
   console.log("Generating and submitting proofs...");
-
-  
 
   const {
     processZkFile,
@@ -81,7 +83,7 @@ export const genAndSubmitProofs = async ({
     useWasm: true,
     stateFile: stateFilePath,
     startBlock: startBlock,
-    blocksPerBatch: 50,
+    blocksPerBatch: blocksPerBatch,
     endBlock: undefined,
     signer: coordinator,
     tallyAddress: tallyContractAddress,

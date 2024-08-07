@@ -85,11 +85,16 @@ const config: HardhatUserConfig = {
   sourcify: {
     enabled: true,
   },
-  defaultNetwork: "scroll",
+  // defaultNetwork: "optimism",
   networks: {
     scroll: {
       chainId: 534352,
       url: process.env.SCROLL_RPC_URL!,
+      accounts: [process.env.COORDINATOR_WALLET_PRIVATE_KEY!],
+    },
+    optimism: {
+      chainId: 10,
+      url: process.env.OPTIMISM_RPC_URL,
       accounts: [process.env.COORDINATOR_WALLET_PRIVATE_KEY!],
     },
     sepolia: {
@@ -100,12 +105,14 @@ const config: HardhatUserConfig = {
     localhost: {
       url: "http://127.0.0.1:8545",
       accounts: [process.env.PRIVATE_KEY!],
+      chainId: 31337,
     },
   },
   etherscan: {
     apiKey: {
       scroll: process.env.SCROLL_SCAN_API_KEY!,
       sepolia: process.env.ETHERSCAN_API_KEY!,
+      optimisticEthereum: process.env.OPTIMISTIC_ETHERSCAN_API_KEY!,
     },
     customChains: [
       {

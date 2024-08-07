@@ -34,12 +34,10 @@ export const getCircuitsDir = () => {
 };
 
 export const uploadToIpfs = async (
-  outputDir: string,
-  apiKey: string,
-  secretApiKey: string
+  outputDir: string
 ) => {
   const tallyFile = getTalyFilePath(outputDir);
-  const tallyHash = await Ipfs.pinFile(tallyFile, apiKey, secretApiKey);
+  const tallyHash = await Ipfs.pinFile(tallyFile);
   return tallyHash;
 };
 

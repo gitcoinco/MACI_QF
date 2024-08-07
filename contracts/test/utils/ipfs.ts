@@ -5,7 +5,8 @@ import { DEFAULT_IPFS_GATEWAY } from "./constants";
 import pinataSDK from "@pinata/sdk";
 import fs from "fs";
 import path from "path";
-
+import dotenv from "dotenv";
+dotenv.config();
 /**
  * Get the ipfs hash for the input object
  * @param object a json object to get the ipfs hash for
@@ -38,11 +39,14 @@ export class Ipfs {
    * @returns IPFS hash
    */
   static async pinFile(
-    file: string,
-    apiKey: string,
-    secretApiKey: string
+    file: string
   ): Promise<string> {
-    const pinata = new pinataSDK(apiKey, secretApiKey);
+    const JWT = process.env.IPFS_JWT as string;
+    const pinata = new pinataSDK( {
+      pinataApiKey: undefined,
+      pinataSecretApiKey: undefined,
+      pinataJWTKey: JWT
+  });
     const data = fs.createReadStream(file);
     const name = path.basename(file);
     const options = {

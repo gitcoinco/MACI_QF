@@ -20,80 +20,93 @@ const CoordinatorKeypair = new Keypair(deserializedPrivKey);
 const tallyBatchSize = Number(process.env.TALLY_BATCH_SIZE || 8);
 const circuitDirectory = getCircuitsDir();
 
-const apiKey = process.env.IPFS_API_KEY as string;
-const secretApiKey = process.env.IPFS_SECRET_API_KEY as string;
-
 const Debug = Boolean(process.env.DEBUG || false);
 
 task(
   "prepareTally",
   "Merges MACI subtrees and generates/submits proofs until tally results are batched"
-).setAction(async (_, hre) => {
-  const { ethers, network } = hre;
-  const [Coordinator] = await ethers.getSigners();
-  const roundId = Number(process.env.ROUND_ID as string);
-  const chainId = network.config.chainId!;
-  const contractStates = new ContractStates(chainId, roundId, Coordinator, hre);
-  const startBlock = Number(process.env.STARTING_BLOCK as string);
-
-  try {
-    const MACIQFStrategy = await contractStates.getMACIQFStrategy();
-
-    const pollContracts = await MACIQFStrategy.pollContracts();
-    const maciContractAddress = await MACIQFStrategy.maci();
-    const tallyContractAddress = pollContracts.tally;
-    const mpContractAddress = pollContracts.messageProcessor;
-    const voteOptionTreeDepth = Number(
-      await contractStates.getVoteOptionTreeDepth()
+)
+  .addParam("startingblock", "The starting block number for tallying")
+  .addParam("blocks", "how many blocks to query per request")
+  .addParam("roundid", "The round ID for the MACI strategy")
+  .setAction(async ({ startingblock, blocks, roundid }, hre) => {
+    const { ethers, network } = hre;
+    const [Coordinator] = await ethers.getSigners();
+    const roundId = Number(roundid);
+    const chainId = network.config.chainId!;
+    const contractStates = new ContractStates(
+      chainId,
+      roundId,
+      Coordinator,
+      hre
     );
+    const startBlock = Number(startingblock);
+    const blockPerRequest = Number(blocks);
 
-    const outputDir = getOutputDir(roundId, chainId);
+    try {
+      const MACIQFStrategy = await contractStates.getMACIQFStrategy();
 
-    await mergeMaciSubtrees({
-      maciAddress: maciContractAddress,
-      pollId: 0n,
-      numQueueOps: "1",
-      signer: Coordinator,
-      quiet: !Debug,
-    });
+      const pollContracts = await MACIQFStrategy.pollContracts();
+      const maciContractAddress = await MACIQFStrategy.maci();
+      const tallyContractAddress = pollContracts.tally;
+      const mpContractAddress = pollContracts.messageProcessor;
+      const voteOptionTreeDepth = Number(
+        await contractStates.getVoteOptionTreeDepth()
+      );
 
-    await genAndSubmitProofs({
-      coordinatorKeypair: CoordinatorKeypair,
-      coordinator: Coordinator,
-      maciAddress: maciContractAddress,
-      tallyContractAddress: tallyContractAddress,
-      mpContractAddress: mpContractAddress,
-      outputDir: outputDir,
-      circuitDirectory: circuitDirectory,
-      maciTransactionHash: undefined,
-      startBlock: startBlock,
-      quiet: !Debug,
-    });
+      const outputDir = getOutputDir(roundId, chainId);
 
-    const tallyFile = getTalyFilePath(outputDir);
-    const tally = JSONFile.read(tallyFile);
-    const tallyHash = await Ipfs.pinFile(tallyFile, apiKey, secretApiKey);
+      await mergeMaciSubtrees({
+        maciAddress: maciContractAddress,
+        pollId: 0n,
+        numQueueOps: "1",
+        signer: Coordinator,
+        quiet: !Debug,
+      });
 
-    console.log("Tally hash url", `https://ipfs.io/ipfs/${tallyHash}`);
+      await genAndSubmitProofs({
+        coordinatorKeypair: CoordinatorKeypair,
+        coordinator: Coordinator,
+        maciAddress: maciContractAddress,
+        tallyContractAddress: tallyContractAddress,
+        mpContractAddress: mpContractAddress,
+        outputDir: outputDir,
+        circuitDirectory: circuitDirectory,
+        maciTransactionHash: undefined,
+        startBlock: startBlock,
+        blockPerRequest: blockPerRequest,
+        quiet: !Debug,
+      });
 
-    let publishTallyHashReceipt = await MACIQFStrategy.connect(
-      Coordinator
-    ).publishTallyHash(tallyHash);
+      await hre.run("createTallyCSV", {
+        startingblock: startingblock,
+        roundid: roundid,
+      });
 
-    await publishTallyHashReceipt.wait();
+      const tallyFile = getTalyFilePath(outputDir);
+      const tally = JSONFile.read(tallyFile);
+      const tallyHash = await Ipfs.pinFile(tallyFile);
 
-    console.log("Tally hash published");
+      console.log("Tally hash url", `https://ipfs.io/ipfs/${tallyHash}`);
 
-    await addTallyResultsBatch(
-      MACIQFStrategy.connect(Coordinator),
-      voteOptionTreeDepth,
-      tally,
-      tallyBatchSize
-    );
-    
-    console.log("Tally results added in batches of : ", tallyBatchSize);
-  } catch (error) {
-    console.error("Error in prepareTally:", error);
-    process.exitCode = 1;
-  }
-});
+      let publishTallyHashReceipt = await MACIQFStrategy.connect(
+        Coordinator
+      ).publishTallyHash(tallyHash);
+
+      await publishTallyHashReceipt.wait();
+
+      console.log("Tally hash published");
+
+      await addTallyResultsBatch(
+        MACIQFStrategy.connect(Coordinator),
+        voteOptionTreeDepth,
+        tally,
+        tallyBatchSize
+      );
+
+      console.log("Tally results added in batches of : ", tallyBatchSize);
+    } catch (error) {
+      console.error("Error in prepareTally:", error);
+      process.exitCode = 1;
+    }
+  });
