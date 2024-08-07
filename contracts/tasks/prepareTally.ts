@@ -78,11 +78,6 @@ task(
         quiet: !Debug,
       });
 
-      await hre.run("createTallyCSV", {
-        startingblock: startingblock,
-        roundid: roundid,
-      });
-
       const tallyFile = getTalyFilePath(outputDir);
       const tally = JSONFile.read(tallyFile);
       const tallyHash = await Ipfs.pinFile(tallyFile);
