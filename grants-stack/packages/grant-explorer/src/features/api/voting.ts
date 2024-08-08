@@ -6,6 +6,7 @@ import {
   pad,
   parseAbiParameters,
   parseUnits,
+  PublicClient,
   slice,
   toHex,
   TypedDataDomain,
@@ -23,6 +24,7 @@ import { VotingToken } from "common";
 import { NATIVE } from "common/dist/allo/common";
 import { getPublicClient } from "@wagmi/core";
 import { getMACIABI } from "common/src/allo/voting";
+import axios from "axios";
 type SignPermitProps = {
   walletClient: WalletClient;
   contractAddress: Hex;
@@ -244,6 +246,176 @@ export function bnSqrt(val: bigint) {
   return x;
 }
 
+export async function getTallyResults(
+  roundId: string,
+  chainId: number,
+  dataLayer: DataLayer,
+  projects: Project[]
+) {
+  const alloContractAddress = getAlloAddress(chainId);
+
+  const publicClient = getPublicClient({
+    chainId,
+  });
+  const [Pool] = await Promise.all([
+    publicClient.readContract({
+      abi: abi,
+      address: alloContractAddress as Hex,
+      functionName: "getPool",
+      args: [BigInt(roundId)],
+    }),
+  ]);
+
+  const strategyAddress = (Pool as PoolInfo).strategy as `0x${string}`;
+
+  const tallyHash = await publicClient.readContract({
+    abi: getMACIABI(),
+    address: strategyAddress,
+    functionName: "tallyHash",
+  });
+  const voiceCreditFactor = await publicClient.readContract({
+    abi: getMACIABI(),
+    address: strategyAddress,
+    functionName: "voiceCreditFactor",
+  });
+  const ALPHA_PRECISION = await publicClient.readContract({
+    abi: getMACIABI(),
+    address: strategyAddress,
+    functionName: "ALPHA_PRECISION",
+  });
+  const poolAmount = await publicClient.readContract({
+    abi: getMACIABI(),
+    address: strategyAddress,
+    functionName: "getPoolAmount",
+  });
+  const totalVotesSquares = await publicClient.readContract({
+    abi: getMACIABI(),
+    address: strategyAddress,
+    functionName: "totalVotesSquares",
+  });
+
+  const results = [] as {
+    index: number;
+    recipientId: string;
+    title: string;
+    amount: number;
+    logo?: string;
+  }[];
+  // fetch the ipfs hash and parse the json data
+  const ipfsHash = tallyHash as string;
+  if (ipfsHash === "" || projects.length === 0) {
+    return results;
+  }
+  const ipfsUrl = `https://ipfs.io/ipfs/${ipfsHash}`;
+  const response = await axios.get(ipfsUrl);
+  const tallyData = response.data;
+
+  const voteOptions = await dataLayer.getVoteOptionIndexesByChainIdAndRoundId(
+    chainId,
+    roundId
+  );
+
+  const alpha = calcAlpha(
+    roundId === "54"
+      ? poolAmount > 83 * 1e18
+        ? poolAmount
+        : poolAmount + BigInt(83.5 * 1e18)
+      : roundId === "55"
+        ? poolAmount > 55 * 1e18
+          ? poolAmount
+          : poolAmount + BigInt(55.5 * 1e18)
+        : roundId === "56"
+          ? poolAmount > 111 * 1e18
+            ? poolAmount
+            : poolAmount + BigInt(111 * 1e18)
+          : poolAmount,
+    totalVotesSquares,
+    BigInt(tallyData.totalSpentVoiceCredits.spent),
+    voiceCreditFactor,
+    ALPHA_PRECISION
+  );
+
+  for (const voteOption of voteOptions.votingIndexOptions) {
+    let proj;
+
+    for (const project of projects) {
+      if (
+        project.anchorAddress?.toLowerCase() ===
+        voteOption.recipientId.toLowerCase()
+      ) {
+        proj = project;
+      }
+    }
+    if (!proj) {
+      continue;
+    }
+    results.push({
+      index: voteOption.optionIndex,
+      recipientId: voteOption.recipientId,
+      title: proj.projectMetadata.title,
+      amount:
+        Number(
+          getAllocatedAmount(
+            BigInt(tallyData.results.tally[voteOption.optionIndex]),
+            BigInt(
+              tallyData.perVOSpentVoiceCredits?.tally[voteOption.optionIndex] ??
+                0
+            ),
+            alpha,
+            BigInt(voiceCreditFactor),
+            BigInt(ALPHA_PRECISION)
+          )
+        ) / 1e18,
+      logo:
+        proj.projectMetadata.logoImg ??
+        proj.projectMetadata.bannerImg ??
+        undefined,
+    });
+  }
+  return results;
+}
+
+function getAllocatedAmount(
+  tallyResult: bigint,
+  spent: bigint,
+  alpha: bigint,
+  voiceCreditFactor: bigint,
+  ALPHA_PRECISION: bigint
+): bigint {
+  const quadratic = alpha * voiceCreditFactor * tallyResult * tallyResult;
+  const totalSpentCredits = voiceCreditFactor * spent;
+  const linearPrecision = ALPHA_PRECISION * totalSpentCredits;
+  const linearAlpha = alpha * totalSpentCredits;
+  return (quadratic + linearPrecision - linearAlpha) / ALPHA_PRECISION;
+}
+
+export function calcAlpha(
+  _budget: bigint,
+  _totalVotesSquares: bigint,
+  _totalSpent: bigint,
+  voiceCreditFactor: bigint,
+  ALPHA_PRECISION: bigint
+): bigint {
+  // Ensure contributions = total spent * voice credit factor
+  const contributions = _totalSpent * voiceCreditFactor;
+
+  if (_budget < contributions) {
+    throw new Error("Budget is less than contributions");
+  }
+
+  // guard against division by zero.
+  // This happens when no project receives more than one vote
+  if (_totalVotesSquares <= _totalSpent) {
+    throw new Error("No project has more than one vote");
+  }
+
+  // Calculate alpha
+  return (
+    ((_budget - contributions) * ALPHA_PRECISION) /
+    (voiceCreditFactor * (_totalVotesSquares - _totalSpent))
+  );
+}
+
 export const prepareAllocationData = ({
   publicKey,
   amount,
@@ -339,6 +511,7 @@ import {
   getAlloAddress,
   getZuPassRegistryAddress,
 } from "common/dist/allo/backends/allo-v2";
+import { DataLayer, Project } from "data-layer";
 
 /**
  * Convert to MACI Message object

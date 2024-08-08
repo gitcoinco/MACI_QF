@@ -32,6 +32,11 @@ export const getMACIABI = () => {
     "function publishMessageBatch((uint256 msgType,uint256[10] data)[] _messages,(uint256 x,uint256 y)[] _pubKeys)",
     "function maxValues() view returns (uint256 maxVoteOptions)",
     "function coordinatorPubKey() view returns ((uint256, uint256))",
+    "function tallyHash() view returns (string)",
+    "function totalVotesSquares() view returns (uint256)",
+    "function ALPHA_PRECISION() view returns (uint256)",
+    "function voiceCreditFactor() view returns (uint256)",
+    "function getPoolAmount() view returns (uint256)",
   ]);
   return abi;
 };

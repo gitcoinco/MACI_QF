@@ -4,6 +4,7 @@ import {
   ComponentPropsWithRef,
   FunctionComponent,
   createElement,
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -73,6 +74,8 @@ import {
   useAlreadyContributed,
   useGetContributions,
 } from "../projects/hooks/useRoundMaciMessages";
+import { getTallyResults } from "../api/voting";
+import { da } from "date-fns/locale";
 
 const builderURL = process.env.REACT_APP_BUILDER_URL;
 
@@ -601,7 +604,22 @@ const ProjectList = (props: {
   setShowCartNotification: React.Dispatch<React.SetStateAction<boolean>>;
 }): JSX.Element => {
   const { projects, roundRoutePath, chainId, roundId } = props;
+  const [results, setResults] = useState<{
+    [key: string]: number;
+  }>({});
   const dataLayer = useDataLayer();
+  const getResultsCallback = useCallback(async () => {
+    const res = await getResults();
+    if (!res) return;
+    const temp = {} as { [key: string]: number };
+    res?.forEach((r) => (temp[r.recipientId] = r.amount));
+    setResults(temp);
+  }, [roundId, chainId, dataLayer, projects]);
+
+  // get result using useMemo
+  useMemo(() => {
+    getResultsCallback();
+  }, [getResultsCallback, projects]);
 
   const { data: applications } = useRoundApprovedApplications(
     {
@@ -610,7 +628,9 @@ const ProjectList = (props: {
     },
     dataLayer
   );
-
+  async function getResults() {
+    return await getTallyResults(roundId, chainId, dataLayer, projects ?? []);
+  }
   const applicationsMapByGrantApplicationId:
     | Map<string, Application>
     | undefined = useMemo(() => {
@@ -653,9 +673,7 @@ const ProjectList = (props: {
                   }
                   setShowCartNotification={props.setShowCartNotification}
                   crowdfundedUSD={
-                    applicationsMapByGrantApplicationId?.get(
-                      project.projectRegistryId
-                    )?.totalAmountDonatedInUsd ?? 0
+                    results[project.anchorAddress ?? 0] ?? undefined
                   }
                   uniqueContributorsCount={
                     applicationsMapByGrantApplicationId?.get(
@@ -683,7 +701,7 @@ function ProjectCard(props: {
   chainId: ChainId;
   setCurrentProjectAddedToCart: React.Dispatch<React.SetStateAction<Project>>;
   setShowCartNotification: React.Dispatch<React.SetStateAction<boolean>>;
-  crowdfundedUSD: number;
+  crowdfundedUSD: number | undefined;
   uniqueContributorsCount: number;
 }) {
   const { project, roundRoutePath, round } = props;
@@ -764,6 +782,18 @@ function ProjectCard(props: {
       {!isDirectRound(round) && (
         <CardFooter className="bg-white">
           <CardContent className="px-2 text-xs">
+            {props.crowdfundedUSD && (
+              <div className="border-t pt-4 flex items-center justify-between text-[11px] font-mono">
+                <div>
+                  <p>
+                    {"raised "}{props.crowdfundedUSD?.toLocaleString("en-US", {
+                      maximumFractionDigits: 3,
+                    })}{" "}
+                    ETH
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="border-t pt-1 flex items-center justify-end mt-3">
               {props.isBeforeRoundEndDate &&
                 address &&
